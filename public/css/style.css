@@ -11572,13 +11572,17 @@ fieldset:disabled .btn {
 }
 
 .btn-warning {
-  color: #000;
+  color: #ffffff;
   background-color: #ffbf36;
   border-color: #ffbf36;
+  border-radius: 10px;
+  transition: opacity 0.2s, box-shadow 0.2s, transform 0.1s;
+  font-family: 'DM Sans', sans-serif;
 }
 
 .btn-warning:hover {
-  color: #000;
+  color: #ffffff;
+  opacity: 0.9;
   background-color: #ffc954;
   border-color: #ffc54a;
 }

@@ -9,15 +9,16 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #0d0f14;
-    --surface: #13161e;
-    --surface-2: #1a1e29;
-    --border: rgba(255,255,255,0.07);
-    --accent: #6c8cff;
-    --accent-glow: rgba(108,140,255,0.25);
-    --text: #eef0f6;
-    --muted: #5a6070;
-    --danger: #ff6b6b;
+    --bg: #fffdf5;
+    --surface: #ffffff;
+    --surface-2: #fdf9ee;
+    --border: rgba(180,140,0,0.15);
+    --accent: #c9a000;
+    --accent-glow: rgba(201,160,0,0.18);
+    --accent-light: #f5c400;
+    --text: #1a1400;
+    --muted: #8a7a3a;
+    --danger: #d94040;
   }
 
   body.auth-body {
@@ -35,7 +36,6 @@
     position: relative;
   }
 
-  /* Background blobs */
   .auth-wrapper::before {
     content: '';
     position: fixed;
@@ -43,7 +43,7 @@
     left: -10%;
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, rgba(108,140,255,0.12) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(245,196,0,0.13) 0%, transparent 70%);
     pointer-events: none;
   }
 
@@ -54,17 +54,16 @@
     right: -10%;
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, rgba(108,140,255,0.07) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(201,160,0,0.09) 0%, transparent 70%);
     pointer-events: none;
   }
 
-  /* Grid texture */
   .auth-grid {
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      linear-gradient(rgba(180,140,0,0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(180,140,0,0.12) 1px, transparent 1px);
     background-size: 48px 48px;
     pointer-events: none;
     mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 100%);
@@ -86,10 +85,10 @@
 
   .auth-card-inner {
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1px solid rgba(180,140,0,0.2);
     border-radius: 16px;
     padding: 40px 36px 36px;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03);
+    box-shadow: 0 24px 64px rgba(180,140,0,0.1), 0 0 0 1px rgba(245,196,0,0.06);
   }
 
   .auth-brand {
@@ -113,11 +112,15 @@
   .auth-brand-icon svg {
     width: 18px;
     height: 18px;
-    fill: white;
+    fill: none;
+    stroke: white;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .auth-brand-name {
-    font-family: 'Syne', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     font-weight: 700;
     font-size: 18px;
     color: var(--text);
@@ -125,7 +128,7 @@
   }
 
   .auth-heading {
-    font-family: 'Syne', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     font-weight: 800;
     font-size: 26px;
     color: var(--text);
@@ -156,7 +159,7 @@
   .form-control {
     width: 100%;
     background: var(--surface-2);
-    border: 1px solid var(--border);
+    border: 1px solid rgba(180,140,0,0.2);
     border-radius: 10px;
     padding: 11px 14px;
     font-size: 14px;
@@ -166,7 +169,7 @@
     transition: border-color 0.2s, box-shadow 0.2s;
   }
 
-  .form-control::placeholder { color: var(--muted); }
+  .form-control::placeholder { color: #bda860; }
 
   .form-control:focus {
     border-color: var(--accent);
@@ -181,32 +184,6 @@
     font-size: 12px;
     color: var(--danger);
     margin-top: 5px;
-  }
-
-  .btn-login {
-    width: 100%;
-    padding: 12px;
-    margin-top: 8px;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-family: 'Syne', sans-serif;
-    font-weight: 600;
-    font-size: 15px;
-    cursor: pointer;
-    letter-spacing: 0.2px;
-    transition: opacity 0.2s, box-shadow 0.2s, transform 0.1s;
-    box-shadow: 0 4px 20px var(--accent-glow);
-  }
-
-  .btn-login:hover {
-    opacity: 0.9;
-    box-shadow: 0 6px 28px var(--accent-glow);
-  }
-
-  .btn-login:active {
-    transform: scale(0.99);
   }
 
   .auth-footer {
@@ -238,17 +215,17 @@
           <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
         </svg>
       </div>
-      <span class="auth-brand-name">Spica</span>
+      <span class="auth-brand-name">One For All</span>
     </div>
 
-    <h1 class="auth-heading">Welcome back</h1>
-    <p class="auth-subheading">Sign in to your account</p>
+    <h1 class="auth-heading">Selamat Datang</h1>
+    <p class="auth-subheading">Masuk ke akun Anda</p>
 
     <form method="POST" action="{{ route('login') }}">
       @csrf
 
       <div class="form-group">
-        <label class="form-label" for="email">Email or Username</label>
+        <label class="form-label" for="email">Email atau Username</label>
         <input
           type="text"
           id="email"
@@ -265,7 +242,7 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="password">Password</label>
+        <label class="form-label" for="password">Kata Sandi</label>
         <input
           type="password"
           id="password"
@@ -279,11 +256,11 @@
         @enderror
       </div>
 
-      <button type="submit" class="btn-login">Sign In</button>
+      <button type="submit" class="btn btn-warning w-100">Masuk</button>
     </form>
 
     <div class="auth-footer">
-      <a href="{{ url('auth/forgot-password') }}">Forgot your password?</a>
+      <a href="{{ url('auth/forgot-password') }}">Lupa kata sandi Anda?</a>
     </div>
   </div>
 </div>
