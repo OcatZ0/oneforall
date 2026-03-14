@@ -11572,26 +11572,23 @@ fieldset:disabled .btn {
 }
 
 .btn-warning {
-  color: #ffffff;
-  background-color: #ffbf36;
-  border-color: #ffbf36;
-  border-radius: 10px;
-  transition: opacity 0.2s, box-shadow 0.2s, transform 0.1s;
-  font-family: 'DM Sans', sans-serif;
+  color: #000;
+  background-color: #ffc107;
+  border-color: #ffc107;
 }
 
 .btn-warning:hover {
-  color: #ffffff;
-  opacity: 0.9;
-  background-color: #ffc954;
-  border-color: #ffc54a;
+  color: #000;
+  background-color: #ffca2c;
+  border-color: #ffc720;
 }
 
-.btn-check:focus + .btn-warning, .btn-warning:focus {
+.btn-check:focus + .btn-warning,
+.btn-warning:focus {
   color: #000;
-  background-color: #ffc954;
-  border-color: #ffc54a;
-  box-shadow: 0 0 0 0.25rem rgba(217, 162, 46, 0.5);
+  background-color: #ffca2c;
+  border-color: #ffc720;
+  box-shadow: 0 0 0 0.25rem rgba(217, 164, 6, 0.5);
 }
 
 .btn-check:checked + .btn-warning,

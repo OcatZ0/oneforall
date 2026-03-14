@@ -1,0 +1,31 @@
+html, body {
+  font-family: 'DM Sans', sans-serif;
+}
+
+* {
+  font-family: inherit;
+}
+
+.btn-warning {
+  color: #ffffff;
+  background-color: #ffbf36;
+  border-color: #ffbf36;
+  border-radius: 10px;
+  transition: opacity 0.2s, box-shadow 0.2s, transform 0.1s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.btn-warning:hover {
+  color: #ffffff;
+  opacity: 0.9;
+  background-color: #ffc954;
+  border-color: #ffc54a;
+}
+
+.btn-warning:focus,
+.btn-check:focus + .btn-warning {
+  color: #ffffff;
+  background-color: #ffc954;
+  border-color: #ffc54a;
+  box-shadow: 0 0 0 0.25rem rgba(217, 162, 46, 0.5);
+}
