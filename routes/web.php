@@ -38,13 +38,21 @@ Route::middleware('guest')->group(function () {
     })->name('password.email');
 });
 
-Route::middleware('auth')->group(function () {
-    Route::get('/', fn() => view('dashboard'))->name('dashboard');
+Route::group([], function () {
+    Route::get('/', function () {
+        if (!session('user')) {
+            return redirect()->route('login');
+        }
+
+        return view('home/index');
+    })->name('dashboard');
 
     Route::post('auth/logout', function (Request $request) {
-        Auth::logout();
+        $request->session()->forget('user');
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('login');
     })->name('logout');
+
 });

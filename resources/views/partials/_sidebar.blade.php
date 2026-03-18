@@ -8,7 +8,6 @@
           <a class="nav-link" href="index.html">
             <i class="mdi mdi-view-quilt menu-icon"></i>
             <span class="menu-title">Dashboard</span>
-            <div class="badge badge-info badge-pill">2</div>
           </a>
         </li>
         <li class="nav-item sidebar-category">
@@ -80,11 +79,6 @@
           <a class="nav-link" href="docs/documentation.html">
             <i class="mdi mdi-file-document-box-outline menu-icon"></i>
             <span class="menu-title">Documentation</span>
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="https://www.bootstrapdash.com/product/spica-admin/">
-            <button class="btn bg-danger btn-sm menu-title">Upgrade to pro</button>
           </a>
         </li>
       </ul>
