@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard - Spica Admin')
+@section('title', 'Dashboard - One For All')
 
 @section('content')
 <div class="row">
