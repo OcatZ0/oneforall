@@ -1,30 +1,36 @@
 @extends('layouts.auth')
 
-@section('title', 'Lupa Kata Sandi - Spica Admin')
+@section('title', 'Lupa Kata Sandi - Dashboard One For All')
 
 @push('styles')
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #fffdf5;
-    --surface: #ffffff;
-    --surface-2: #fdf9ee;
-    --border: rgba(180,140,0,0.15);
-    --accent: #c9a000;
-    --accent-glow: rgba(201,160,0,0.18);
-    --accent-light: #f5c400;
-    --text: #1a1400;
-    --muted: #8a7a3a;
-    --danger: #d94040;
-    --success: #2d8a4e;
-    --success-bg: rgba(45,138,78,0.08);
+    --bg-start: #000428;
+    --bg-mid: #00295D;
+    --bg-end: #004E92;
+    --card-bg: #3A538A;
+    --card-border: rgba(255,255,255,0.1);
+    --input-bg: rgba(255,255,255,0.12);
+    --input-border: rgba(255,255,255,0.15);
+    --input-focus-border: rgba(255,255,255,0.45);
+    --text: #ffffff;
+    --text-muted: rgba(255,255,255,0.55);
+    --placeholder: rgba(255,255,255,0.35);
+    --danger: #ff6b6b;
+    --success: #4ade80;
+    --success-bg: rgba(74,222,128,0.1);
+    --success-border: rgba(74,222,128,0.2);
+    --btn-bg: rgba(200,215,240,0.75);
+    --btn-hover: rgba(220,230,250,0.88);
+    --btn-text: #ffffff;
+    --label-color: rgba(255,255,255,0.6);
   }
 
   body.auth-body {
-    background: var(--bg);
     font-family: 'DM Sans', sans-serif;
     min-height: 100vh;
     overflow: hidden;
@@ -35,114 +41,75 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-mid) 50%, var(--bg-end) 100%);
     position: relative;
-  }
-
-  .auth-wrapper::before {
-    content: '';
-    position: fixed;
-    top: -20%;
-    left: -10%;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(245,196,0,0.13) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  .auth-wrapper::after {
-    content: '';
-    position: fixed;
-    bottom: -20%;
-    right: -10%;
-    width: 500px;
-    height: 500px;
-    background: radial-gradient(circle, rgba(201,160,0,0.09) 0%, transparent 70%);
-    pointer-events: none;
   }
 
   .auth-grid {
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(rgba(180,140,0,0.12) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(180,140,0,0.12) 1px, transparent 1px);
+      linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
     background-size: 48px 48px;
     pointer-events: none;
-    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 100%);
+    mask-image: radial-gradient(ellipse 85% 85% at 50% 50%, black 0%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 85% 85% at 50% 50%, black 0%, transparent 100%);
   }
 
   .auth-card {
     position: relative;
     z-index: 10;
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     padding: 0 20px;
-    animation: fadeUp 0.5s ease forwards;
+    animation: fadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
+    from { opacity: 0; transform: translateY(24px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
   .auth-card-inner {
-    background: var(--surface);
-    border: 1px solid rgba(180,140,0,0.2);
-    border-radius: 16px;
-    padding: 40px 36px 36px;
-    box-shadow: 0 24px 64px rgba(180,140,0,0.1), 0 0 0 1px rgba(245,196,0,0.06);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 40px 40px 36px;
+    box-shadow:
+      0 32px 80px rgba(0,4,40,0.5),
+      0 0 0 1px rgba(255,255,255,0.06),
+      inset 0 1px 0 rgba(255,255,255,0.1);
   }
 
   .auth-brand {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 32px;
-  }
-
-  .auth-brand-icon {
-    width: 36px;
-    height: 36px;
-    background: var(--accent);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0 20px var(--accent-glow);
-  }
-
-  .auth-brand-icon svg {
-    width: 18px;
-    height: 18px;
-    fill: none;
-    stroke: white;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    gap: 12px;
+    margin-bottom: 28px;
   }
 
   .auth-brand-name {
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 700;
     font-size: 18px;
+    font-weight: 700;
     color: var(--text);
     letter-spacing: -0.3px;
+    line-height: 1.2;
   }
 
   .auth-heading {
-    font-family: 'DM Sans', sans-serif;
+    font-size: 28px;
     font-weight: 800;
-    font-size: 26px;
     color: var(--text);
-    letter-spacing: -0.5px;
-    margin-bottom: 6px;
+    letter-spacing: -0.6px;
+    margin-bottom: 4px;
   }
 
   .auth-subheading {
     font-size: 14px;
-    color: var(--muted);
+    color: var(--text-muted);
     margin-bottom: 28px;
-    line-height: 1.5;
+    line-height: 1.6;
   }
 
   .form-group {
@@ -151,32 +118,37 @@
 
   .form-label {
     display: block;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--muted);
-    margin-bottom: 7px;
-    letter-spacing: 0.5px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--label-color);
+    margin-bottom: 8px;
+    letter-spacing: 0.8px;
     text-transform: uppercase;
   }
 
   .form-control {
     width: 100%;
-    background: var(--surface-2);
-    border: 1px solid rgba(180,140,0,0.2);
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
     border-radius: 10px;
-    padding: 11px 14px;
+    padding: 12px 16px;
     font-size: 14px;
     font-family: 'DM Sans', sans-serif;
     color: var(--text);
     outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    -webkit-appearance: none;
   }
 
-  .form-control::placeholder { color: #bda860; }
+  .form-control::placeholder {
+    color: var(--placeholder);
+  }
 
   .form-control:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-glow);
+    border-color: var(--input-focus-border);
+    color: var(--text);
+    background: rgba(255,255,255,0.16);
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.07);
   }
 
   .form-control.is-invalid {
@@ -191,7 +163,7 @@
 
   .alert-success {
     background: var(--success-bg);
-    border: 1px solid rgba(45,138,78,0.2);
+    border: 1px solid var(--success-border);
     border-radius: 10px;
     padding: 12px 14px;
     font-size: 13px;
@@ -200,28 +172,53 @@
     line-height: 1.5;
   }
 
+  .btn-submit {
+    width: 100%;
+    background: var(--btn-bg);
+    border: none;
+    border-radius: 10px;
+    padding: 13px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--btn-text);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    margin-top: 8px;
+    letter-spacing: 0.2px;
+  }
+
+  .btn-submit:hover {
+    background: var(--btn-hover);
+    box-shadow: 0 4px 16px rgba(0,4,40,0.3);
+  }
+
+  .btn-submit:active {
+    transform: scale(0.99);
+  }
+
   .auth-footer {
     text-align: center;
-    margin-top: 20px;
+    margin-top: 18px;
   }
 
   .auth-footer a {
-    font-size: 12px;
-    color: var(--muted);
+    font-size: 13px;
+    color: var(--text-muted);
     text-decoration: none;
     transition: color 0.2s;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
   }
 
   .auth-footer a:hover {
-    color: var(--accent);
+    color: rgba(255,255,255,0.85);
   }
 
   .auth-footer a svg {
-    width: 12px;
-    height: 12px;
+    width: 13px;
+    height: 13px;
     stroke: currentColor;
     fill: none;
     stroke-width: 2;
@@ -233,56 +230,51 @@
 
 @section('content')
 <div class="auth-grid"></div>
+  <div class="auth-card">
+    <div class="auth-card-inner">
 
-<div class="auth-card">
-  <div class="auth-card-inner">
-    <div class="auth-brand">
-      <div class="auth-brand-icon">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-        </svg>
-      </div>
-      <span class="auth-brand-name">One For All</span>
-    </div>
-
-    <h1 class="auth-heading">Lupa Kata Sandi</h1>
-    <p class="auth-subheading">Masukkan email Anda dan kami akan mengirimkan tautan untuk mengatur ulang kata sandi.</p>
-
-    @if (session('status'))
-      <div class="alert-success">
-        {{ session('status') }}
-      </div>
-    @endif
-
-    <form method="POST" action="{{ route('password.email') }}">
-      @csrf
-
-      <div class="form-group">
-        <label class="form-label" for="email">Email</label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          class="form-control @error('email') is-invalid @enderror"
-          placeholder="you@example.com"
-          value="{{ old('email') }}"
-          autocomplete="email"
-          autofocus
-        >
-        @error('email')
-          <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
+      <div class="auth-brand">
+        <img src="{{ asset('images/logo_dofa.png') }}" alt="DOFA Logo" style="display: block; height: 82px; width: auto;">
+        <span class="auth-brand-name">Dashboard One For All</span>
       </div>
 
-      <button type="submit" class="btn btn-warning w-100">Kirim Tautan Reset</button>
-    </form>
+      <h1 class="auth-heading">Lupa Kata Sandi</h1>
+      <p class="auth-subheading">Masukkan email Anda dan kami akan mengirimkan tautan untuk mengatur ulang kata sandi.</p>
 
-    <div class="auth-footer">
-      <a href="{{ route('login') }}">
-        <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-        Kembali ke halaman masuk
-      </a>
+      @if (session('status'))
+        <div class="alert-success">{{ session('status') }}</div>
+      @endif
+
+      <form method="POST" action="{{ route('password.email') }}">
+        @csrf
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            class="form-control @error('email') is-invalid @enderror"
+            placeholder="you@example.com"
+            value="{{ old('email') }}"
+            autocomplete="email"
+            autofocus
+          >
+          @error('email')
+            <div class="invalid-feedback">{{ $message }}</div>
+          @enderror
+        </div>
+
+        <button type="submit" class="btn-submit">Kirim Tautan Reset</button>
+      </form>
+
+      <div class="auth-footer">
+        <a href="{{ route('login') }}">
+          <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Kembali ke halaman masuk
+        </a>
+      </div>
+
     </div>
   </div>
-</div>
 @endsection
