@@ -5,7 +5,7 @@
           <span></span>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="index.html">
+          <a class="nav-link" href="/">
             <i class="mdi mdi-view-quilt menu-icon"></i>
             <span class="menu-title">Dashboard</span>
           </a>
@@ -28,19 +28,19 @@
           </div>
         </li> -->
         <li class="nav-item">
-          <a class="nav-link" href="">
+          <a class="nav-link" href="/agent">
             <i class="mdi mdi-laptop menu-icon"></i>
             <span class="menu-title">Agents</span>
           </a>
         </li>
         <li class="nav-item sidebar-category">
-          <p>Manajemen Pelanggan</p>
+          <p>Manajemen Pengguna</p>
           <span></span>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="">
+          <a class="nav-link" href="/user">
             <i class="mdi mdi-account menu-icon"></i>
-            <span class="menu-title">Pelanggan</span>
+            <span class="menu-title">Pengguna</span>
           </a>
         </li>
       </ul>

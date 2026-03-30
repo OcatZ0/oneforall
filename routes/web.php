@@ -47,6 +47,22 @@ Route::group([], function () {
         return view('home/index');
     })->name('dashboard');
 
+    Route::get('/agent', function () {
+        if (!session('user')) {
+            return redirect()->route('login');
+        }
+
+        return view('agent/index');
+    })->name('agent');
+
+    Route::get('/user', function () {
+        if (!session('user')) {
+            return redirect()->route('login');
+        }
+
+        return view('user/index');
+    })->name('user');
+
     Route::post('auth/logout', function (Request $request) {
         $request->session()->forget('user');
         $request->session()->invalidate();
