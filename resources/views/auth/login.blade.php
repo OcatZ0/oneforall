@@ -70,7 +70,7 @@
   .auth-card-inner {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
-    border-radius: 20px;
+    border-radius: 0px;
     padding: 40px 40px 36px;
     box-shadow:
       0 32px 80px rgba(0,4,40,0.5),
@@ -125,7 +125,7 @@
     width: 100%;
     background: var(--input-bg);
     border: 1px solid var(--input-border);
-    border-radius: 10px;
+    border-radius: 0px;
     padding: 12px 16px;
     font-size: 14px;
     color: var(--text);
@@ -159,7 +159,7 @@
     width: 100%;
     background: var(--btn-bg);
     border: none;
-    border-radius: 10px;
+    border-radius: 0px;
     padding: 13px;
     font-size: 14px;
     font-weight: 600;

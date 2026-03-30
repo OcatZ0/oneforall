@@ -63,6 +63,22 @@ Route::group([], function () {
         return view('user/index');
     })->name('user');
 
+    Route::get('/user/{id}/edit', function ($id) {
+        if (!session('user')) {
+            return redirect()->route('login');
+        }
+
+        return view('user/edit-user', compact('id'));
+    })->name('edit-user');
+
+    Route::get('/profile', function () {
+        if (!session('user')) {
+            return redirect()->route('login');
+        }
+
+        return view('profile/index');
+    })->name('profile');
+
     Route::post('auth/logout', function (Request $request) {
         $request->session()->forget('user');
         $request->session()->invalidate();

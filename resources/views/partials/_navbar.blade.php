@@ -15,30 +15,31 @@
                 <span>{{ session('user') }}</span>
               </a>
               <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list" aria-labelledby="profileDropdown">
-                <p class="mb-0 font-weight-normal float-left dropdown-header">Profile</p>
-                <a class="dropdown-item preview-item" href="#">
+                <p class="mb-0 font-weight-normal float-left dropdown-header">Profil</p>
+                <a class="dropdown-item preview-item" href="profile">
                   <div class="preview-thumbnail">
                     <div class="preview-icon bg-success">
                       <i class="mdi mdi-account mx-0"></i>
                     </div>
                   </div>
                   <div class="preview-item-content">
-                    <h6 class="preview-subject font-weight-normal">My Profile</h6>
-                    <p class="font-weight-light small-text mb-0 text-muted">Account details</p>
+                    <h6 class="preview-subject font-weight-normal">Profil</h6>
+                    <p class="font-weight-light small-text mb-0 text-muted">Detail akun</p>
                   </div>
                 </a>
-                <a class="dropdown-item preview-item" href="#">
+                <a class="dropdown-item preview-item" href="auth/forgot-password">
                   <div class="preview-thumbnail">
                     <div class="preview-icon bg-warning">
                       <i class="mdi mdi-lock mx-0"></i>
                     </div>
                   </div>
                   <div class="preview-item-content">
-                    <h6 class="preview-subject font-weight-normal">Change Password</h6>
-                    <p class="font-weight-light small-text mb-0 text-muted">Security settings</p>
+                    <h6 class="preview-subject font-weight-normal">Ubah Kata Sandi</h6>
+                    <p class="font-weight-light small-text mb-0 text-muted">Pengaturan keamanan</p>
                   </div>
                 </a>
-                <a class="dropdown-item preview-item" href="logout.php">
+                <a href="#" class="dropdown-item preview-item"
+                  onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                   <div class="preview-thumbnail">
                     <div class="preview-icon bg-danger">
                       <i class="mdi mdi-logout mx-0"></i>
@@ -46,9 +47,13 @@
                   </div>
                   <div class="preview-item-content">
                     <h6 class="preview-subject font-weight-normal">Logout</h6>
-                    <p class="font-weight-light small-text mb-0 text-muted">Sign out</p>
+                    <p class="font-weight-light small-text mb-0 text-muted">Keluar</p>
                   </div>
                 </a>
+
+                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                  @csrf
+                </form>
               </div>
             </li>
           </ul>

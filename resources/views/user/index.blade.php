@@ -62,7 +62,7 @@
                 </td>
                 <td>01 Jan 2025</td>
                 <td class="text-nowrap">
-                  <a href="#" class="btn btn-sm btn-outline-primary mr-1 me-1"><i class="mdi mdi-pencil"></i></a>
+                  <a href="/user/1/edit" class="btn btn-sm btn-outline-primary mr-1 me-1"><i class="mdi mdi-pencil"></i></a>
                   <a href="#" class="btn btn-sm btn-outline-danger"><i class="mdi mdi-delete"></i></a>
                 </td>
               </tr>
