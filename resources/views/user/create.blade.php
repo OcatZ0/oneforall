@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Pengguna - One For All')
+@section('title', 'Tambah Pengguna - One For All')
 
 @section('content')
 
@@ -10,15 +10,14 @@
     <div class="card grid-margin">
       <div class="card-body">
         <div class="d-flex align-items-center justify-content-between mb-4">
-          <h4 class="card-title mb-0">Edit Pengguna: {{ $user->username }}</h4>
+          <h4 class="card-title mb-0">Tambah Pengguna Baru</h4>
           <a href="{{ route('user') }}" class="btn btn-sm btn-outline-secondary">
             <i class="mdi mdi-arrow-left mr-1"></i> Kembali
           </a>
         </div>
 
-        <form action="{{ route('user.update', $user->id_pengguna) }}" method="POST">
+        <form action="{{ route('user.store') }}" method="POST">
           @csrf
-          @method('PUT')
 
           <!-- User Information -->
           <div class="card mb-4">
@@ -30,7 +29,7 @@
                 <div class="col-md-6 mb-3">
                   <label class="form-label" for="username">Username <span class="text-danger">*</span></label>
                   <input type="text" id="username" name="username" class="form-control @error('username') is-invalid @enderror"
-                    placeholder="Masukkan username" value="{{ old('username', $user->username) }}" required>
+                    placeholder="Masukkan username" value="{{ old('username') }}" required>
                   @error('username')
                     <div class="invalid-feedback">{{ $message }}</div>
                   @enderror
@@ -39,7 +38,7 @@
                 <div class="col-md-6 mb-3">
                   <label class="form-label" for="email">Email <span class="text-danger">*</span></label>
                   <input type="email" id="email" name="email" class="form-control @error('email') is-invalid @enderror"
-                    placeholder="Masukkan email" value="{{ old('email', $user->email) }}" required>
+                    placeholder="Masukkan email" value="{{ old('email') }}" required>
                   @error('email')
                     <div class="invalid-feedback">{{ $message }}</div>
                   @enderror
@@ -48,20 +47,23 @@
 
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label class="form-label" for="peran">Role <span class="text-danger">*</span></label>
-                  <select id="peran" name="peran" class="form-control form-select @error('peran') is-invalid @enderror" required disabled>
-                    <option value="customer" {{ old('peran', $user->peran) === 'customer' ? 'selected' : '' }}>Customer</option>
-                  </select>
-                  <small class="text-muted">Role tidak dapat diubah</small>
-                  @error('peran')
+                  <label class="form-label" for="password">Kata Sandi <span class="text-danger">*</span></label>
+                  <input type="password" id="password" name="password" class="form-control @error('password') is-invalid @enderror"
+                    placeholder="Masukkan kata sandi" required>
+                  @error('password')
                     <div class="invalid-feedback">{{ $message }}</div>
                   @enderror
                 </div>
 
                 <div class="col-md-6 mb-3">
-                  <label class="form-label" for="tanggal_dibuat">Tanggal Dibuat</label>
-                  <input type="text" id="tanggal_dibuat" class="form-control"
-                    value="{{ \Carbon\Carbon::parse($user->tanggal_dibuat)->translatedFormat('d F Y H:i') }}" disabled>
+                  <label class="form-label" for="peran">Role <span class="text-danger">*</span></label>
+                  <select id="peran" name="peran" class="form-control form-select @error('peran') is-invalid @enderror" required>
+                    <option value="">Pilih Role</option>
+                    <option value="customer" {{ old('peran') === 'customer' ? 'selected' : '' }}>Customer</option>
+                  </select>
+                  @error('peran')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                  @enderror
                 </div>
               </div>
             </div>
@@ -81,8 +83,8 @@
                     <div class="form-check mb-3 pb-2 d-flex align-items-start" style="border-bottom: 1px solid #eee;">
                       <input type="checkbox" class="form-check-input flex-shrink-0 mt-1" id="agent_{{ $agent['id'] }}"
                         name="agents[]" value="{{ $agent['id'] }}"
-                        {{ in_array($agent['id'], old('agents', $userAgentIds)) ? 'checked' : '' }}
-                        {{ $agent['assigned'] && !in_array($agent['id'], $userAgentIds) ? 'disabled' : '' }}
+                        {{ in_array($agent['id'], old('agents', [])) ? 'checked' : '' }}
+                        {{ $agent['assigned'] ? 'disabled' : '' }}
                         style="width: 18px; height: 18px; cursor: pointer; margin-top: 2px; margin-left: 0;">
                       <label class="form-check-label flex-grow-1 ms-3" for="agent_{{ $agent['id'] }}" style="cursor: pointer;">
                         <div class="d-flex justify-content-between align-items-start gap-2">
@@ -92,9 +94,7 @@
                           </div>
                           <div style="flex-shrink: 0;">
                             @if($agent['assigned'])
-                              <span class="badge badge-{{ in_array($agent['id'], $userAgentIds) ? 'primary' : 'secondary' }}">
-                                Assigned to: <strong>{{ $agent['assigned_to'] }}</strong>
-                              </span>
+                              <span class="badge badge-secondary">Assigned to: <strong>{{ $agent['assigned_to'] }}</strong></span>
                             @else
                               <span class="badge badge-success">Available</span>
                             @endif
@@ -116,7 +116,7 @@
           <!-- Action Buttons -->
           <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">
-              <i class="mdi mdi-check mr-1"></i> Simpan Perubahan
+              <i class="mdi mdi-check mr-1"></i> Simpan Pengguna
             </button>
             <a href="{{ route('user') }}" class="btn btn-outline-secondary">
               <i class="mdi mdi-close mr-1"></i> Batal

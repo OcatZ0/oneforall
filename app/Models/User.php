@@ -13,14 +13,30 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
+     * The table associated with the model.
+     */
+    protected $table = 'pengguna';
+
+    /**
+     * The primary key for the model.
+     */
+    protected $primaryKey = 'id_pengguna';
+
+    /**
+     * Indicates if the model should be timestamped.
+     */
+    public $timestamps = false;
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'username',
         'email',
-        'password',
+        'kata_sandi',
+        'peran',
     ];
 
     /**
@@ -29,8 +45,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $hidden = [
-        'password',
-        'remember_token',
+        'kata_sandi',
     ];
 
     /**
@@ -41,8 +56,32 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'tanggal_dibuat' => 'datetime',
         ];
     }
+
+    /**
+     * Get the password attribute for authentication.
+     */
+    public function getAuthPassword()
+    {
+        return $this->kata_sandi;
+    }
+
+    /**
+     * Relationship: Get all agents for this user.
+     */
+    public function agents()
+    {
+        return $this->hasMany(Agent::class, 'id_pengguna', 'id_pengguna');
+    }
+
+    /**
+     * Relationship: Get all activity logs for this user.
+     */
+    public function activities()
+    {
+        return $this->hasMany(LogActivity::class, 'id_pengguna', 'id_pengguna');
+    }
 }
+

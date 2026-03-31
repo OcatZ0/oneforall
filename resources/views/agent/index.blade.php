@@ -4,7 +4,7 @@
 
 @section('content')
 
-{{-- Status, Details, Evolution --}}
+{{-- Agent Statistics --}}
 <div class="row grid-margin">
   <div class="col-md-3 stretch-card">
     <div class="card">
@@ -12,19 +12,19 @@
         <p class="card-title text-center">STATUS</p>
         <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
           <span><span class="badge badge-success mr-2 me-2">&nbsp;&nbsp;&nbsp;</span> Active</span>
-          <span class="font-weight-bold">1</span>
+          <span class="font-weight-bold">{{ $stats['active'] }}</span>
         </div>
         <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
           <span><span class="badge badge-danger mr-2 me-2">&nbsp;&nbsp;&nbsp;</span> Disconnected</span>
-          <span class="font-weight-bold">0</span>
+          <span class="font-weight-bold">{{ $stats['disconnected'] }}</span>
         </div>
         <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
           <span><span class="badge badge-warning mr-2 me-2">&nbsp;&nbsp;&nbsp;</span> Pending</span>
-          <span class="font-weight-bold">0</span>
+          <span class="font-weight-bold">{{ $stats['pending'] }}</span>
         </div>
         <div class="d-flex justify-content-between align-items-center">
           <span><span class="badge badge-secondary mr-2 me-2">&nbsp;&nbsp;&nbsp;</span> Never Connected</span>
-          <span class="font-weight-bold">0</span>
+          <span class="font-weight-bold">{{ $stats['never_connected'] }}</span>
         </div>
       </div>
     </div>
@@ -37,34 +37,23 @@
         <div class="row text-center mb-3">
           <div class="col">
             <p class="text-muted mb-1">Active</p>
-            <h4 class="text-success font-weight-bold">1</h4>
+            <h4 class="text-success font-weight-bold">{{ $stats['active'] }}</h4>
           </div>
           <div class="col">
             <p class="text-muted mb-1">Disconnected</p>
-            <h4 class="text-danger font-weight-bold">0</h4>
+            <h4 class="text-danger font-weight-bold">{{ $stats['disconnected'] }}</h4>
           </div>
           <div class="col">
             <p class="text-muted mb-1">Pending</p>
-            <h4 class="text-warning font-weight-bold">0</h4>
+            <h4 class="text-warning font-weight-bold">{{ $stats['pending'] }}</h4>
           </div>
           <div class="col">
             <p class="text-muted mb-1">Never Connected</p>
-            <h4 class="text-secondary font-weight-bold">0</h4>
+            <h4 class="text-secondary font-weight-bold">{{ $stats['never_connected'] }}</h4>
           </div>
           <div class="col">
             <p class="text-muted mb-1">Coverage</p>
-            <h4 class="text-success font-weight-bold">100%</h4>
-          </div>
-        </div>
-        <hr class="mt-0">
-        <div class="row">
-          <div class="col">
-            <p class="text-muted mb-0">Last registered agent</p>
-            <a href="#">windows-10</a>
-          </div>
-          <div class="col">
-            <p class="text-muted mb-0">Most active agent</p>
-            <a href="#">windows-10</a>
+            <h4 class="text-success font-weight-bold">{{ $stats['total'] > 0 ? round(($stats['active'] / $stats['total']) * 100) : 0 }}%</h4>
           </div>
         </div>
       </div>
@@ -93,120 +82,209 @@
       <div class="card-body">
         <div class="d-flex align-items-center justify-content-between mb-3">
           <h4 class="card-title mb-0">Agents</h4>
-          <div class="d-flex">
-            <button class="btn btn-sm btn-success mr-2 me-2">
+          <div class="d-flex gap-2 flex-wrap justify-content-end">
+            <button class="btn btn-sm btn-primary" onclick="location.reload()">
               <i class="mdi mdi-refresh mr-1"></i> Refresh
             </button>
-            <button class="btn btn-sm btn-primary">
-              <i class="mdi mdi-download mr-1"></i> Export
+            <button class="btn btn-sm btn-success" onclick="location.reload()">
+              <i class="mdi mdi-refresh mr-1"></i> Update Data Agent
             </button>
           </div>
         </div>
 
-        <div class="d-flex align-items-center mb-3">
-          <div class="input-group" style="max-width:400px">
-            <div class="input-group-prepend">
-              <span class="input-group-text bg-white border-right-0">
-                <i class="mdi mdi-magnify text-muted"></i>
-              </span>
+        <!-- Search and Filter Form -->
+        <form method="GET" action="{{ route('agent') }}" id="filterForm" class="mb-3">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="input-group" style="max-width:400px">
+              <div class="input-group-prepend">
+                <span class="input-group-text bg-white border-right-0">
+                  <i class="mdi mdi-magnify text-muted"></i>
+                </span>
+              </div>
+              <input type="text" id="searchInput" name="search" class="form-control border-left-0"
+                placeholder="Cari agent ID atau nama..."
+                value="{{ request('search') }}">
             </div>
-            <input type="text" class="form-control border-left-0" placeholder="Search agents...">
-          </div>
-          <div class="ml-3 ms-3">
-            <select class="form-control form-select">
-              <option value="">All Status</option>
-              <option value="active">Active</option>
-              <option value="disconnected">Disconnected</option>
-              <option value="pending">Pending</option>
-              <option value="never_connected">Never Connected</option>
+
+            <select id="statusFilter" name="status" class="form-control form-select" style="width:180px">
+              <option value="">Semua Status</option>
+              <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+              <option value="disconnected" {{ request('status') === 'disconnected' ? 'selected' : '' }}>Disconnected</option>
+              <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+              <option value="never_connected" {{ request('status') === 'never_connected' ? 'selected' : '' }}>Never Connected</option>
             </select>
+
+            <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-secondary">
+              <i class="mdi mdi-refresh mr-1"></i>Reset
+            </a>
           </div>
-        </div>
+        </form>
 
         <div class="table-responsive">
           <table class="table table-striped table-hover mb-0">
             <thead>
               <tr>
-                <th>ID <i class="mdi mdi-arrow-up text-muted"></i></th>
-                <th>Name</th>
+                <th style="width:50px">#</th>
+                <th>ID</th>
+                <th>Nama Agent</th>
                 <th>IP Address</th>
-                <th>Group(s)</th>
                 <th>Operating System</th>
-                <th>Cluster Node</th>
                 <th>Version</th>
+                <th>Assigned To</th>
+                <th>Cluster Node</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
+              @forelse($agents as $agent)
               <tr>
-                <td>001</td>
-                <td class="font-weight-bold">windows-10</td>
-                <td>192.168.200.169</td>
-                <td><span class="badge badge-secondary">default</span></td>
-                <td><i class="mdi mdi-microsoft-windows text-primary mr-1"></i> Microsoft Windows Server 2022 Datacenter 10.0.20348.469</td>
-                <td>node01</td>
-                <td>v4.7.5</td>
-                <td><span class="badge badge-success">active</span></td>
+                <td>{{ ($agents->currentPage() - 1) * $agents->perPage() + $loop->iteration }}</td>
+                <td class="font-weight-bold">{{ $agent->id_agent }}</td>
+                <td>{{ $agent->nama }}</td>
+                <td>{{ $agent->ip }}</td>
+                <td>
+                  <i class="mdi {{ \App\Http\Controllers\AgentController::getOSIcon($agent->os) }} mr-1"></i>
+                  <small>{{ $agent->os }}</small>
+                </td>
+                <td><small class="text-muted">{{ $agent->version }}</small></td>
+                <td>
+                  @if($agent->user)
+                    <span class="badge badge-primary">{{ $agent->user->username }}</span>
+                  @else
+                    <span class="text-muted font-italic">Unassigned</span>
+                  @endif
+                </td>
+                <td><small class="text-muted">{{ $agent->cluster_node }}</small></td>
+                <td>
+                  <span class="badge badge-{{ \App\Http\Controllers\AgentController::getStatusBadgeColor($agent->status) }}">
+                    {{ \App\Http\Controllers\AgentController::formatStatus($agent->status) }}
+                  </span>
+                </td>
               </tr>
+              @empty
+              <tr>
+                <td colspan="9" class="text-center text-muted py-4">
+                  <i class="mdi mdi-information-outline mr-2"></i>Tidak ada agent yang ditemukan
+                </td>
+              </tr>
+              @endforelse
             </tbody>
           </table>
         </div>
 
+        <!-- Pagination Controls -->
+        @if($agents->count() > 0)
         <div class="d-flex align-items-center justify-content-between mt-3">
           <div class="d-flex align-items-center">
             <span class="text-muted mr-2 me-2">Rows per page:</span>
-            <select class="form-control form-select" style="width:70px">
-              <option>10</option>
-              <option>25</option>
-              <option>50</option>
-            </select>
+            <form method="GET" action="{{ route('agent') }}" class="d-inline" id="perPageForm">
+              @foreach(request()->query() as $key => $value)
+                @if($key !== 'per_page' && $key !== 'page')
+                  <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                @endif
+              @endforeach
+              <input type="hidden" name="page" value="1">
+              <select name="per_page" class="form-control form-select" style="width:90px" onchange="document.getElementById('perPageForm').submit()">
+                <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
+                <option value="25" {{ request('per_page', 10) == 25 ? 'selected' : '' }}>25</option>
+                <option value="50" {{ request('per_page', 10) == 50 ? 'selected' : '' }}>50</option>
+              </select>
+            </form>
           </div>
-          <nav>
-            <ul class="pagination pagination-sm mb-0">
-              <li class="page-item disabled"><a class="page-link" href="#">&laquo;</a></li>
-              <li class="page-item active"><a class="page-link" href="#">1</a></li>
-              <li class="page-item disabled"><a class="page-link" href="#">&raquo;</a></li>
-            </ul>
-          </nav>
+
+          <!-- Pagination Links -->
+          <div>
+            {{ $agents->appends(request()->query())->links('pagination::bootstrap-4') }}
+          </div>
         </div>
+
+        <!-- Pagination Info -->
+        <div class="text-muted text-sm mt-2">
+          Menampilkan {{ ($agents->currentPage() - 1) * $agents->perPage() + 1 }} hingga
+          {{ min($agents->currentPage() * $agents->perPage(), $agents->total()) }} dari {{ $agents->total() }} agent
+        </div>
+        @endif
+
       </div>
     </div>
   </div>
 </div>
 
-@endsection
-
-@push('scripts')
 <script>
-const labels = [];
-const dataPoints = [];
-const now = new Date();
-for (let i = 144; i >= 0; i--) {
-  const t = new Date(now - i * 10 * 60 * 1000);
-  labels.push(t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0'));
-  dataPoints.push(1);
+// Debounce function for search
+function debounce(func, delay) {
+  let timeoutId;
+  return function(...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(this, args), delay);
+  };
 }
-new Chart(document.getElementById('evolution-chart').getContext('2d'), {
-  type: 'line',
-  data: {
-    labels: labels,
-    datasets: [{
-      data: dataPoints,
-      borderColor: '#82D616',
-      borderWidth: 2,
-      fill: false,
-      pointRadius: 0,
-      tension: 0,
-    }]
-  },
-  options: {
-    responsive: true,
-    plugins: { legend: { display: false } },
-    scales: {
-      y: { min: 0, max: 2, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } },
-      x: { ticks: { maxTicksLimit: 6, font: { size: 10 } }, grid: { display: false } }
+
+// Auto-submit form on search input (debounced)
+const searchInput = document.getElementById('searchInput');
+if (searchInput) {
+  searchInput.addEventListener('input', debounce(function() {
+    const form = document.getElementById('filterForm');
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'page';
+    input.value = '1';
+    form.appendChild(input);
+    form.submit();
+  }, 500));
+}
+
+// Auto-submit form on status filter change
+const statusFilter = document.getElementById('statusFilter');
+if (statusFilter) {
+  statusFilter.addEventListener('change', function() {
+    const form = document.getElementById('filterForm');
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'page';
+    input.value = '1';
+    form.appendChild(input);
+    form.submit();
+  });
+}
+
+// Evolution Chart
+document.addEventListener('DOMContentLoaded', function() {
+  const evolutionChart = document.getElementById('evolution-chart');
+  if (evolutionChart && typeof Chart !== 'undefined') {
+    const labels = [];
+    const dataPoints = [];
+    const now = new Date();
+    for (let i = 144; i >= 0; i--) {
+      const t = new Date(now - i * 10 * 60 * 1000);
+      labels.push(t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0'));
+      // Make up data with some variation
+      dataPoints.push(Math.floor(Math.random() * 3) + 1);
     }
+    new Chart(evolutionChart.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: dataPoints,
+          borderColor: '#82D616',
+          borderWidth: 2,
+          fill: false,
+          pointRadius: 0,
+          tension: 0,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { min: 0, max: 4, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } },
+          x: { ticks: { maxTicksLimit: 6, font: { size: 10 } }, grid: { display: false } }
+        }
+      }
+    });
   }
 });
 </script>
-@endpush
+
+@endsection

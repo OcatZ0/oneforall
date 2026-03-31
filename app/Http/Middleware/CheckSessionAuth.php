@@ -9,7 +9,7 @@ class CheckSessionAuth
 {
     public function handle(Request $request, Closure $next)
     {
-        if (!session('user')) {
+        if (!session('user_id')) {
             return redirect()->route('login');
         }
 

@@ -22,7 +22,7 @@
               <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center mx-auto mb-2" style="width:160px;height:160px">
                 <i class="mdi mdi-account text-white" style="font-size:5rem"></i>
               </div>
-              <span class="badge badge-danger">Admin</span>
+              <span class="badge badge-{{ $user->peran === 'admin' ? 'danger' : 'primary' }}">{{ ucfirst($user->peran) }}</span>
             </div>
           </div>
           <div class="col-md-9">
@@ -30,19 +30,19 @@
               <tbody>
                 <tr>
                   <td class="text-muted font-weight-bold" style="width:160px">Username</td>
-                  <td>fadli</td>
+                  <td>{{ $user->username }}</td>
                 </tr>
                 <tr>
                   <td class="text-muted font-weight-bold">Email</td>
-                  <td>fadli@example.com</td>
+                  <td>{{ $user->email }}</td>
                 </tr>
                 <tr>
                   <td class="text-muted font-weight-bold">Role</td>
-                  <td><span class="badge badge-danger">Admin</span></td>
+                  <td><span class="badge badge-{{ $user->peran === 'admin' ? 'danger' : 'primary' }}">{{ ucfirst($user->peran) }}</span></td>
                 </tr>
                 <tr>
                   <td class="text-muted font-weight-bold">Tanggal Dibuat</td>
-                  <td>01 Januari 2025</td>
+                  <td>{{ \Carbon\Carbon::parse($user->tanggal_dibuat)->translatedFormat('d F Y') }}</td>
                 </tr>
               </tbody>
             </table>
@@ -53,72 +53,38 @@
 
         <div class="mt-3">
           <div class="d-flex align-items-center justify-content-between mb-3">
-            <h5 class="card-title mb-0">Agents Dimiliki <span class="badge badge-primary ml-2 ms-2">7</span></h5>
+            <h5 class="card-title mb-0">Agents Dimiliki <span class="badge badge-primary ml-2 ms-2">{{ count($agents) }}</span></h5>
           </div>
+          @if(count($agents) > 0)
           <div class="table-responsive">
             <table class="table table-striped table-hover mb-0">
               <thead>
                 <tr>
                   <th style="width:50px">#</th>
-                  <th>Agent Name</th>
-                  <th>IP Address</th>
-                  <th>OS</th>
-                  <th>Status</th>
+                  <th>Agent ID</th>
+                  <th>Nama Agent</th>
+                  <th>Deskripsi</th>
+                  <th>Tanggal Dibuat</th>
                 </tr>
               </thead>
               <tbody>
+                @foreach($agents as $agent)
                 <tr>
-                  <td>1</td>
-                  <td class="font-weight-bold">web-server-prod</td>
-                  <td>192.168.1.10</td>
-                  <td><i class="mdi mdi-linux mr-1"></i> Ubuntu 22.04</td>
-                  <td><span class="badge badge-success">Active</span></td>
+                  <td>{{ $loop->iteration }}</td>
+                  <td class="font-weight-bold">{{ $agent->id_agent }}</td>
+                  <td>{{ $agent->nama }}</td>
+                  <td>{{ $agent->deskripsi }}</td>
+                  <td>{{ \Carbon\Carbon::parse($agent->tanggal_dibuat)->translatedFormat('d M Y') }}</td>
                 </tr>
-                <tr>
-                  <td>2</td>
-                  <td class="font-weight-bold">db-server-01</td>
-                  <td>192.168.1.25</td>
-                  <td><i class="mdi mdi-linux mr-1"></i> CentOS 7</td>
-                  <td><span class="badge badge-success">Active</span></td>
-                </tr>
-                <tr>
-                  <td>3</td>
-                  <td class="font-weight-bold">firewall-edge</td>
-                  <td>10.0.0.1</td>
-                  <td><i class="mdi mdi-microsoft-windows mr-1"></i> Windows Server 2019</td>
-                  <td><span class="badge badge-success">Active</span></td>
-                </tr>
-                <tr>
-                  <td>4</td>
-                  <td class="font-weight-bold">mail-server</td>
-                  <td>192.168.2.5</td>
-                  <td><i class="mdi mdi-linux mr-1"></i> Debian 11</td>
-                  <td><span class="badge badge-danger">Disconnected</span></td>
-                </tr>
-                <tr>
-                  <td>5</td>
-                  <td class="font-weight-bold">workstation-dev3</td>
-                  <td>192.168.3.11</td>
-                  <td><i class="mdi mdi-microsoft-windows mr-1"></i> Windows 11</td>
-                  <td><span class="badge badge-success">Active</span></td>
-                </tr>
-                <tr>
-                  <td>6</td>
-                  <td class="font-weight-bold">backup-server</td>
-                  <td>192.168.1.50</td>
-                  <td><i class="mdi mdi-linux mr-1"></i> Ubuntu 20.04</td>
-                  <td><span class="badge badge-warning">Pending</span></td>
-                </tr>
-                <tr>
-                  <td>7</td>
-                  <td class="font-weight-bold">proxy-server</td>
-                  <td>192.168.1.99</td>
-                  <td><i class="mdi mdi-linux mr-1"></i> Debian 12</td>
-                  <td><span class="badge badge-success">Active</span></td>
-                </tr>
+                @endforeach
               </tbody>
             </table>
           </div>
+          @else
+          <div class="alert alert-info">
+            <i class="mdi mdi-information-outline mr-2"></i> Anda belum memiliki agent
+          </div>
+          @endif
         </div>
 
       </div>

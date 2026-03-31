@@ -7,12 +7,12 @@
             <a class="navbar-brand brand-logo" href="/"><img src="{{ asset('images/logo_dofa.png') }}" alt="DOFA Logo" style="display: block;height: 50px; width: auto;"></a>
             <a class="navbar-brand brand-logo-mini" href="/"><img src="{{ asset('images/logo_dofa.png') }}" alt="DOFA Logo" style="display: block;height: 82px; width: auto;"></a>
           </div>
-          <h4 class="font-weight-bold mb-0 d-none d-md-block mt-1">Selamat Datang, {{ session('user') }}</h4>
+          <h4 class="font-weight-bold mb-0 d-none d-md-block mt-1">Selamat Datang, {{ Auth::user()->username }}</h4>
           <ul class="navbar-nav navbar-nav-right">
             <li class="nav-item dropdown me-2">
               <a class="nav-link dropdown-toggle d-flex align-items-center justify-content-center gap-2 border rounded px-3" id="profileDropdown" href="#" data-bs-toggle="dropdown">
                 <i class="mdi mdi-account-circle mx-0"></i>
-                <span>{{ session('user') }}</span>
+                <span>{{ Auth::user()->username }}</span>
               </a>
               <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list" aria-labelledby="profileDropdown">
                 <p class="mb-0 font-weight-normal float-left dropdown-header">Profil</p>
