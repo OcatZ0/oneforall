@@ -13,7 +13,7 @@
           <p class="card-title mb-0">Active Agents</p>
           <i class="mdi mdi-server-network text-success icon-lg"></i>
         </div>
-        <h2 class="font-weight-bold mb-1">38</h2>
+        <h2 class="font-weight-bold mb-1">{{ $agentStats['active'] }}</h2>
         <p class="text-muted mb-0">Terhubung & berjalan normal</p>
       </div>
     </div>
@@ -25,7 +25,7 @@
           <p class="card-title mb-0">Disconnected</p>
           <i class="mdi mdi-server-off text-danger icon-lg"></i>
         </div>
-        <h2 class="font-weight-bold mb-1">5</h2>
+        <h2 class="font-weight-bold mb-1">{{ $agentStats['disconnected'] }}</h2>
         <p class="text-muted mb-0">Pernah terhubung, kini terputus</p>
       </div>
     </div>
@@ -37,7 +37,7 @@
           <p class="card-title mb-0">Pending</p>
           <i class="mdi mdi-server text-warning icon-lg"></i>
         </div>
-        <h2 class="font-weight-bold mb-1">3</h2>
+        <h2 class="font-weight-bold mb-1">{{ $agentStats['pending'] }}</h2>
         <p class="text-muted mb-0">Menunggu registrasi selesai</p>
       </div>
     </div>
@@ -49,7 +49,7 @@
           <p class="card-title mb-0">Never Connected</p>
           <i class="mdi mdi-server-minus text-secondary icon-lg"></i>
         </div>
-        <h2 class="font-weight-bold mb-1">1</h2>
+        <h2 class="font-weight-bold mb-1">{{ $agentStats['never_connected'] }}</h2>
         <p class="text-muted mb-0">Belum pernah terhubung sama sekali</p>
       </div>
     </div>
@@ -65,7 +65,7 @@
           <p class="card-title mb-0">Total Agents</p>
           <i class="mdi mdi-server-network text-primary icon-lg"></i>
         </div>
-        <h2 class="font-weight-bold mb-1">47</h2>
+        <h2 class="font-weight-bold mb-1">{{ $agentStats['total'] }}</h2>
         <p class="text-muted mb-0"><span class="text-success me-1"><i class="mdi mdi-arrow-up"></i>3</span> dari bulan lalu</p>
       </div>
     </div>
@@ -82,6 +82,15 @@
       </div>
     </div>
   </div>
+
+  @php
+    $total = $agentStats['total'] ?: 1; // avoid division by zero
+    $activePct          = round($agentStats['active'] / $total * 100, 1);
+    $disconnectedPct    = round($agentStats['disconnected'] / $total * 100, 1);
+    $pendingPct         = round($agentStats['pending'] / $total * 100, 1);
+    $neverConnectedPct  = round($agentStats['never_connected'] / $total * 100, 1);
+  @endphp
+
   <div class="col-md-6 grid-margin stretch-card">
     <div class="card">
       <div class="card-body">
@@ -89,31 +98,31 @@
         <p class="text-muted mb-3">Dari total 47 agent terdaftar</p>
         <div class="d-flex justify-content-between mb-1">
           <span class="text-success">Active</span>
-          <span class="font-weight-bold">38 (80.8%)</span>
+          <span class="font-weight-bold">{{ $agentStats['active'] }} ({{ $activePct }}%)</span>
         </div>
         <div class="progress mb-2" style="height:8px">
-          <div class="progress-bar bg-success" role="progressbar" style="width:80.8%" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
+          <div class="progress-bar bg-success" role="progressbar" style="width:{{ $activePct }}%" aria-valuenow="{{ $activePct }}" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
         <div class="d-flex justify-content-between mb-1">
           <span class="text-danger">Disconnected</span>
-          <span class="font-weight-bold">5 (10.6%)</span>
+          <span class="font-weight-bold">{{ $agentStats['disconnected'] }} ({{ $disconnectedPct }}%)</span>
         </div>
         <div class="progress mb-2" style="height:8px">
-          <div class="progress-bar bg-danger" role="progressbar" style="width:10.6%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+          <div class="progress-bar bg-danger" role="progressbar" style="width:{{ $disconnectedPct }}%" aria-valuenow="{{ $disconnectedPct }}" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
         <div class="d-flex justify-content-between mb-1">
           <span class="text-warning">Pending</span>
-          <span class="font-weight-bold">3 (6.4%)</span>
+          <span class="font-weight-bold">{{ $agentStats['pending'] }} ({{ $pendingPct }}%)</span>
         </div>
         <div class="progress mb-2" style="height:8px">
-          <div class="progress-bar bg-warning" role="progressbar" style="width:6.4%" aria-valuenow="6" aria-valuemin="0" aria-valuemax="100"></div>
+          <div class="progress-bar bg-warning" role="progressbar" style="width:{{ $pendingPct }}%" aria-valuenow="{{ $pendingPct }}" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
         <div class="d-flex justify-content-between mb-1">
           <span class="text-secondary">Never Connected</span>
-          <span class="font-weight-bold">1 (2.1%)</span>
+          <span class="font-weight-bold">{{ $agentStats['never_connected'] }} ({{ $neverConnectedPct }}%)</span>
         </div>
         <div class="progress" style="height:8px">
-          <div class="progress-bar bg-secondary" role="progressbar" style="width:2.1%" aria-valuenow="2" aria-valuemin="0" aria-valuemax="100"></div>
+          <div class="progress-bar bg-secondary" role="progressbar" style="width:{{ $neverConnectedPct }}%" aria-valuenow="{{ $neverConnectedPct }}" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
       </div>
     </div>

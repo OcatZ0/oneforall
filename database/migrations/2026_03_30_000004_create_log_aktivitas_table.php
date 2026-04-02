@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('log_aktivitas', function (Blueprint $table) {
             $table->id('id_log');
-            $table->foreignId('id_pengguna')->constrained('pengguna')->cascadeOnDelete();
+            $table->unsignedBigInteger('id_pengguna');
+            $table->foreign('id_pengguna')->references('id_pengguna')->on('pengguna')->cascadeOnDelete();
             $table->string('aktivitas', 255);
             $table->dateTime('tanggal')->useCurrent();
         });

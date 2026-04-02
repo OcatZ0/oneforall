@@ -16,7 +16,8 @@ return new class extends Migration
             $table->string('nama', 100);
             $table->string('deskripsi', 255);
             $table->dateTime('tanggal_dibuat')->useCurrent();
-            $table->foreignId('id_pengguna')->constrained('pengguna')->cascadeOnDelete();
+            $table->unsignedBigInteger('id_pengguna');
+            $table->foreign('id_pengguna')->references('id_pengguna')->on('pengguna')->cascadeOnDelete();
         });
     }
 
