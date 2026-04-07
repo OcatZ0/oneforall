@@ -7,13 +7,16 @@ use App\Services\OpenSearchService;
 
 class DashboardController extends Controller
 {
-    private $wazuhBase = 'https://192.168.200.150:55000';
-    private $wazuhUser = 'admin';
-    private $wazuhPass = 'Admin123.';
+    private $wazuhBase;
+    private $wazuhUser;
+    private $wazuhPass;
     private $openSearch;
 
     public function __construct(OpenSearchService $openSearch)
     {
+        $this->wazuhBase = env('WAZUH_HOST', 'https://192.168.200.150:55000');
+        $this->wazuhUser = env('WAZUH_USER', 'admin');
+        $this->wazuhPass = env('WAZUH_PASSWORD', 'admin');
         $this->openSearch = $openSearch;
     }
 

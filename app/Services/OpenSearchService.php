@@ -10,12 +10,19 @@ class OpenSearchService
     private $opensearchHost;
     private $opensearchUser;
     private $opensearchPassword;
+    private $wazuhHost;
+    private $wazuhUser;
+    private $wazuhPassword;
 
     public function __construct()
     {
         $this->opensearchHost = env('OPENSEARCH_HOST', 'https://192.168.200.150:9200');
         $this->opensearchUser = env('OPENSEARCH_USER', 'admin');
         $this->opensearchPassword = env('OPENSEARCH_PASSWORD', 'admin');
+        
+        $this->wazuhHost = env('WAZUH_HOST', 'https://192.168.200.150:55000');
+        $this->wazuhUser = env('WAZUH_USER', 'admin');
+        $this->wazuhPassword = env('WAZUH_PASSWORD', 'admin');
     }
 
     /**
@@ -163,59 +170,68 @@ class OpenSearchService
     }
 
     /**
-     * Get OS distribution from agent metadata
+     * Get OS distribution from Wazuh Agent API
      */
     public function getOsDistribution()
     {
-        $query = [
-            'size' => 0,
-            'aggs' => [
-                'os_distribution' => [
-                    'terms' => [
-                        'field' => 'agent.os.name',
-                        'size' => 10,
-                    ]
-                ]
-            ],
-            'query' => [
-                'range' => [
-                    'timestamp' => [
-                        'gte' => 'now-7d'
-                    ]
-                ]
-            ]
-        ];
-
         try {
-            $response = Http::withoutVerifying()
-                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
-                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+            // Get Wazuh API token
+            $tokenResponse = Http::withoutVerifying()
+                ->withBasicAuth($this->wazuhUser, $this->wazuhPassword)
+                ->post("{$this->wazuhHost}/security/user/authenticate");
 
-            if ($response->successful()) {
-                return $this->parseOsDistributionResponse($response->json());
+            if (!$tokenResponse->successful()) {
+                \Log::error('Failed to authenticate with Wazuh API: ' . $tokenResponse->status() . ' - ' . $tokenResponse->body());
+                return $this->getOsFallbackData();
             }
+
+            $token = $tokenResponse->json('data.token');
+            \Log::info('Wazuh token obtained successfully');
+
+            // Get all agents from Wazuh API
+            $agentsResponse = Http::withoutVerifying()
+                ->withToken($token)
+                ->get("{$this->wazuhHost}/agents", [
+                    'limit' => 500,
+                    'select' => 'id,name,os.name'
+                ]);
+
+            \Log::info('Wazuh agents API response: ' . $agentsResponse->status());
+            
+            if (!$agentsResponse->successful()) {
+                \Log::error('Wazuh agents API request failed: ' . $agentsResponse->status() . ' - ' . $agentsResponse->body());
+                return $this->getOsFallbackData();
+            }
+
+            $agents = $agentsResponse->json('data.affected_items') ?? [];
+            \Log::info('Agents retrieved: ' . count($agents));
+            
+            if (empty($agents)) {
+                \Log::warning('No agents returned from Wazuh API');
+                return $this->getOsFallbackData();
+            }
+
+            // Aggregate agents by OS
+            $osDistribution = [];
+            foreach ($agents as $agent) {
+                if (isset($agent['os']) && isset($agent['os']['name'])) {
+                    $osName = $agent['os']['name'];
+                    $osDistribution[$osName] = ($osDistribution[$osName] ?? 0) + 1;
+                }
+            }
+
+            if (!empty($osDistribution)) {
+                \Log::info('OS distribution from Wazuh API: ' . json_encode($osDistribution));
+                return $osDistribution;
+            }
+
+            \Log::warning('No OS data found in Wazuh agents');
+            return $this->getOsFallbackData();
+
         } catch (\Exception $e) {
-            \Log::error('OpenSearch OS distribution query failed: ' . $e->getMessage());
+            \Log::error('Wazuh OS distribution query failed: ' . $e->getMessage());
+            return $this->getOsFallbackData();
         }
-
-        return $this->getOsFallbackData();
-    }
-
-    /**
-     * Parse OS distribution response
-     */
-    private function parseOsDistributionResponse($data)
-    {
-        $buckets = $data['aggregations']['os_distribution']['buckets'] ?? [];
-        $osData = [];
-
-        foreach ($buckets as $bucket) {
-            $osName = $bucket['key'] ?? 'Unknown';
-            $count = $bucket['doc_count'] ?? 0;
-            $osData[$osName] = $count;
-        }
-
-        return $osData ?: $this->getOsFallbackData();
     }
 
     /**
