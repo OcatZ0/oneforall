@@ -144,12 +144,20 @@
     </div>
   </div>
 
+  @php
+    $total_alerts = $totalAlerts ?? 0;
+    $critical_pct = $total_alerts > 0 ? round($alertSeverity['critical'] / $total_alerts * 100, 1) : 0;
+    $high_pct = $total_alerts > 0 ? round($alertSeverity['high'] / $total_alerts * 100, 1) : 0;
+    $medium_pct = $total_alerts > 0 ? round($alertSeverity['medium'] / $total_alerts * 100, 1) : 0;
+    $low_pct = $total_alerts > 0 ? round($alertSeverity['low'] / $total_alerts * 100, 1) : 0;
+  @endphp
+
   <div class="col-md-4 grid-margin stretch-card">
     <div class="card">
       <div class="card-body">
         <p class="card-title">Alerts by Rule Level</p>
         <p class="text-muted mb-1">
-          Dari <strong>Wazuh Indexer</strong> — aggregasi <code>rule.level</code>.
+          Dari <strong>OpenSearch Indexer</strong> — aggregasi <code>rule.level</code>.
           Level 1–5 = Low, 6–8 = Medium, 9–11 = High, 12–15 = Critical.
         </p>
         <canvas id="severity-chart" height="180"></canvas>
@@ -167,35 +175,35 @@
     <div class="card">
       <div class="card-body">
         <p class="card-title">Total Security Alerts</p>
-        <h2 class="font-weight-bold mb-1">12,847</h2>
+        <h2 class="font-weight-bold mb-1">{{ number_format($totalAlerts) }}</h2>
         <p class="text-muted mb-3">Dari seluruh agent</p>
         <div class="d-flex justify-content-between mb-1">
           <span class="text-danger">Critical</span>
-          <span class="font-weight-bold">1,203</span>
+          <span class="font-weight-bold">{{ number_format($alertSeverity['critical']) }}</span>
         </div>
         <div class="progress mb-3" style="height:6px">
-          <div class="progress-bar bg-danger" role="progressbar" style="width:9%" aria-valuenow="9" aria-valuemin="0" aria-valuemax="100"></div>
+          <div class="progress-bar bg-danger" role="progressbar" style="width:{{ $critical_pct }}%" aria-valuenow="{{ $critical_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
         <div class="d-flex justify-content-between mb-1">
           <span class="text-warning">High</span>
-          <span class="font-weight-bold">3,451</span>
+          <span class="font-weight-bold">{{ number_format($alertSeverity['high']) }}</span>
         </div>
         <div class="progress mb-3" style="height:6px">
-          <div class="progress-bar bg-warning" role="progressbar" style="width:27%" aria-valuenow="27" aria-valuemin="0" aria-valuemax="100"></div>
+          <div class="progress-bar bg-warning" role="progressbar" style="width:{{ $high_pct }}%" aria-valuenow="{{ $high_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
         <div class="d-flex justify-content-between mb-1">
           <span class="text-info">Medium</span>
-          <span class="font-weight-bold">5,782</span>
+          <span class="font-weight-bold">{{ number_format($alertSeverity['medium']) }}</span>
         </div>
         <div class="progress mb-3" style="height:6px">
-          <div class="progress-bar bg-info" role="progressbar" style="width:45%" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+          <div class="progress-bar bg-info" role="progressbar" style="width:{{ $medium_pct }}%" aria-valuenow="{{ $medium_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
         <div class="d-flex justify-content-between mb-1">
           <span class="text-success">Low</span>
-          <span class="font-weight-bold">2,411</span>
+          <span class="font-weight-bold">{{ number_format($alertSeverity['low']) }}</span>
         </div>
         <div class="progress" style="height:6px">
-          <div class="progress-bar bg-success" role="progressbar" style="width:19%" aria-valuenow="19" aria-valuemin="0" aria-valuemax="100"></div>
+          <div class="progress-bar bg-success" role="progressbar" style="width:{{ $low_pct }}%" aria-valuenow="{{ $low_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
       </div>
     </div>
@@ -218,7 +226,7 @@
     <div class="card">
       <div class="card-body">
         <p class="card-title">Top Rules Paling Sering Trigger</p>
-        <p class="text-muted mb-3">Data dari Wazuh Indexer — aggregasi <code>rule.id</code></p>
+        <p class="text-muted mb-3">Data dari OpenSearch — aggregasi <code>rule.id</code></p>
         <div class="table-responsive">
           <table class="table table-striped mb-0">
             <thead>
@@ -231,41 +239,27 @@
               </tr>
             </thead>
             <tbody>
+              @forelse($topRules as $rule)
               <tr>
-                <td><span class="badge badge-secondary">5501</span></td>
-                <td>User successfully logged in</td>
-                <td><span class="badge badge-success">3</span></td>
-                <td class="font-weight-bold">2,341</td>
+                <td><span class="badge badge-secondary">{{ $rule['id'] }}</span></td>
+                <td>{{ $rule['description'] }}</td>
+                <td>
+                  @php
+                    $levelColor = 'success';
+                    if ($rule['level'] >= 12) $levelColor = 'danger';
+                    elseif ($rule['level'] >= 9) $levelColor = 'warning';
+                    elseif ($rule['level'] >= 6) $levelColor = 'info';
+                  @endphp
+                  <span class="badge badge-{{ $levelColor }}">{{ $rule['level'] }}</span>
+                </td>
+                <td class="font-weight-bold">{{ number_format($rule['count']) }}</td>
                 <td><i class="mdi mdi-trending-up text-danger"></i></td>
               </tr>
+              @empty
               <tr>
-                <td><span class="badge badge-secondary">40111</span></td>
-                <td>Firewall Drop event</td>
-                <td><span class="badge badge-info">8</span></td>
-                <td class="font-weight-bold">1,892</td>
-                <td><i class="mdi mdi-trending-up text-danger"></i></td>
+                <td colspan="5" class="text-center text-muted">No rules data available</td>
               </tr>
-              <tr>
-                <td><span class="badge badge-secondary">1002</span></td>
-                <td>Unknown problem somewhere in the system</td>
-                <td><span class="badge badge-warning">10</span></td>
-                <td class="font-weight-bold">1,204</td>
-                <td><i class="mdi mdi-trending-down text-success"></i></td>
-              </tr>
-              <tr>
-                <td><span class="badge badge-secondary">5402</span></td>
-                <td>PAM: Login session opened</td>
-                <td><span class="badge badge-success">3</span></td>
-                <td class="font-weight-bold">987</td>
-                <td><i class="mdi mdi-trending-neutral text-muted"></i></td>
-              </tr>
-              <tr>
-                <td><span class="badge badge-secondary">31101</span></td>
-                <td>Web server 400 error code</td>
-                <td><span class="badge badge-info">6</span></td>
-                <td class="font-weight-bold">763</td>
-                <td><i class="mdi mdi-trending-up text-danger"></i></td>
-              </tr>
+              @endforelse
             </tbody>
           </table>
         </div>
@@ -297,69 +291,42 @@
               </tr>
             </thead>
             <tbody>
+              @php
+                $maxAlerts = collect($topAgents)->max('alert_count') ?? 1;
+              @endphp
+              @forelse($topAgents as $agent)
               <tr>
-                <td><span class="badge badge-secondary">001</span></td>
-                <td class="font-weight-bold">web-server-prod</td>
-                <td>192.168.1.10</td>
-                <td><i class="mdi mdi-linux me-1"></i> Ubuntu 22.04</td>
+                <td><span class="badge badge-secondary">{{ $agent['id'] }}</span></td>
+                <td class="font-weight-bold">{{ $agent['name'] }}</td>
+                <td>{{ $agent['ip'] }}</td>
+                <td>
+                  @php
+                    $osIcon = 'mdi-linux';
+                    if (stripos($agent['os'], 'windows') !== false) $osIcon = 'mdi-microsoft-windows';
+                    elseif (stripos($agent['os'], 'macos') !== false) $osIcon = 'mdi-apple';
+                    elseif (stripos($agent['os'], 'freebsd') !== false) $osIcon = 'mdi-freebsd';
+                  @endphp
+                  <i class="mdi {{ $osIcon }} me-1"></i> {{ $agent['os'] }}
+                </td>
                 <td><span class="badge badge-success">Active</span></td>
-                <td class="font-weight-bold text-danger">3,241</td>
+                <td class="font-weight-bold text-danger">{{ number_format($agent['alert_count']) }}</td>
                 <td style="min-width:150px">
                   <div class="progress" style="height:8px">
-                    <div class="progress-bar bg-danger" role="progressbar" style="width:100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                    @php
+                      $percentage = ($agent['alert_count'] / $maxAlerts) * 100;
+                    @endphp
+                    <div class="progress-bar bg-danger" role="progressbar" style="width:{{ $percentage }}%" aria-valuenow="{{ $percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
                   </div>
                 </td>
               </tr>
+              @empty
               <tr>
-                <td><span class="badge badge-secondary">008</span></td>
-                <td class="font-weight-bold">db-server-01</td>
-                <td>192.168.1.25</td>
-                <td><i class="mdi mdi-linux me-1"></i> CentOS 7</td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td class="font-weight-bold text-warning">2,108</td>
-                <td style="min-width:150px">
-                  <div class="progress" style="height:8px">
-                    <div class="progress-bar bg-warning" role="progressbar" style="width:65%" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100"></div>
-                  </div>
-                </td>
+                <td colspan="7" class="text-center text-muted">No agent data available</td>
               </tr>
-              <tr>
-                <td><span class="badge badge-secondary">014</span></td>
-                <td class="font-weight-bold">firewall-edge</td>
-                <td>10.0.0.1</td>
-                <td><i class="mdi mdi-microsoft-windows me-1"></i> Windows Server 2019</td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td class="font-weight-bold text-warning">1,874</td>
-                <td style="min-width:150px">
-                  <div class="progress" style="height:8px">
-                    <div class="progress-bar bg-warning" role="progressbar" style="width:58%" aria-valuenow="58" aria-valuemin="0" aria-valuemax="100"></div>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td><span class="badge badge-secondary">022</span></td>
-                <td class="font-weight-bold">mail-server</td>
-                <td>192.168.2.5</td>
-                <td><i class="mdi mdi-linux me-1"></i> Debian 11</td>
-                <td><span class="badge badge-danger">Disconnected</span></td>
-                <td class="font-weight-bold text-info">1,102</td>
-                <td style="min-width:150px">
-                  <div class="progress" style="height:8px">
-                    <div class="progress-bar bg-info" role="progressbar" style="width:34%" aria-valuenow="34" aria-valuemin="0" aria-valuemax="100"></div>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td><span class="badge badge-secondary">031</span></td>
-                <td class="font-weight-bold">workstation-dev3</td>
-                <td>192.168.3.11</td>
-                <td><i class="mdi mdi-microsoft-windows me-1"></i> Windows 11</td>
-                <td><span class="badge badge-success">Active</span></td>
-                <td class="font-weight-bold text-success">892</td>
-                <td style="min-width:150px">
-                  <div class="progress" style="height:8px">
-                    <div class="progress-bar bg-success" role="progressbar" style="width:28%" aria-valuenow="28" aria-valuemin="0" aria-valuemax="100"></div>
-                  </div>
+              @endforelse
+            </tbody>
+          </table>
+        </div>
                 </td>
               </tr>
             </tbody>
@@ -374,13 +341,19 @@
 
 @push('scripts')
 <script>
+// Alert Trend Chart
+const alertTrendData = @json($alertTrend ?? []);
+const fallbackTrendData = [1420, 1835, 1230, 2105, 1784, 980, 1493];
+const trendData = alertTrendData.length > 0 ? alertTrendData : fallbackTrendData;
+const dayLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+
 new Chart(document.getElementById('alert-trend-chart').getContext('2d'), {
   type: 'line',
   data: {
-    labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+    labels: dayLabels.slice(0, trendData.length),
     datasets: [{
       label: 'Total Alerts',
-      data: [1420, 1835, 1230, 2105, 1784, 980, 1493],
+      data: trendData,
       borderColor: '#4B49AC',
       backgroundColor: 'rgba(75, 73, 172, 0.1)',
       borderWidth: 2,
@@ -400,12 +373,14 @@ new Chart(document.getElementById('alert-trend-chart').getContext('2d'), {
   }
 });
 
+// Severity Chart
+const severityData = @json($alertSeverity);
 new Chart(document.getElementById('severity-chart').getContext('2d'), {
   type: 'doughnut',
   data: {
     labels: ['Critical (12–15)', 'High (9–11)', 'Medium (6–8)', 'Low (1–5)'],
     datasets: [{
-      data: [1203, 3451, 5782, 2411],
+      data: [severityData.critical, severityData.high, severityData.medium, severityData.low],
       backgroundColor: ['#FF4747', '#FFC542', '#17C1E8', '#82D616'],
       borderWidth: 0,
       hoverOffset: 6,
@@ -421,10 +396,10 @@ new Chart(document.getElementById('severity-chart').getContext('2d'), {
 new Chart(document.getElementById('os-chart').getContext('2d'), {
   type: 'bar',
   data: {
-    labels: ['Linux', 'Windows', 'macOS', 'FreeBSD', 'Other'],
+    labels: @json(array_keys($osDistribution ?? [])),
     datasets: [{
       label: 'Agents',
-      data: [22, 14, 6, 3, 2],
+      data: @json(array_values($osDistribution ?? [])),
       backgroundColor: ['#4B49AC', '#7978E9', '#F3797E', '#FFC542', '#82D616'],
       borderRadius: 6,
       borderWidth: 0,

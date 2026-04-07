@@ -3,12 +3,19 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Http;
+use App\Services\OpenSearchService;
 
 class DashboardController extends Controller
 {
     private $wazuhBase = 'https://192.168.200.150:55000';
     private $wazuhUser = 'admin';
     private $wazuhPass = 'Admin123.';
+    private $openSearch;
+
+    public function __construct(OpenSearchService $openSearch)
+    {
+        $this->openSearch = $openSearch;
+    }
 
     private function getToken()
     {
@@ -36,6 +43,16 @@ class DashboardController extends Controller
             'never_connected' => $summary['never_connected'] ?? 0,
         ];
 
-        return view('home.index', compact('agentStats'));
+        // Fetch alert data from OpenSearch
+        $alertTrend = $this->openSearch->getAlertTrendLast7Days();
+        $alertSeverity = $this->openSearch->getAlertSeverityDistribution();
+        $totalAlerts = $this->openSearch->getTotalAlertCount();
+        
+        // Fetch additional analytics
+        $osDistribution = $this->openSearch->getOsDistribution();
+        $topRules = $this->openSearch->getTopTriggeredRules(5);
+        $topAgents = $this->openSearch->getTopAgentsByAlerts(5);
+
+        return view('home.index', compact('agentStats', 'alertTrend', 'alertSeverity', 'totalAlerts', 'osDistribution', 'topRules', 'topAgents'));
     }
 }
