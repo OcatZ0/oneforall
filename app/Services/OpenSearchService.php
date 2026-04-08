@@ -44,8 +44,8 @@ class OpenSearchService
             'query' => [
                 'range' => [
                     'timestamp' => [
-                        'gte' => 'now-7d/d',
-                        'lte' => 'now/d'
+                        'gte' => 'now-6d/d',
+                        'lte' => 'now'
                     ]
                 ]
             ]

@@ -345,12 +345,36 @@
 const alertTrendData = @json($alertTrend ?? []);
 const fallbackTrendData = [1420, 1835, 1230, 2105, 1784, 980, 1493];
 const trendData = alertTrendData.length > 0 ? alertTrendData : fallbackTrendData;
-const dayLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+
+// Generate date labels for the last 7 days ending today
+function generateDateLabels(numDays = 7) {
+  const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  const today = new Date();
+  const labels = [];
+  
+  // Start from 6 days ago (for 7 days total including today)
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - (numDays - 1));
+  
+  for (let i = 0; i < numDays; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    const dayName = dayNames[date.getDay()];
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = monthNames[date.getMonth()];
+    labels.push(`${dayName} ${day} ${month}`);
+  }
+  
+  return labels;
+}
+
+const dateLabels = generateDateLabels(trendData.length);
 
 new Chart(document.getElementById('alert-trend-chart').getContext('2d'), {
   type: 'line',
   data: {
-    labels: dayLabels.slice(0, trendData.length),
+    labels: dateLabels,
     datasets: [{
       label: 'Total Alerts',
       data: trendData,
