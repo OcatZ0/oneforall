@@ -53,12 +53,16 @@ class OpenSearchService
 
         try {
             $response = Http::withoutVerifying()
+                ->connectTimeout(2)
+                ->timeout(2)
                 ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
                 ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
 
             if ($response->successful()) {
                 return $this->parseAlertTrendResponse($response->json());
             }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            \Log::warning('OpenSearch alert trend query timeout: ' . $e->getMessage());
         } catch (\Exception $e) {
             \Log::error('OpenSearch alert trend query failed: ' . $e->getMessage());
         }
@@ -107,12 +111,16 @@ class OpenSearchService
 
         try {
             $response = Http::withoutVerifying()
+                ->connectTimeout(2)
+                ->timeout(2)
                 ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
                 ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
 
             if ($response->successful()) {
                 return $this->parseSeverityResponse($response->json());
             }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            \Log::warning('OpenSearch severity query timeout: ' . $e->getMessage());
         } catch (\Exception $e) {
             \Log::error('OpenSearch severity query failed: ' . $e->getMessage());
         }
@@ -175,13 +183,15 @@ class OpenSearchService
     public function getOsDistribution()
     {
         try {
-            // Get Wazuh API token
+            // Get Wazuh API token with aggressive timeout
             $tokenResponse = Http::withoutVerifying()
+                ->connectTimeout(2)
+                ->timeout(2)
                 ->withBasicAuth($this->wazuhUser, $this->wazuhPassword)
                 ->post("{$this->wazuhHost}/security/user/authenticate");
 
             if (!$tokenResponse->successful()) {
-                \Log::error('Failed to authenticate with Wazuh API: ' . $tokenResponse->status() . ' - ' . $tokenResponse->body());
+                \Log::warning('Failed to authenticate with Wazuh API: ' . $tokenResponse->status());
                 return $this->getOsFallbackData();
             }
 
@@ -190,6 +200,8 @@ class OpenSearchService
 
             // Get all agents from Wazuh API
             $agentsResponse = Http::withoutVerifying()
+                ->connectTimeout(2)
+                ->timeout(2)
                 ->withToken($token)
                 ->get("{$this->wazuhHost}/agents", [
                     'limit' => 500,
@@ -199,7 +211,7 @@ class OpenSearchService
             \Log::info('Wazuh agents API response: ' . $agentsResponse->status());
             
             if (!$agentsResponse->successful()) {
-                \Log::error('Wazuh agents API request failed: ' . $agentsResponse->status() . ' - ' . $agentsResponse->body());
+                \Log::warning('Wazuh agents API request failed: ' . $agentsResponse->status());
                 return $this->getOsFallbackData();
             }
 
@@ -228,8 +240,11 @@ class OpenSearchService
             \Log::warning('No OS data found in Wazuh agents');
             return $this->getOsFallbackData();
 
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            \Log::warning('Wazuh API connection timeout or unreachable: ' . $e->getMessage() . '. Using fallback data.');
+            return $this->getOsFallbackData();
         } catch (\Exception $e) {
-            \Log::error('Wazuh OS distribution query failed: ' . $e->getMessage());
+            \Log::warning('Wazuh OS distribution query failed: ' . $e->getMessage() . '. Using fallback data.');
             return $this->getOsFallbackData();
         }
     }
@@ -274,12 +289,16 @@ class OpenSearchService
 
         try {
             $response = Http::withoutVerifying()
+                ->connectTimeout(2)
+                ->timeout(2)
                 ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
                 ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
 
             if ($response->successful()) {
                 return $this->parseTopRulesResponse($response->json());
             }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            \Log::warning('OpenSearch top rules query timeout: ' . $e->getMessage());
         } catch (\Exception $e) {
             \Log::error('OpenSearch top rules query failed: ' . $e->getMessage());
         }
@@ -358,12 +377,16 @@ class OpenSearchService
 
         try {
             $response = Http::withoutVerifying()
+                ->connectTimeout(2)
+                ->timeout(2)
                 ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
                 ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
 
             if ($response->successful()) {
                 return $this->parseTopAgentsResponse($response->json());
             }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            \Log::warning('OpenSearch top agents query timeout: ' . $e->getMessage());
         } catch (\Exception $e) {
             \Log::error('OpenSearch top agents query failed: ' . $e->getMessage());
         }
