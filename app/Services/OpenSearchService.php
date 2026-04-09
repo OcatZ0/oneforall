@@ -277,18 +277,6 @@ class OpenSearchService
                     ]
                 ],
                 'query' => [
-                    'range' => [
-                        'timestamp' => [
-                            'gte' => 'now-24h',
-                            'lte' => 'now'
-                        ]
-                    ]
-                ]
-            ];
-
-            // Add agent ID filter if provided
-            if ($agentIds && !empty($agentIds)) {
-                $query['query'] = [
                     'bool' => [
                         'must' => [
                             [
@@ -300,11 +288,20 @@ class OpenSearchService
                                 ]
                             ],
                             [
-                                'terms' => [
-                                    'agent.id' => $agentIds
+                                'term' => [
+                                    'status' => 'active'
                                 ]
                             ]
                         ]
+                    ]
+                ]
+            ];
+
+            // Add agent ID filter if provided
+            if ($agentIds && !empty($agentIds)) {
+                $query['query']['bool']['must'][] = [
+                    'terms' => [
+                        'agent.id' => $agentIds
                     ]
                 ];
             }
@@ -315,7 +312,7 @@ class OpenSearchService
                 ->connectTimeout(3)
                 ->timeout(3)
                 ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
-                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+                ->post("{$this->opensearchHost}/wazuh-monitoring-*/_search", $query);
 
             \Log::info('OpenSearch response status: ' . $response->status());
 
@@ -388,7 +385,7 @@ class OpenSearchService
                 $start = $now->copy()->startOfDay();
                 $interval = 30; // 30 minutes
                 while ($start <= $now) {
-                    $labels[] = $start->format('H:i');
+                    $labels[] = $start->format('M d H:i');
                     $start->addMinutes($interval);
                 }
             } elseif ($timeRange === 'week') {
@@ -420,15 +417,27 @@ class OpenSearchService
                             break;
                     }
                     
-                    if ($timeRange === '7d' || $timeRange === '30d' || $timeRange === '90d' || $timeRange === '1y') {
+                    if ($timeRange === '1y') {
+                        $labels[] = $time->format('M d, Y');
+                    } elseif ($timeRange === '90d') {
+                        $labels[] = $time->format('M d, Y');
+                    } elseif ($timeRange === '30d' || $timeRange === '7d') {
                         $labels[] = $time->format('M d');
+                    } elseif ($timeRange === '24h') {
+                        $labels[] = $time->format('M d H:i');
                     } else {
-                        $labels[] = $time->format('H:i');
+                        // 15m, 30m, 1h
+                        $labels[] = $time->format('M d H:i');
                     }
                 }
             }
 
             // Build query
+            // For custom ranges (today, week), use the range value directly without 'now-' prefix
+            $gteValue = (isset($config['custom']) && $config['custom']) 
+                ? $config['range'] 
+                : 'now-' . $config['range'];
+            
             $query = [
                 'size' => 0,
                 'aggs' => [
@@ -442,17 +451,28 @@ class OpenSearchService
                             'unique_agents' => [
                                 'cardinality' => [
                                     'field' => 'agent.id',
-                                    'precision_threshold' => 100
+                                    'precision_threshold' => 1000
                                 ]
                             ]
                         ]
                     ]
                 ],
                 'query' => [
-                    'range' => [
-                        'timestamp' => [
-                            'gte' => 'now-' . $config['range'],
-                            'lte' => 'now'
+                    'bool' => [
+                        'must' => [
+                            [
+                                'range' => [
+                                    'timestamp' => [
+                                        'gte' => $gteValue,
+                                        'lte' => 'now'
+                                    ]
+                                ]
+                            ],
+                            [
+                                'term' => [
+                                    'status' => 'active'
+                                ]
+                            ]
                         ]
                     ]
                 ]
@@ -460,23 +480,9 @@ class OpenSearchService
 
             // Add agent ID filter if provided
             if ($agentIds && !empty($agentIds)) {
-                $query['query'] = [
-                    'bool' => [
-                        'must' => [
-                            [
-                                'range' => [
-                                    'timestamp' => [
-                                        'gte' => 'now-' . $config['range'],
-                                        'lte' => 'now'
-                                    ]
-                                ]
-                            ],
-                            [
-                                'terms' => [
-                                    'agent.id' => $agentIds
-                                ]
-                            ]
-                        ]
+                $query['query']['bool']['must'][] = [
+                    'terms' => [
+                        'agent.id' => $agentIds
                     ]
                 ];
             }
@@ -485,7 +491,7 @@ class OpenSearchService
                 ->connectTimeout(3)
                 ->timeout(3)
                 ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
-                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+                ->post("{$this->opensearchHost}/wazuh-monitoring-*/_search", $query);
 
             if ($response->successful()) {
                 $buckets = $response->json('aggregations.timeline.buckets') ?? [];
