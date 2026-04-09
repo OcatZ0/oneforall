@@ -72,17 +72,17 @@
               <span id="timeRangeLabel">Last 24 hours</span>
             </button>
             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="timeRangeDropdown" style="min-width: 150px;">
-              <a class="dropdown-item" href="#" onclick="updateChart('15m'); return false;">Last 15 minutes</a>
-              <a class="dropdown-item" href="#" onclick="updateChart('30m'); return false;">Last 30 minutes</a>
-              <a class="dropdown-item" href="#" onclick="updateChart('1h'); return false;">Last 1 hour</a>
-              <a class="dropdown-item active" href="#" onclick="updateChart('24h'); return false;">Last 24 hours</a>
-              <a class="dropdown-item" href="#" onclick="updateChart('7d'); return false;">Last 7 days</a>
-              <a class="dropdown-item" href="#" onclick="updateChart('30d'); return false;">Last 30 days</a>
-              <a class="dropdown-item" href="#" onclick="updateChart('90d'); return false;">Last 90 days</a>
-              <a class="dropdown-item" href="#" onclick="updateChart('1y'); return false;">Last 1 year</a>
+              <a class="dropdown-item" href="#" onclick="updateChart('15m', event); return false;">Last 15 minutes</a>
+              <a class="dropdown-item" href="#" onclick="updateChart('30m', event); return false;">Last 30 minutes</a>
+              <a class="dropdown-item" href="#" onclick="updateChart('1h', event); return false;">Last 1 hour</a>
+              <a class="dropdown-item active" href="#" onclick="updateChart('24h', event); return false;">Last 24 hours</a>
+              <a class="dropdown-item" href="#" onclick="updateChart('7d', event); return false;">Last 7 days</a>
+              <a class="dropdown-item" href="#" onclick="updateChart('30d', event); return false;">Last 30 days</a>
+              <a class="dropdown-item" href="#" onclick="updateChart('90d', event); return false;">Last 90 days</a>
+              <a class="dropdown-item" href="#" onclick="updateChart('1y', event); return false;">Last 1 year</a>
               <div class="dropdown-divider"></div>
-              <a class="dropdown-item" href="#" onclick="updateChart('today'); return false;">Today</a>
-              <a class="dropdown-item" href="#" onclick="updateChart('week'); return false;">This week</a>
+              <a class="dropdown-item" href="#" onclick="updateChart('today', event); return false;">Today</a>
+              <a class="dropdown-item" href="#" onclick="updateChart('week', event); return false;">This week</a>
             </div>
           </div>
         </div>
@@ -301,79 +301,108 @@ const intervalTexts = {
 // Initialize chart
 function initChart(labels, dataPoints) {
   const evolutionChart = document.getElementById('evolution-chart');
+  console.log('initChart called with:', {
+    labels_count: labels.length,
+    data_points_count: dataPoints.length,
+    chart_element_exists: !!evolutionChart,
+    Chart_available: typeof Chart !== 'undefined'
+  });
+  
   if (evolutionChart && typeof Chart !== 'undefined') {
     // Destroy existing chart if any
     if (evolutionChartInstance) {
+      console.log('Destroying existing chart instance');
       evolutionChartInstance.destroy();
     }
     
+    console.log('Creating new chart with data:', {
+      first_label: labels[0],
+      last_label: labels[labels.length - 1],
+      first_data: dataPoints[0],
+      last_data: dataPoints[dataPoints.length - 1]
+    });
+    
     evolutionChartInstance = new Chart(evolutionChart.getContext('2d'), {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'active',
-          data: dataPoints,
-          borderColor: '#82D616',
-          borderWidth: 2,
-          fill: false,
-          pointRadius: 0,
-          tension: 0,
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { min: 0, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } },
-          x: { ticks: { maxTicksLimit: 6, font: { size: 10 } }, grid: { display: false } }
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'active',
+                data: dataPoints,
+                borderColor: '#82D616',
+                borderWidth: 2,
+                fill: false,
+                pointRadius: 0,
+                tension: 0.3,
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: true,
+                    callbacks: {
+                        title: ctx => ctx[0].label,
+                        label: ctx => `Active agents: ${ctx.raw}`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    min: 0,
+                    ticks: { stepSize: 1 },
+                    grid: { color: 'rgba(0,0,0,0.05)' }
+                },
+                x: {
+                    ticks: {
+                        maxTicksLimit: 8,       // only show 8 labels max
+                        maxRotation: 0,         // no rotation
+                        autoSkip: true,
+                        font: { size: 10 }
+                    },
+                    grid: { display: false }
+                }
+            }
         }
-      }
+    });
+    
+    console.log('Chart created successfully');
+  } else {
+    console.error('Chart initialization failed:', {
+      chart_element_exists: !!evolutionChart,
+      Chart_available: typeof Chart !== 'undefined'
     });
   }
 }
 
 // Update chart with selected time range
-function updateChart(timeRange) {
-  // Update dropdown label
+function updateChart(timeRange, event) {
   document.getElementById('timeRangeLabel').textContent = timeRangeLabels[timeRange] || 'Select time range';
   document.getElementById('chartIntervalText').textContent = intervalTexts[timeRange] || 'loading...';
-  
-  // Show loading state
+
   const evolutionChart = document.getElementById('evolution-chart');
-  if (evolutionChart) {
-    evolutionChart.style.opacity = '0.5';
-  }
-  
-  // Fetch chart data via AJAX
+  if (evolutionChart) evolutionChart.style.opacity = '0.5';
+
   fetch('{{ route("agent.chart-data") }}?time_range=' + timeRange)
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
       if (data.success) {
-        initChart(data.labels, data.data);
-        
-        // Update dropdown item styling
-        document.querySelectorAll('#timeRangeDropdown').forEach(item => {
-          item.classList.remove('active');
-        });
-        document.querySelectorAll('.dropdown-item').forEach(item => {
-          item.classList.remove('active');
-        });
-        event.target.classList.add('active');
-      } else {
-        console.error('Failed to fetch chart data:', data.message);
+        const dataPoints = Array.isArray(data.data) ? data.data : (data.data.active ?? []);
+        initChart(data.labels, dataPoints);
+
+        document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+        if (event?.target) event.target.classList.add('active');
       }
-      
-      // Remove loading state
-      if (evolutionChart) {
-        evolutionChart.style.opacity = '1';
-      }
+      if (evolutionChart) evolutionChart.style.opacity = '1';
     })
     .catch(error => {
       console.error('Error fetching chart data:', error);
-      if (evolutionChart) {
-        evolutionChart.style.opacity = '1';
-      }
+      if (evolutionChart) evolutionChart.style.opacity = '1';
     });
 }
 
@@ -382,8 +411,22 @@ document.addEventListener('DOMContentLoaded', function() {
   const labels = {!! $evolutionLabels ?? '[]' !!};
   const dataPoints = {!! $evolutionData ?? '[]' !!};
   
+  console.log('Evolution Chart Data Loaded:', {
+    labels: labels,
+    dataLength: labels.length,
+    data: dataPoints,
+    dataLength: dataPoints.length,
+    hasChartElement: !!document.getElementById('evolution-chart')
+  });
+  
   if (labels.length > 0 && dataPoints.length > 0) {
+    console.log('Initializing evolution chart with valid data');
     initChart(labels, dataPoints);
+  } else {
+    console.warn('Chart initialization skipped - insufficient data', {
+      labels_count: labels.length,
+      data_count: dataPoints.length
+    });
   }
 });
 </script>

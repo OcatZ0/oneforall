@@ -18,11 +18,11 @@ class OpenSearchService
     {
         $this->opensearchHost = env('OPENSEARCH_HOST', 'https://192.168.200.150:9200');
         $this->opensearchUser = env('OPENSEARCH_USER', 'admin');
-        $this->opensearchPassword = env('OPENSEARCH_PASSWORD', 'admin');
+        $this->opensearchPassword = env('OPENSEARCH_PASSWORD', 'Admin123.');
         
         $this->wazuhHost = env('WAZUH_HOST', 'https://192.168.200.150:55000');
         $this->wazuhUser = env('WAZUH_USER', 'admin');
-        $this->wazuhPassword = env('WAZUH_PASSWORD', 'admin');
+        $this->wazuhPassword = env('WAZUH_PASSWORD', 'Admin123.');
     }
 
     /**
@@ -178,346 +178,263 @@ class OpenSearchService
     }
 
     /**
-     * Debug: Get sample documents to understand the data structure
-     */
-    public function getAgentEvolutionDebug($agentIds = null)
-    {
-        try {
-            // Get sample documents to see the structure
-            $query = [
-                'size' => 5,
-                'query' => [
-                    'range' => [
-                        'timestamp' => [
-                            'gte' => 'now-24h',
-                            'lte' => 'now'
-                        ]
-                    ]
-                ]
-            ];
-
-            if ($agentIds && !empty($agentIds)) {
-                $query['query'] = [
-                    'bool' => [
-                        'must' => [
-                            [
-                                'range' => [
-                                    'timestamp' => [
-                                        'gte' => 'now-24h',
-                                        'lte' => 'now'
-                                    ]
-                                ]
-                            ],
-                            [
-                                'terms' => [
-                                    'agent.id' => $agentIds
-                                ]
-                            ]
-                        ]
-                    ]
-                ];
-            }
-
-            $response = Http::withoutVerifying()
-                ->connectTimeout(3)
-                ->timeout(3)
-                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
-                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
-
-            if ($response->successful()) {
-                $hits = $response->json('hits.hits') ?? [];
-                \Log::info('Sample documents from OpenSearch: ' . json_encode($hits, JSON_PRETTY_PRINT));
-                return $hits;
-            }
-
-            \Log::warning('OpenSearch debug query unsuccessful: ' . $response->status());
-            return null;
-
-        } catch (\Exception $e) {
-            \Log::error('OpenSearch debug query failed: ' . $e->getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Get agent evolution data for last 24 hours in 10-minute intervals
-     * Filters by specific agent IDs if provided
-     */
-    public function getAgentEvolutionLast24Hours($agentIds = null)
-    {
-        $labels = [];
-        $dataPoints = [];
-        
-        try {
-            // Generate time labels for last 24 hours (144 intervals of 10 minutes)
-            $now = Carbon::now();
-            for ($i = 144; $i >= 0; $i--) {
-                $time = $now->copy()->subMinutes($i * 10);
-                $labels[] = $time->format('H:i');
-            }
-
-            // Build query to get distinct agent counts per time interval
-            $query = [
-                'size' => 0,
-                'aggs' => [
-                    'timeline' => [
-                        'date_histogram' => [
-                            'field' => 'timestamp',
-                            'fixed_interval' => '10m',
-                            'min_doc_count' => 0,
-                        ],
-                        'aggs' => [
-                            'unique_agents' => [
-                                'cardinality' => [
-                                    'field' => 'agent.id',
-                                    'precision_threshold' => 100
-                                ]
-                            ]
-                        ]
-                    ]
-                ],
-                'query' => [
-                    'bool' => [
-                        'must' => [
-                            [
-                                'range' => [
-                                    'timestamp' => [
-                                        'gte' => 'now-24h',
-                                        'lte' => 'now'
-                                    ]
-                                ]
-                            ],
-                            [
-                                'term' => [
-                                    'status' => 'active'
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ];
-
-            // Add agent ID filter if provided
-            if ($agentIds && !empty($agentIds)) {
-                $query['query']['bool']['must'][] = [
-                    'terms' => [
-                        'agent.id' => $agentIds
-                    ]
-                ];
-            }
-
-            \Log::info('OpenSearch query: ' . json_encode($query));
-
-            $response = Http::withoutVerifying()
-                ->connectTimeout(3)
-                ->timeout(3)
-                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
-                ->post("{$this->opensearchHost}/wazuh-monitoring-*/_search", $query);
-
-            \Log::info('OpenSearch response status: ' . $response->status());
-
-            if ($response->successful()) {
-                $buckets = $response->json('aggregations.timeline.buckets') ?? [];
-                
-                \Log::info('OpenSearch buckets count: ' . count($buckets));
-                
-                // Extract data points from aggregation
-                foreach ($buckets as $bucket) {
-                    $dataPoints[] = $bucket['unique_agents']['value'] ?? 0;
-                }
-
-                // Ensure we have exactly 145 data points (one for each time interval)
-                while (count($dataPoints) < 145) {
-                    $dataPoints[] = 0;
-                }
-                $dataPoints = array_slice($dataPoints, -145);
-
-                \Log::info('Agent evolution data retrieved: ' . count($dataPoints) . ' points, max: ' . max($dataPoints));
-
-                return [
-                    'labels' => $labels,
-                    'data' => $dataPoints
-                ];
-            }
-
-            \Log::warning('OpenSearch agent evolution query unsuccessful: ' . $response->status());
-            \Log::warning('OpenSearch response body: ' . $response->body());
-            return $this->getAgentEvolutionFallbackData($labels);
-
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            \Log::warning('OpenSearch agent evolution query timeout: ' . $e->getMessage());
-            return $this->getAgentEvolutionFallbackData($labels);
-        } catch (\Exception $e) {
-            \Log::error('OpenSearch agent evolution query failed: ' . $e->getMessage());
-            \Log::error('Exception trace: ' . $e->getTraceAsString());
-            return $this->getAgentEvolutionFallbackData($labels);
-        }
-    }
-
-    /**
      * Get agent evolution data for a specific time range
      */
     public function getAgentEvolutionByTimeRange($timeRange = '24h', $agentIds = null)
-    {
-        $intervals = [
-            '15m' => ['range' => '15m', 'interval' => '1m', 'count' => 15],
-            '30m' => ['range' => '30m', 'interval' => '1m', 'count' => 30],
-            '1h' => ['range' => '1h', 'interval' => '2m', 'count' => 30],
-            '24h' => ['range' => '24h', 'interval' => '10m', 'count' => 145],
-            '7d' => ['range' => '7d', 'interval' => '1h', 'count' => 168],
-            '30d' => ['range' => '30d', 'interval' => '6h', 'count' => 120],
-            '90d' => ['range' => '90d', 'interval' => '12h', 'count' => 180],
-            '1y' => ['range' => '1y', 'interval' => '1d', 'count' => 365],
-            'today' => ['range' => 'now/d', 'interval' => '30m', 'count' => null, 'custom' => true],
-            'week' => ['range' => 'now/w', 'interval' => '1h', 'count' => null, 'custom' => true],
-        ];
+{
+    $intervals = [
+        '15m'   => ['interval' => '3m',  'duration' => 15],
+        '30m'   => ['interval' => '10m',  'duration' => 30],
+        '1h'    => ['interval' => '10m', 'duration' => 60],
+        '24h'   => ['interval' => '1h',  'duration' => 1440],
+        '7d'    => ['interval' => '12h',  'duration' => 10080],
+        '30d'   => ['interval' => '1d',  'duration' => 43200],
+        '90d'   => ['interval' => '10d',  'duration' => 129600],
+        '1y'    => ['interval' => '3w',  'duration' => 525600],
+        'today' => ['interval' => '1h'],
+        'week'  => ['interval' => '12h'],
+    ];
 
-        $config = $intervals[$timeRange] ?? $intervals['24h'];
-        $labels = [];
-        $dataPoints = [];
-        
-        try {
-            // Generate time labels
-            $now = Carbon::now();
-            
-            if ($timeRange === 'today') {
-                // From 00:00 today to now
-                $start = $now->copy()->startOfDay();
-                $interval = 30; // 30 minutes
-                while ($start <= $now) {
-                    $labels[] = $start->format('M d H:i');
-                    $start->addMinutes($interval);
-                }
-            } elseif ($timeRange === 'week') {
-                // From start of week to now
-                $start = $now->copy()->startOfWeek();
-                $interval = 60; // 1 hour
-                while ($start <= $now) {
-                    $labels[] = $start->format('M d H:i');
-                    $start->addHours(1);
-                }
-            } else {
-                // Standard time range
-                $count = $config['count'];
-                preg_match('/(\d+)([mhd])/', $config['interval'], $matches);
-                $value = (int)$matches[1];
-                $unit = $matches[2];
-                
-                for ($i = $count - 1; $i >= 0; $i--) {
-                    $time = $now->copy();
-                    switch ($unit) {
-                        case 'm':
-                            $time->subMinutes($i * $value);
-                            break;
-                        case 'h':
-                            $time->subHours($i * $value);
-                            break;
-                        case 'd':
-                            $time->subDays($i * $value);
-                            break;
-                    }
-                    
-                    if ($timeRange === '1y') {
-                        $labels[] = $time->format('M d, Y');
-                    } elseif ($timeRange === '90d') {
-                        $labels[] = $time->format('M d, Y');
-                    } elseif ($timeRange === '30d' || $timeRange === '7d') {
-                        $labels[] = $time->format('M d');
-                    } elseif ($timeRange === '24h') {
-                        $labels[] = $time->format('M d H:i');
-                    } else {
-                        // 15m, 30m, 1h
-                        $labels[] = $time->format('M d H:i');
-                    }
-                }
-            }
+    $config = $intervals[$timeRange] ?? $intervals['24h'];
+    $labels = [];
 
-            // Build query
-            // For custom ranges (today, week), use the range value directly without 'now-' prefix
-            $gteValue = (isset($config['custom']) && $config['custom']) 
-                ? $config['range'] 
-                : 'now-' . $config['range'];
-            
-            $query = [
-                'size' => 0,
-                'aggs' => [
-                    'timeline' => [
-                        'date_histogram' => [
-                            'field' => 'timestamp',
-                            'fixed_interval' => $config['interval'],
-                            'min_doc_count' => 0,
-                        ],
-                        'aggs' => [
-                            'unique_agents' => [
-                                'cardinality' => [
-                                    'field' => 'agent.id',
-                                    'precision_threshold' => 1000
-                                ]
-                            ]
-                        ]
-                    ]
-                ],
-                'query' => [
-                    'bool' => [
-                        'must' => [
-                            [
-                                'range' => [
-                                    'timestamp' => [
-                                        'gte' => $gteValue,
-                                        'lte' => 'now'
-                                    ]
-                                ]
+    try {
+        $now      = Carbon::now();
+        $timezone = 'Asia/Jakarta';
+
+        $endDate = $now->copy()->toIso8601String();
+        if ($timeRange === 'today') {
+            $startDate = $now->copy()->startOfDay()->toIso8601String();
+        } elseif ($timeRange === 'week') {
+            $startDate = $now->copy()->startOfWeek()->toIso8601String();
+        } else {
+            $startDate = $now->copy()->subMinutes($config['duration'])->toIso8601String();
+        }
+
+        $this->generateTimeLabels($timeRange, $config['interval'], $labels);
+
+        $query = [
+            '_source'        => ['excludes' => []],
+            'size'           => 0,
+            'stored_fields'  => ['*'],
+            'script_fields'  => (object)[],
+            'docvalue_fields' => [
+                ['field' => 'timestamp', 'format' => 'date_time']
+            ],
+            'aggs' => [
+                '2' => [
+                    'date_histogram' => [
+                        'field'          => 'timestamp',
+                        'fixed_interval' => $config['interval'],
+                        'time_zone'      => $timezone,
+                        'min_doc_count'  => 1,
+                    ],
+                    'aggs' => [
+                        '3' => [
+                            'terms' => [
+                                'field' => 'status',
+                                'order' => ['_term' => 'desc'],
+                                'size'  => 5,
                             ],
-                            [
-                                'term' => [
-                                    'status' => 'active'
+                            'aggs' => [
+                                '4' => [
+                                    'cardinality' => ['field' => 'id']
                                 ]
                             ]
                         ]
                     ]
                 ]
+            ],
+            'query' => [
+                'bool' => [
+                    'must'   => [['match_all' => (object)[]]],
+                    'filter' => [
+                        [
+                            'bool' => [
+                                'should' => [
+                                    ['term' => ['manager.keyword' => env('WAZUH_MANAGER_NAME', 'fadli')]]
+                                ]
+                            ]
+                        ],
+                        [
+                            'range' => [
+                                'timestamp' => [
+                                    'gte'    => $startDate,
+                                    'lte'    => $endDate,
+                                    'format' => 'strict_date_optional_time'
+                                ]
+                            ]
+                        ]
+                    ],
+                    'should'   => [],
+                    'must_not' => []
+                ]
+            ],
+        ];
+
+        if ($agentIds && !empty($agentIds)) {
+            $query['query']['bool']['filter'][] = [
+                'terms' => ['id' => $agentIds]
             ];
+        }
 
-            // Add agent ID filter if provided
-            if ($agentIds && !empty($agentIds)) {
-                $query['query']['bool']['must'][] = [
-                    'terms' => [
-                        'agent.id' => $agentIds
-                    ]
-                ];
+        \Log::info('[AgentEvolution] Sending query to OpenSearch', [
+            'index'      => 'wazuh-monitoring-*',
+            'time_range' => $timeRange,
+            'interval'   => $config['interval'],
+            'start_date' => $startDate,
+            'end_date'   => $endDate,
+            'agent_ids'  => $agentIds,
+            'query'      => json_encode($query, JSON_PRETTY_PRINT),
+        ]);
+
+        $response = Http::withoutVerifying()
+            ->connectTimeout(5)
+            ->timeout(10)
+            ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+            ->post("{$this->opensearchHost}/wazuh-monitoring-*/_search", $query);
+
+        \Log::info('[AgentEvolution] Raw response from OpenSearch', [
+            'http_status' => $response->status(),
+            'body'        => $response->body(),
+        ]);
+
+        if (!$response->successful()) {
+            \Log::error('[AgentEvolution] OpenSearch returned non-200', [
+                'http_status' => $response->status(),
+                'body'        => $response->body(),
+            ]);
+            return $this->getAgentEvolutionFallbackData($labels);
+        }
+
+        $json        = $response->json();
+        $timeBuckets = $json['aggregations']['2']['buckets'] ?? [];
+        $totalHits   = $json['hits']['total']['value'] ?? 0;
+
+        \Log::info('[AgentEvolution] Aggregation result', [
+            'total_hits'    => $totalHits,
+            'bucket_count'  => count($timeBuckets),
+            'raw_buckets'   => json_encode($timeBuckets, JSON_PRETTY_PRINT),
+        ]);
+
+        $result = [
+            'labels' => [],
+            'data'   => ['active' => [], 'disconnected' => [], 'never_connected' => [], 'pending' => []]
+        ];
+
+        foreach ($timeBuckets as $tb) {
+            // Use bucket timestamp directly as label
+            $label = Carbon::createFromTimestampMs($tb['key'])
+                ->setTimezone('Asia/Jakarta')
+                ->format('H:i');
+
+            $result['labels'][] = $label;
+
+            $statusCounts = ['active' => 0, 'disconnected' => 0, 'never_connected' => 0, 'pending' => 0];
+            foreach ($tb['3']['buckets'] ?? [] as $sb) {
+                $status = $sb['key'] ?? '';
+                if (isset($statusCounts[$status])) {
+                    $statusCounts[$status] = $sb['4']['value'] ?? 0;
+                }
             }
 
-            $response = Http::withoutVerifying()
-                ->connectTimeout(3)
-                ->timeout(3)
-                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
-                ->post("{$this->opensearchHost}/wazuh-monitoring-*/_search", $query);
+            $result['data']['active'][]          = $statusCounts['active'];
+            $result['data']['disconnected'][]    = $statusCounts['disconnected'];
+            $result['data']['never_connected'][] = $statusCounts['never_connected'];
+            $result['data']['pending'][]         = $statusCounts['pending'];
+        }
 
-            if ($response->successful()) {
-                $buckets = $response->json('aggregations.timeline.buckets') ?? [];
-                
-                foreach ($buckets as $bucket) {
-                    $dataPoints[] = $bucket['unique_agents']['value'] ?? 0;
-                }
+        return $result;
 
-                // Ensure we have correct number of data points
-                $expectedCount = $timeRange === 'today' || $timeRange === 'week' ? count($labels) : $config['count'];
-                while (count($dataPoints) < $expectedCount) {
-                    $dataPoints[] = 0;
-                }
-                $dataPoints = array_slice($dataPoints, -$expectedCount);
-
-                return [
-                    'labels' => $labels,
-                    'data' => $dataPoints
-                ];
+        $expectedCount = count($labels);
+        foreach ($result['data'] as $status => &$points) {
+            while (count($points) < $expectedCount) {
+                $points[] = 0;
             }
+            $points = array_slice($points, -$expectedCount);
+        }
 
-            return $this->getAgentEvolutionFallbackData($labels);
+        \Log::info('[AgentEvolution] Final result', [
+            'labels_count'          => count($result['labels']),
+            'active_points'         => $result['data']['active'],
+            'disconnected_points'   => $result['data']['disconnected'],
+            'never_connected_points'=> $result['data']['never_connected'],
+            'pending_points'        => $result['data']['pending'],
+        ]);
 
-        } catch (\Exception $e) {
-            \Log::warning('OpenSearch agent evolution query failed: ' . $e->getMessage());
-            return $this->getAgentEvolutionFallbackData($labels);
+        return $result;
+
+    } catch (\Exception $e) {
+        \Log::error('[AgentEvolution] Exception', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+        return $this->getAgentEvolutionFallbackData($labels);
+    }
+}
+
+    /**
+     * Generate time labels based on time range and interval
+     */
+    private function generateTimeLabels($timeRange, $interval, &$labels)
+    {
+        $now = Carbon::now();
+        $intervals = [];
+        
+        // Parse interval string (e.g., "30m", "1h", "12h", "1d")
+        preg_match('/(\d+)([mhd])/', $interval, $matches);
+        if (!$matches) {
+            return;
+        }
+        
+        $value = (int)$matches[1];
+        $unit = $matches[2];
+        
+        if ($timeRange === 'today') {
+            $start = $now->copy()->startOfDay();
+            $end = $now;
+            $step = fn($dt) => match($unit) {
+                'm' => $dt->addMinutes($value),
+                'h' => $dt->addHours($value),
+                'd' => $dt->addDays($value),
+            };
+        } elseif ($timeRange === 'week') {
+            $start = $now->copy()->startOfWeek();
+            $end = $now;
+            $step = fn($dt) => match($unit) {
+                'm' => $dt->addMinutes($value),
+                'h' => $dt->addHours($value),
+                'd' => $dt->addDays($value),
+            };
+        } else {
+            // Standard ranges
+            $start = $now->copy();
+            switch ($unit) {
+                case 'm':
+                    preg_match('/(\d+)m/', $interval, $m);
+                    $start->subMinutes((int)$m[1] * 144); // Approximate for standard intervals
+                    break;
+                case 'h':
+                    preg_match('/(\d+)h/', $interval, $m);
+                    $start->subHours((int)$m[1] * 24);
+                    break;
+                case 'd':
+                    preg_match('/(\d+)d/', $interval, $m);
+                    $start->subDays((int)$m[1] * 30);
+                    break;
+            }
+            $end = $now;
+            $step = fn($dt) => match($unit) {
+                'm' => $dt->addMinutes($value),
+                'h' => $dt->addHours($value),
+                'd' => $dt->addDays($value),
+            };
+        }
+        
+        $current = $start;
+        while ($current <= $end) {
+            $labels[] = $current->format('M d H:i');
+            $step($current);
         }
     }
 

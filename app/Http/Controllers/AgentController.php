@@ -165,16 +165,45 @@ class AgentController extends Controller
     private function getAgentEvolution($timeRange = '24h')
     {
         try {
-            // Get current user's agent IDs
-            $userId = auth()->id();
-            $userAgents = Agent::where('id_pengguna', $userId)->pluck('id_agent')->toArray();
+            // Get current user and their role
+            $user = auth()->user();
+            $userId = $user->id_pengguna ?? auth()->id();
+            $userRole = $user->peran ?? null;
+            
+            \Log::info('Fetching agent evolution', [
+                'user_id' => $userId,
+                'user_role' => $userRole,
+                'time_range' => $timeRange
+            ]);
+            
+            // Only filter by agent IDs if user is a customer
+            // Admin users see all agents
+            $userAgents = null;
+            if ($userRole === 'customer') {
+                $userAgents = Agent::where('id_pengguna', $userId)->pluck('id_agent')->toArray();
+                
+                \Log::info('Customer user - filtering by assigned agents', [
+                    'count' => count($userAgents),
+                    'agent_ids' => $userAgents
+                ]);
+            } else {
+                \Log::info('Admin/Manager user - showing all agents');
+            }
 
             // Fetch evolution data from OpenSearch
             $evolution = $this->openSearch->getAgentEvolutionByTimeRange($timeRange, $userAgents ?: null);
 
+            \Log::info('Agent evolution data fetched', [
+                'labels_count' => count($evolution['labels'] ?? []),
+                'data_count' => count($evolution['data'] ?? [])
+            ]);
+            
             return $evolution;
         } catch (\Exception $e) {
-            \Log::warning('Failed to fetch agent evolution data: ' . $e->getMessage());
+            \Log::error('Failed to fetch agent evolution data', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             
             // Return fallback data
             return [
@@ -242,6 +271,8 @@ class AgentController extends Controller
     public function index()
     {
         try {
+            \Log::info('Agent index request started');
+            
             $token = $this->getToken();
             $stats = $this->getAgentStats($token);
 
@@ -253,6 +284,14 @@ class AgentController extends Controller
             // Get filter parameters
             $search = request('search');
             $status = request('status');
+
+            \Log::info('Fetching agents', [
+                'page' => $page,
+                'per_page' => $perPage,
+                'offset' => $offset,
+                'search' => $search,
+                'status' => $status
+            ]);
 
             // Fetch agents from Wazuh
             $wazuhData = $this->getAgentsFromWazuh($token, $offset, $perPage, $search, $status);
@@ -288,12 +327,21 @@ class AgentController extends Controller
 
             // Get evolution data for chart
             $evolution = $this->getAgentEvolution();
-            $evolutionLabels = json_encode($evolution['labels']);
-            $evolutionData = json_encode($evolution['data']);
+            $evolutionLabels = json_encode($evolution['labels'] ?? []);
+            $evolutionData   = json_encode($evolution['data']['active'] ?? $evolution['data'] ?? []);
+
+            \Log::info('Agent index completed', [
+                'agents_count' => count($agentsList),
+                'evolution_labels_count' => count($evolution['labels'] ?? []),
+                'evolution_data_count' => count($evolution['data'] ?? [])
+            ]);
 
             return view('agent.index', compact('agents', 'stats', 'evolutionLabels', 'evolutionData'));
         } catch (\Exception $e) {
-            \Log::error('Agent controller error: ' . $e->getMessage());
+            \Log::error('Agent controller error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             
             // Return view with empty data on error
             $agents = new \Illuminate\Pagination\LengthAwarePaginator(
@@ -308,7 +356,7 @@ class AgentController extends Controller
             );
 
             $evolutionLabels = json_encode([]);
-            $evolutionData = json_encode([]);
+            $evolutionData   = json_encode([]);
 
             return view('agent.index', [
                 'agents' => $agents,
@@ -332,15 +380,30 @@ class AgentController extends Controller
     {
         try {
             $timeRange = request('time_range', '24h');
+            
+            \Log::info('Chart data request', [
+                'time_range' => $timeRange,
+                'user_id' => auth()->id()
+            ]);
+            
             $evolution = $this->getAgentEvolution($timeRange);
+            
+            \Log::info('Chart data generated', [
+                'time_range' => $timeRange,
+                'labels_count' => count($evolution['labels'] ?? []),
+                'data_count' => count($evolution['data'] ?? [])
+            ]);
             
             return response()->json([
                 'success' => true,
-                'labels' => $evolution['labels'],
-                'data' => $evolution['data']
+                'labels' => $evolution['labels'] ?? [],
+                'data' => $evolution['data'] ?? []
             ]);
         } catch (\Exception $e) {
-            \Log::error('Get chart data error: ' . $e->getMessage());
+            \Log::error('Get chart data error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             
             return response()->json([
                 'success' => false,
