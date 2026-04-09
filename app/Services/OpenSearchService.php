@@ -178,6 +178,367 @@ class OpenSearchService
     }
 
     /**
+     * Debug: Get sample documents to understand the data structure
+     */
+    public function getAgentEvolutionDebug($agentIds = null)
+    {
+        try {
+            // Get sample documents to see the structure
+            $query = [
+                'size' => 5,
+                'query' => [
+                    'range' => [
+                        'timestamp' => [
+                            'gte' => 'now-24h',
+                            'lte' => 'now'
+                        ]
+                    ]
+                ]
+            ];
+
+            if ($agentIds && !empty($agentIds)) {
+                $query['query'] = [
+                    'bool' => [
+                        'must' => [
+                            [
+                                'range' => [
+                                    'timestamp' => [
+                                        'gte' => 'now-24h',
+                                        'lte' => 'now'
+                                    ]
+                                ]
+                            ],
+                            [
+                                'terms' => [
+                                    'agent.id' => $agentIds
+                                ]
+                            ]
+                        ]
+                    ]
+                ];
+            }
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(3)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+
+            if ($response->successful()) {
+                $hits = $response->json('hits.hits') ?? [];
+                \Log::info('Sample documents from OpenSearch: ' . json_encode($hits, JSON_PRETTY_PRINT));
+                return $hits;
+            }
+
+            \Log::warning('OpenSearch debug query unsuccessful: ' . $response->status());
+            return null;
+
+        } catch (\Exception $e) {
+            \Log::error('OpenSearch debug query failed: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Get agent evolution data for last 24 hours in 10-minute intervals
+     * Filters by specific agent IDs if provided
+     */
+    public function getAgentEvolutionLast24Hours($agentIds = null)
+    {
+        $labels = [];
+        $dataPoints = [];
+        
+        try {
+            // Generate time labels for last 24 hours (144 intervals of 10 minutes)
+            $now = Carbon::now();
+            for ($i = 144; $i >= 0; $i--) {
+                $time = $now->copy()->subMinutes($i * 10);
+                $labels[] = $time->format('H:i');
+            }
+
+            // Build query to get distinct agent counts per time interval
+            $query = [
+                'size' => 0,
+                'aggs' => [
+                    'timeline' => [
+                        'date_histogram' => [
+                            'field' => 'timestamp',
+                            'fixed_interval' => '10m',
+                            'min_doc_count' => 0,
+                        ],
+                        'aggs' => [
+                            'unique_agents' => [
+                                'cardinality' => [
+                                    'field' => 'agent.id',
+                                    'precision_threshold' => 100
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                'query' => [
+                    'range' => [
+                        'timestamp' => [
+                            'gte' => 'now-24h',
+                            'lte' => 'now'
+                        ]
+                    ]
+                ]
+            ];
+
+            // Add agent ID filter if provided
+            if ($agentIds && !empty($agentIds)) {
+                $query['query'] = [
+                    'bool' => [
+                        'must' => [
+                            [
+                                'range' => [
+                                    'timestamp' => [
+                                        'gte' => 'now-24h',
+                                        'lte' => 'now'
+                                    ]
+                                ]
+                            ],
+                            [
+                                'terms' => [
+                                    'agent.id' => $agentIds
+                                ]
+                            ]
+                        ]
+                    ]
+                ];
+            }
+
+            \Log::info('OpenSearch query: ' . json_encode($query));
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(3)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+
+            \Log::info('OpenSearch response status: ' . $response->status());
+
+            if ($response->successful()) {
+                $buckets = $response->json('aggregations.timeline.buckets') ?? [];
+                
+                \Log::info('OpenSearch buckets count: ' . count($buckets));
+                
+                // Extract data points from aggregation
+                foreach ($buckets as $bucket) {
+                    $dataPoints[] = $bucket['unique_agents']['value'] ?? 0;
+                }
+
+                // Ensure we have exactly 145 data points (one for each time interval)
+                while (count($dataPoints) < 145) {
+                    $dataPoints[] = 0;
+                }
+                $dataPoints = array_slice($dataPoints, -145);
+
+                \Log::info('Agent evolution data retrieved: ' . count($dataPoints) . ' points, max: ' . max($dataPoints));
+
+                return [
+                    'labels' => $labels,
+                    'data' => $dataPoints
+                ];
+            }
+
+            \Log::warning('OpenSearch agent evolution query unsuccessful: ' . $response->status());
+            \Log::warning('OpenSearch response body: ' . $response->body());
+            return $this->getAgentEvolutionFallbackData($labels);
+
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            \Log::warning('OpenSearch agent evolution query timeout: ' . $e->getMessage());
+            return $this->getAgentEvolutionFallbackData($labels);
+        } catch (\Exception $e) {
+            \Log::error('OpenSearch agent evolution query failed: ' . $e->getMessage());
+            \Log::error('Exception trace: ' . $e->getTraceAsString());
+            return $this->getAgentEvolutionFallbackData($labels);
+        }
+    }
+
+    /**
+     * Get agent evolution data for a specific time range
+     */
+    public function getAgentEvolutionByTimeRange($timeRange = '24h', $agentIds = null)
+    {
+        $intervals = [
+            '15m' => ['range' => '15m', 'interval' => '1m', 'count' => 15],
+            '30m' => ['range' => '30m', 'interval' => '1m', 'count' => 30],
+            '1h' => ['range' => '1h', 'interval' => '2m', 'count' => 30],
+            '24h' => ['range' => '24h', 'interval' => '10m', 'count' => 145],
+            '7d' => ['range' => '7d', 'interval' => '1h', 'count' => 168],
+            '30d' => ['range' => '30d', 'interval' => '6h', 'count' => 120],
+            '90d' => ['range' => '90d', 'interval' => '12h', 'count' => 180],
+            '1y' => ['range' => '1y', 'interval' => '1d', 'count' => 365],
+            'today' => ['range' => 'now/d', 'interval' => '30m', 'count' => null, 'custom' => true],
+            'week' => ['range' => 'now/w', 'interval' => '1h', 'count' => null, 'custom' => true],
+        ];
+
+        $config = $intervals[$timeRange] ?? $intervals['24h'];
+        $labels = [];
+        $dataPoints = [];
+        
+        try {
+            // Generate time labels
+            $now = Carbon::now();
+            
+            if ($timeRange === 'today') {
+                // From 00:00 today to now
+                $start = $now->copy()->startOfDay();
+                $interval = 30; // 30 minutes
+                while ($start <= $now) {
+                    $labels[] = $start->format('H:i');
+                    $start->addMinutes($interval);
+                }
+            } elseif ($timeRange === 'week') {
+                // From start of week to now
+                $start = $now->copy()->startOfWeek();
+                $interval = 60; // 1 hour
+                while ($start <= $now) {
+                    $labels[] = $start->format('M d H:i');
+                    $start->addHours(1);
+                }
+            } else {
+                // Standard time range
+                $count = $config['count'];
+                preg_match('/(\d+)([mhd])/', $config['interval'], $matches);
+                $value = (int)$matches[1];
+                $unit = $matches[2];
+                
+                for ($i = $count - 1; $i >= 0; $i--) {
+                    $time = $now->copy();
+                    switch ($unit) {
+                        case 'm':
+                            $time->subMinutes($i * $value);
+                            break;
+                        case 'h':
+                            $time->subHours($i * $value);
+                            break;
+                        case 'd':
+                            $time->subDays($i * $value);
+                            break;
+                    }
+                    
+                    if ($timeRange === '7d' || $timeRange === '30d' || $timeRange === '90d' || $timeRange === '1y') {
+                        $labels[] = $time->format('M d');
+                    } else {
+                        $labels[] = $time->format('H:i');
+                    }
+                }
+            }
+
+            // Build query
+            $query = [
+                'size' => 0,
+                'aggs' => [
+                    'timeline' => [
+                        'date_histogram' => [
+                            'field' => 'timestamp',
+                            'fixed_interval' => $config['interval'],
+                            'min_doc_count' => 0,
+                        ],
+                        'aggs' => [
+                            'unique_agents' => [
+                                'cardinality' => [
+                                    'field' => 'agent.id',
+                                    'precision_threshold' => 100
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                'query' => [
+                    'range' => [
+                        'timestamp' => [
+                            'gte' => 'now-' . $config['range'],
+                            'lte' => 'now'
+                        ]
+                    ]
+                ]
+            ];
+
+            // Add agent ID filter if provided
+            if ($agentIds && !empty($agentIds)) {
+                $query['query'] = [
+                    'bool' => [
+                        'must' => [
+                            [
+                                'range' => [
+                                    'timestamp' => [
+                                        'gte' => 'now-' . $config['range'],
+                                        'lte' => 'now'
+                                    ]
+                                ]
+                            ],
+                            [
+                                'terms' => [
+                                    'agent.id' => $agentIds
+                                ]
+                            ]
+                        ]
+                    ]
+                ];
+            }
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(3)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+
+            if ($response->successful()) {
+                $buckets = $response->json('aggregations.timeline.buckets') ?? [];
+                
+                foreach ($buckets as $bucket) {
+                    $dataPoints[] = $bucket['unique_agents']['value'] ?? 0;
+                }
+
+                // Ensure we have correct number of data points
+                $expectedCount = $timeRange === 'today' || $timeRange === 'week' ? count($labels) : $config['count'];
+                while (count($dataPoints) < $expectedCount) {
+                    $dataPoints[] = 0;
+                }
+                $dataPoints = array_slice($dataPoints, -$expectedCount);
+
+                return [
+                    'labels' => $labels,
+                    'data' => $dataPoints
+                ];
+            }
+
+            return $this->getAgentEvolutionFallbackData($labels);
+
+        } catch (\Exception $e) {
+            \Log::warning('OpenSearch agent evolution query failed: ' . $e->getMessage());
+            return $this->getAgentEvolutionFallbackData($labels);
+        }
+    }
+
+    /**
+     * Fallback data for agent evolution
+     */
+    private function getAgentEvolutionFallbackData($labels = [])
+    {
+        if (empty($labels)) {
+            $labels = [];
+            $now = Carbon::now();
+            for ($i = 144; $i >= 0; $i--) {
+                $time = $now->copy()->subMinutes($i * 10);
+                $labels[] = $time->format('H:i');
+            }
+        }
+
+        // Return empty/zero data for all intervals
+        $data = array_fill(0, 145, 0);
+
+        return [
+            'labels' => $labels,
+            'data' => $data
+        ];
+    }
+
+    /**
      * Get OS distribution from Wazuh Agent API
      */
     public function getOsDistribution()

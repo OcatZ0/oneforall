@@ -23,6 +23,7 @@ Route::middleware('auth')->group(function () {
     // Admin only routes
     Route::middleware('admin')->group(function () {
         Route::get('/agent', [AgentController::class, 'index'])->name('agent');
+        Route::get('/agent/chart-data', [AgentController::class, 'getChartData'])->name('agent.chart-data');
         Route::get('/user', [UserController::class, 'index'])->name('user');
         Route::get('/user/create', [UserController::class, 'create'])->name('user.create');
         Route::post('/user', [UserController::class, 'store'])->name('user.store');
