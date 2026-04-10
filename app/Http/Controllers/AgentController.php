@@ -160,9 +160,11 @@ class AgentController extends Controller
     }
 
     /**
-     * Get evolution data for user's agents (last 24 hours) using OpenSearch
+     * Get evolution data for user's agents using OpenSearch
+     * @param string $timeRange The time range for the query
+     * @param Carbon $baseTime Optional fixed point in time to use for queries (ensures consistency)
      */
-    private function getAgentEvolution($timeRange = '24h')
+    private function getAgentEvolution($timeRange = '24h', $baseTime = null)
     {
         try {
             // Get current user and their role
@@ -173,7 +175,8 @@ class AgentController extends Controller
             \Log::info('Fetching agent evolution', [
                 'user_id' => $userId,
                 'user_role' => $userRole,
-                'time_range' => $timeRange
+                'time_range' => $timeRange,
+                'base_time' => $baseTime ? $baseTime->toIso8601String() : 'now'
             ]);
             
             // Only filter by agent IDs if user is a customer
@@ -190,8 +193,8 @@ class AgentController extends Controller
                 \Log::info('Admin/Manager user - showing all agents');
             }
 
-            // Fetch evolution data from OpenSearch
-            $evolution = $this->openSearch->getAgentEvolutionByTimeRange($timeRange, $userAgents ?: null);
+            // Fetch evolution data from OpenSearch with fixed base time
+            $evolution = $this->openSearch->getAgentEvolutionByTimeRange($timeRange, $userAgents ?: null, $baseTime);
 
             \Log::info('Agent evolution data fetched', [
                 'labels_count' => count($evolution['labels'] ?? []),
@@ -325,8 +328,16 @@ class AgentController extends Controller
                 ]
             );
 
-            // Get evolution data for chart
-            $evolution = $this->getAgentEvolution();
+            // Get evolution data for chart with consistent base time
+            // Capture time once per minute for consistency across requests
+            $sessionKey = 'agent_evolution_base_time_' . floor(date('n')); // Changes every minute
+            $baseTime = session($sessionKey);
+            if (!$baseTime) {
+                $baseTime = Carbon::now();
+                session([$sessionKey => $baseTime]);
+            }
+            
+            $evolution = $this->getAgentEvolution('24h', $baseTime);
             $evolutionLabels = json_encode($evolution['labels'] ?? []);
             $evolutionData   = json_encode($evolution['data']['active'] ?? $evolution['data'] ?? []);
 
@@ -381,17 +392,27 @@ class AgentController extends Controller
         try {
             $timeRange = request('time_range', '24h');
             
+            // Use consistent base time from session (same per minute)
+            $sessionKey = 'agent_evolution_base_time_' . floor(date('n'));
+            $baseTime = session($sessionKey);
+            if (!$baseTime) {
+                $baseTime = Carbon::now();
+                session([$sessionKey => $baseTime]);
+            }
+            
             \Log::info('Chart data request', [
                 'time_range' => $timeRange,
-                'user_id' => auth()->id()
+                'user_id' => auth()->id(),
+                'base_time' => $baseTime->toIso8601String()
             ]);
             
-            $evolution = $this->getAgentEvolution($timeRange);
+            $evolution = $this->getAgentEvolution($timeRange, $baseTime);
             
             \Log::info('Chart data generated', [
                 'time_range' => $timeRange,
                 'labels_count' => count($evolution['labels'] ?? []),
-                'data_count' => count($evolution['data'] ?? [])
+                'data_count' => count($evolution['data'] ?? []),
+                'data_keys' => array_keys($evolution['data'] ?? [])
             ]);
             
             return response()->json([

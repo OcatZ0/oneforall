@@ -30,28 +30,28 @@
     </div>
   </div>
 
-  <div class="col-md-6 stretch-card">
+  <div class="col-md-3 stretch-card">
     <div class="card">
       <div class="card-body">
         <p class="card-title text-center">DETAILS</p>
         <div class="row text-center mb-3">
-          <div class="col">
+          <div class="col-6">
             <p class="text-muted mb-1">Active</p>
             <h4 class="text-success font-weight-bold">{{ $stats['active'] }}</h4>
           </div>
-          <div class="col">
+          <div class="col-6">
             <p class="text-muted mb-1">Disconnected</p>
             <h4 class="text-danger font-weight-bold">{{ $stats['disconnected'] }}</h4>
           </div>
-          <div class="col">
+          <div class="col-6">
             <p class="text-muted mb-1">Pending</p>
             <h4 class="text-warning font-weight-bold">{{ $stats['pending'] }}</h4>
           </div>
-          <div class="col">
+          <div class="col-6">
             <p class="text-muted mb-1">Never Connected</p>
             <h4 class="text-secondary font-weight-bold">{{ $stats['never_connected'] }}</h4>
           </div>
-          <div class="col">
+          <div class="col-12">
             <p class="text-muted mb-1">Coverage</p>
             <h4 class="text-success font-weight-bold">{{ $stats['total'] > 0 ? round(($stats['active'] / $stats['total']) * 100) : 0 }}%</h4>
           </div>
@@ -60,7 +60,7 @@
     </div>
   </div>
 
-  <div class="col-md-3 stretch-card">
+  <div class="col-md-6 stretch-card">
     <div class="card">
       <div class="card-body">
         <div class="d-flex align-items-center justify-content-between mb-2">
@@ -301,26 +301,13 @@ const intervalTexts = {
 // Initialize chart
 function initChart(labels, dataPoints) {
   const evolutionChart = document.getElementById('evolution-chart');
-  console.log('initChart called with:', {
-    labels_count: labels.length,
-    data_points_count: dataPoints.length,
-    chart_element_exists: !!evolutionChart,
-    Chart_available: typeof Chart !== 'undefined'
-  });
   
   if (evolutionChart && typeof Chart !== 'undefined') {
-    // Destroy existing chart if any
     if (evolutionChartInstance) {
-      console.log('Destroying existing chart instance');
       evolutionChartInstance.destroy();
     }
     
-    console.log('Creating new chart with data:', {
-      first_label: labels[0],
-      last_label: labels[labels.length - 1],
-      first_data: dataPoints[0],
-      last_data: dataPoints[dataPoints.length - 1]
-    });
+    const maxValue = dataPoints.length > 0 ? Math.max(...dataPoints) : 1;
     
     evolutionChartInstance = new Chart(evolutionChart.getContext('2d'), {
         type: 'line',
@@ -332,7 +319,12 @@ function initChart(labels, dataPoints) {
                 borderColor: '#82D616',
                 borderWidth: 2,
                 fill: false,
-                pointRadius: 0,
+                pointRadius: 4,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#82D616',
+                pointHoverBackgroundColor: '#82D616',
+                pointBorderWidth: 0,
+                pointHoverBorderWidth: 0,
                 tension: 0.3,
             }]
         },
@@ -355,13 +347,20 @@ function initChart(labels, dataPoints) {
             scales: {
                 y: {
                     min: 0,
-                    ticks: { stepSize: 1 },
+                    max: maxValue === 0 ? 1 : maxValue,
+                    grace: 0,
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        precision: 0,
+                        callback: value => Number.isInteger(value) ? value : null
+                    },
                     grid: { color: 'rgba(0,0,0,0.05)' }
                 },
                 x: {
                     ticks: {
-                        maxTicksLimit: 8,       // only show 8 labels max
-                        maxRotation: 0,         // no rotation
+                        maxTicksLimit: 8,
+                        maxRotation: 0,
                         autoSkip: true,
                         font: { size: 10 }
                     },
@@ -369,13 +368,6 @@ function initChart(labels, dataPoints) {
                 }
             }
         }
-    });
-    
-    console.log('Chart created successfully');
-  } else {
-    console.error('Chart initialization failed:', {
-      chart_element_exists: !!evolutionChart,
-      Chart_available: typeof Chart !== 'undefined'
     });
   }
 }

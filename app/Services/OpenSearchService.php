@@ -13,6 +13,8 @@ class OpenSearchService
     private $wazuhHost;
     private $wazuhUser;
     private $wazuhPassword;
+    private $requestCache = [];
+    private const CACHE_TTL = 60; // seconds
 
     public function __construct()
     {
@@ -179,28 +181,45 @@ class OpenSearchService
 
     /**
      * Get agent evolution data for a specific time range
+     * @param string $timeRange Time range identifier (15m, 30m, 1h, 24h, 7d, 30d, 90d, 1y, today, week)
+     * @param array $agentIds Optional list of agent IDs to filter by
+     * @param Carbon $baseTime Optional fixed timestamp to use as 'now' for consistent results
+     * @return array Array with 'labels' and 'data' keys containing the evolution data
      */
-    public function getAgentEvolutionByTimeRange($timeRange = '24h', $agentIds = null)
-{
-    $intervals = [
-        '15m'   => ['interval' => '3m',  'duration' => 15],
-        '30m'   => ['interval' => '10m',  'duration' => 30],
-        '1h'    => ['interval' => '10m', 'duration' => 60],
-        '24h'   => ['interval' => '1h',  'duration' => 1440],
-        '7d'    => ['interval' => '12h',  'duration' => 10080],
-        '30d'   => ['interval' => '1d',  'duration' => 43200],
-        '90d'   => ['interval' => '10d',  'duration' => 129600],
-        '1y'    => ['interval' => '3w',  'duration' => 525600],
-        'today' => ['interval' => '1h'],
-        'week'  => ['interval' => '12h'],
-    ];
+    public function getAgentEvolutionByTimeRange($timeRange = '24h', $agentIds = null, $baseTime = null)
+    {
+        // Generate cache key
+        $cacheKey = 'agent_evolution_' . $timeRange . '_' . md5(json_encode($agentIds ?? []));
+        
+        // Check cache
+        if (isset($this->requestCache[$cacheKey])) {
+            $cached = $this->requestCache[$cacheKey];
+            if (time() - $cached['timestamp'] < self::CACHE_TTL) {
+                \Log::info('[AgentEvolution] Using cached result', ['time_range' => $timeRange]);
+                return $cached['data'];
+            }
+        }
 
-    $config = $intervals[$timeRange] ?? $intervals['24h'];
-    $labels = [];
+        $intervals = [
+            '15m'   => ['interval' => '3m',  'duration' => 15],
+            '30m'   => ['interval' => '5m',  'duration' => 30],
+            '1h'    => ['interval' => '10m', 'duration' => 60],
+            '24h'   => ['interval' => '1h',  'duration' => 1440],
+            '7d'    => ['interval' => '12h',  'duration' => 10080],
+            '30d'   => ['interval' => '1d',  'duration' => 43200],
+            '90d'   => ['interval' => '1d',  'duration' => 129600],
+            '1y'    => ['interval' => '1d',  'duration' => 525600],
+            'today' => ['interval' => '1h'],
+            'week'  => ['interval' => '12h'],
+        ];
 
-    try {
-        $now      = Carbon::now();
-        $timezone = 'Asia/Jakarta';
+        $config = $intervals[$timeRange] ?? $intervals['24h'];
+        $labels = [];
+
+        try {
+            // Use provided baseTime or current time (ensures fixed window)
+            $now      = $baseTime ?? Carbon::now();
+            $timezone = 'Asia/Jakarta';
 
         $endDate = $now->copy()->toIso8601String();
         if ($timeRange === 'today') {
@@ -211,7 +230,7 @@ class OpenSearchService
             $startDate = $now->copy()->subMinutes($config['duration'])->toIso8601String();
         }
 
-        $this->generateTimeLabels($timeRange, $config['interval'], $labels);
+        $this->generateTimeLabels($timeRange, $config['interval'], $labels, $now);
 
         $query = [
             '_source'        => ['excludes' => []],
@@ -323,14 +342,24 @@ class OpenSearchService
         ];
 
         foreach ($timeBuckets as $tb) {
-            // Use bucket timestamp directly as label
-            $label = Carbon::createFromTimestampMs($tb['key'])
-                ->setTimezone('Asia/Jakarta')
-                ->format('H:i');
+            // Use bucket timestamp directly as label with date information
+            $bucketTime = Carbon::createFromTimestampMs($tb['key'])
+                ->setTimezone('Asia/Jakarta');
+            
+            // Format based on time range for better clarity
+            $label = match($timeRange) {
+                '15m', '30m', '1h' => $bucketTime->format('H:i'),              // HH:MM for short ranges
+                '24h', 'today' => $bucketTime->format('M d H:i'),              // MMM DD HH:MM for daily
+                '7d', 'week' => $bucketTime->format('M d'),                    // MMM DD for weekly
+                default => $bucketTime->format('M d Y'),                        // MMM DD YYYY for monthly+
+            };
 
             $result['labels'][] = $label;
 
+            // Initialize all statuses with 0 (ensures consistency)
             $statusCounts = ['active' => 0, 'disconnected' => 0, 'never_connected' => 0, 'pending' => 0];
+            
+            // Fill in actual counts from response
             foreach ($tb['3']['buckets'] ?? [] as $sb) {
                 $status = $sb['key'] ?? '';
                 if (isset($statusCounts[$status])) {
@@ -338,29 +367,40 @@ class OpenSearchService
                 }
             }
 
+            // Append all statuses to result (ensures complete data structure)
             $result['data']['active'][]          = $statusCounts['active'];
             $result['data']['disconnected'][]    = $statusCounts['disconnected'];
             $result['data']['never_connected'][] = $statusCounts['never_connected'];
             $result['data']['pending'][]         = $statusCounts['pending'];
         }
 
-        return $result;
-
+        // Ensure data points match label count
         $expectedCount = count($labels);
         foreach ($result['data'] as $status => &$points) {
+            // Pad with zeros if needed
             while (count($points) < $expectedCount) {
                 $points[] = 0;
             }
+            // Trim to expected count
             $points = array_slice($points, -$expectedCount);
         }
+        unset($points); // Break reference
 
         \Log::info('[AgentEvolution] Final result', [
+            'time_range'            => $timeRange,
+            'base_time'             => $now->toIso8601String(),
             'labels_count'          => count($result['labels']),
-            'active_points'         => $result['data']['active'],
-            'disconnected_points'   => $result['data']['disconnected'],
-            'never_connected_points'=> $result['data']['never_connected'],
-            'pending_points'        => $result['data']['pending'],
+            'active_points'         => count($result['data']['active']),
+            'disconnected_points'   => count($result['data']['disconnected']),
+            'never_connected_points'=> count($result['data']['never_connected']),
+            'pending_points'        => count($result['data']['pending']),
         ]);
+
+        // Store in cache before returning
+        $this->requestCache[$cacheKey] = [
+            'data' => $result,
+            'timestamp' => time()
+        ];
 
         return $result;
 
@@ -375,10 +415,14 @@ class OpenSearchService
 
     /**
      * Generate time labels based on time range and interval
+     * @param string $timeRange The time range identifier
+     * @param string $interval The interval for bucketing (e.g., '1h', '1d')
+     * @param array &$labels Reference to labels array to populate
+     * @param Carbon $baseTime The base time to use (defaults to now)
      */
-    private function generateTimeLabels($timeRange, $interval, &$labels)
+    private function generateTimeLabels($timeRange, $interval, &$labels, $baseTime = null)
     {
-        $now = Carbon::now();
+        $now = $baseTime ?? Carbon::now();
         $intervals = [];
         
         // Parse interval string (e.g., "30m", "1h", "12h", "1d")
