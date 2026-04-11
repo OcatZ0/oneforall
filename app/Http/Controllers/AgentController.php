@@ -238,6 +238,130 @@ class AgentController extends Controller
     }
 
     /**
+     * Check if current user has access to a specific agent
+     * Admin has access to all agents, customers only to their assigned agents
+     */
+    private function userHasAccessToAgent($agentId)
+    {
+        $user = auth()->user();
+        
+        // Admin has access to all agents
+        if ($user->peran === 'admin') {
+            return true;
+        }
+        
+        // Customer can only access their assigned agents
+        $dbAgent = Agent::where('id_agent', $agentId)->first();
+        
+        if (!$dbAgent) {
+            // Agent not in database - customer cannot access
+            return false;
+        }
+        
+        // Check if agent is assigned to this customer
+        return $dbAgent->id_pengguna === $user->id_pengguna;
+    }
+
+    /**
+     * Get list of agent IDs accessible by current user
+     * Admin can access all agents, customers only their assigned agents
+     */
+    private function getAccessibleAgentIds()
+    {
+        $user = auth()->user();
+        
+        // Admin gets all agents
+        if ($user->peran === 'admin') {
+            return Agent::pluck('id_agent')->toArray();
+        }
+        
+        // Customer gets only their assigned agents
+        return Agent::where('id_pengguna', $user->id_pengguna)
+            ->pluck('id_agent')
+            ->toArray();
+    }
+
+    /**
+     * Get agent statistics filtered by user accessibility
+     */
+    private function getAgentStatsFiltered($token)
+    {
+        $stats = [
+            'total'           => 0,
+            'active'          => 0,
+            'disconnected'    => 0,
+            'pending'         => 0,
+            'never_connected' => 0,
+        ];
+
+        if (!$token) {
+            return $stats;
+        }
+
+        try {
+            $user = auth()->user();
+            
+            // If admin, get all stats from API
+            if ($user->peran === 'admin') {
+                $summary = Http::withoutVerifying()
+                    ->connectTimeout(2)
+                    ->timeout(2)
+                    ->withToken($token)
+                    ->get("{$this->wazuhBase}/agents/summary/status")
+                    ->json('data.connection');
+
+                return [
+                    'total'           => $summary['total'] ?? 0,
+                    'active'          => $summary['active'] ?? 0,
+                    'disconnected'    => $summary['disconnected'] ?? 0,
+                    'pending'         => $summary['pending'] ?? 0,
+                    'never_connected' => $summary['never_connected'] ?? 0,
+                ];
+            }
+            
+            // For customers, get accessible agent IDs and fetch their individual status
+            $accessibleIds = $this->getAccessibleAgentIds();
+            
+            if (empty($accessibleIds)) {
+                return $stats;
+            }
+            
+            // Get all agents and filter by accessible IDs
+            try {
+                $response = Http::withoutVerifying()
+                    ->connectTimeout(3)
+                    ->timeout(3)
+                    ->withToken($token)
+                    ->get("{$this->wazuhBase}/agents", [
+                        'limit' => 50000,
+                    ]);
+
+                if ($response->successful()) {
+                    $allAgents = $response->json('data.affected_items', []);
+                    
+                    foreach ($allAgents as $agent) {
+                        if (in_array($agent['id'], $accessibleIds)) {
+                            $stats['total']++;
+                            $status = $agent['status'] ?? 'unknown';
+                            if (isset($stats[$status])) {
+                                $stats[$status]++;
+                            }
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Failed to fetch filtered agent stats: ' . $e->getMessage());
+            }
+            
+            return $stats;
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch filtered agent summary: ' . $e->getMessage());
+        }
+
+        return $stats;
+    }
+
+    /**
      * Display agents list with statistics
      */
     public function index()
@@ -245,10 +369,13 @@ class AgentController extends Controller
         try {
             \Log::info('Agent index request started');
             
+            $user = auth()->user();
+            $userRole = $user->peran ?? null;
+            
             $token = $this->getToken();
             
-            // Get agent statistics
-            $stats = $this->getAgentStats($token);
+            // Get agent statistics (filtered by user accessibility)
+            $stats = $this->getAgentStatsFiltered($token);
             
             // Get pagination parameters
             $perPage = request('per_page', 10);
@@ -266,6 +393,9 @@ class AgentController extends Controller
             $perPage = request('per_page', 10);
             $page = max(request('page', 1), 1);
             
+            // Get accessible agent IDs for filtering (non-admin users)
+            $accessibleIds = ($userRole === 'admin') ? null : $this->getAccessibleAgentIds();
+            
             // Convert Wazuh agents to objects
             $agentsList = collect($wazuhData['agents'])->map(function ($agent) {
                 // Map Wazuh agent fields to our view format
@@ -281,6 +411,13 @@ class AgentController extends Controller
                 ];
                 
                 return $this->enrichAgentData($agentData);
+            })->filter(function ($agent) use ($accessibleIds, $userRole) {
+                // Filter agents based on user role
+                if ($userRole === 'admin') {
+                    return true; // Admin sees all
+                }
+                // Customer sees only their assigned agents
+                return in_array($agent->id_agent, $accessibleIds);
             });
 
             // Create a length-aware paginator
@@ -406,6 +543,20 @@ class AgentController extends Controller
     public function detail($id)
     {
         try {
+            // Check if user has access to this agent
+            if (!$this->userHasAccessToAgent($id)) {
+                \Log::warning('Unauthorized agent detail access', [
+                    'agent_id' => $id,
+                    'user_id' => auth()->id(),
+                    'user_role' => auth()->user()->peran
+                ]);
+                
+                return view('agent.detail', [
+                    'agent' => null,
+                    'error' => 'You do not have permission to view this agent'
+                ]);
+            }
+            
             $token = $this->getToken();
             
             if (!$token) {

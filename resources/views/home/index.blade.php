@@ -66,7 +66,14 @@
           <i class="mdi mdi-server-network text-primary icon-lg"></i>
         </div>
         <h2 class="font-weight-bold mb-1">{{ $agentStats['total'] }}</h2>
-        <p class="text-muted mb-0"><span class="text-success me-1"><i class="mdi mdi-arrow-up"></i>3</span> dari bulan lalu</p>
+        <p class="text-muted mb-0">
+          @if($agentStats['change'] >= 0)
+            <span class="text-success me-1"><i class="mdi mdi-arrow-up"></i>{{ $agentStats['change'] }}</span>
+          @else
+            <span class="text-danger me-1"><i class="mdi mdi-arrow-down"></i>{{ abs($agentStats['change']) }}</span>
+          @endif
+          dari bulan lalu
+        </p>
       </div>
     </div>
   </div>
@@ -104,7 +111,7 @@
     <div class="card">
       <div class="card-body">
         <p class="card-title mb-1">Komposisi Status Agent</p>
-        <p class="text-muted mb-3">Dari total 47 agent terdaftar</p>
+        <p class="text-muted mb-3">Dari total {{ $agentStats['total'] }} agent terdaftar</p>
         <div class="d-flex justify-content-between mb-1">
           <span class="text-success">Active</span>
           <span class="font-weight-bold">{{ $agentStats['active'] }} ({{ $activePct }}%)</span>

@@ -29,8 +29,9 @@ class OpenSearchService
 
     /**
      * Get alert counts for the last 7 days
+     * @param array $agentIds Optional list of agent IDs to filter by
      */
-    public function getAlertTrendLast7Days()
+    public function getAlertTrendLast7Days($agentIds = null)
     {
         $query = [
             'size' => 0,
@@ -44,16 +45,39 @@ class OpenSearchService
                 ]
             ],
             'query' => [
-                'range' => [
-                    'timestamp' => [
-                        'gte' => 'now-6d/d',
-                        'lte' => 'now'
+                'bool' => [
+                    'filter' => [
+                        [
+                            'range' => [
+                                'timestamp' => [
+                                    'gte' => 'now-6d/d',
+                                    'lte' => 'now'
+                                ]
+                            ]
+                        ]
                     ]
                 ]
             ]
         ];
+        
+        // Add agent filter if provided
+        if ($agentIds && !empty($agentIds)) {
+            $query['query']['bool']['filter'][] = [
+                'terms' => ['agent.id' => $agentIds]
+            ];
+            \Log::info('Alert trend query with agent filter', [
+                'agent_ids' => $agentIds,
+                'agent_count' => count($agentIds),
+            ]);
+        } else {
+            \Log::info('Alert trend query - no agent filter (admin or no accessible agents)', [
+                'agent_ids' => $agentIds,
+            ]);
+        }
 
         try {
+            \Log::debug('OpenSearch alert trend query', ['query' => $query]);
+            
             $response = Http::withoutVerifying()
                 ->connectTimeout(2)
                 ->timeout(2)
@@ -89,8 +113,9 @@ class OpenSearchService
 
     /**
      * Get alert severity distribution (Critical, High, Medium, Low)
+     * @param array $agentIds Optional list of agent IDs to filter by
      */
-    public function getAlertSeverityDistribution()
+    public function getAlertSeverityDistribution($agentIds = null)
     {
         $query = [
             'size' => 0,
@@ -103,13 +128,26 @@ class OpenSearchService
                 ]
             ],
             'query' => [
-                'range' => [
-                    'timestamp' => [
-                        'gte' => 'now-7d'
+                'bool' => [
+                    'filter' => [
+                        [
+                            'range' => [
+                                'timestamp' => [
+                                    'gte' => 'now-7d'
+                                ]
+                            ]
+                        ]
                     ]
                 ]
             ]
         ];
+        
+        // Add agent filter if provided
+        if ($agentIds && !empty($agentIds)) {
+            $query['query']['bool']['filter'][] = [
+                'terms' => ['agent.id' => $agentIds]
+            ];
+        }
 
         try {
             $response = Http::withoutVerifying()
@@ -172,10 +210,11 @@ class OpenSearchService
 
     /**
      * Get total alert count
+     * @param array $agentIds Optional list of agent IDs to filter by
      */
-    public function getTotalAlertCount()
+    public function getTotalAlertCount($agentIds = null)
     {
-        $severity = $this->getAlertSeverityDistribution();
+        $severity = $this->getAlertSeverityDistribution($agentIds);
         return array_sum($severity);
     }
 
@@ -508,7 +547,7 @@ class OpenSearchService
     /**
      * Get OS distribution from Wazuh Agent API
      */
-    public function getOsDistribution()
+    public function getOsDistribution($agentIds = null)
     {
         try {
             // Get Wazuh API token with aggressive timeout
@@ -551,6 +590,11 @@ class OpenSearchService
                 return $this->getOsFallbackData();
             }
 
+            // Filter agents if specified
+            if ($agentIds && !empty($agentIds)) {
+                $agents = array_filter($agents, fn($agent) => in_array($agent['id'] ?? null, $agentIds));
+            }
+
             // Aggregate agents by OS
             $osDistribution = [];
             foreach ($agents as $agent) {
@@ -580,7 +624,7 @@ class OpenSearchService
     /**
      * Get top triggered rules
      */
-    public function getTopTriggeredRules($limit = 5)
+    public function getTopTriggeredRules($limit = 5, $agentIds = null)
     {
         $query = [
             'size' => 0,
@@ -607,13 +651,26 @@ class OpenSearchService
                 ]
             ],
             'query' => [
-                'range' => [
-                    'timestamp' => [
-                        'gte' => 'now-7d'
+                'bool' => [
+                    'filter' => [
+                        [
+                            'range' => [
+                                'timestamp' => [
+                                    'gte' => 'now-7d'
+                                ]
+                            ]
+                        ]
                     ]
                 ]
             ]
         ];
+        
+        // Add agent filter if provided
+        if ($agentIds && !empty($agentIds)) {
+            $query['query']['bool']['filter'][] = [
+                'terms' => ['agent.id' => $agentIds]
+            ];
+        }
 
         try {
             $response = Http::withoutVerifying()
@@ -662,7 +719,7 @@ class OpenSearchService
     /**
      * Get top agents by alert count
      */
-    public function getTopAgentsByAlerts($limit = 5)
+    public function getTopAgentsByAlerts($limit = 5, $agentIds = null)
     {
         $query = [
             'size' => 0,
@@ -695,13 +752,26 @@ class OpenSearchService
                 ]
             ],
             'query' => [
-                'range' => [
-                    'timestamp' => [
-                        'gte' => 'now-7d'
+                'bool' => [
+                    'filter' => [
+                        [
+                            'range' => [
+                                'timestamp' => [
+                                    'gte' => 'now-7d'
+                                ]
+                            ]
+                        ]
                     ]
                 ]
             ]
         ];
+        
+        // Add agent filter if provided
+        if ($agentIds && !empty($agentIds)) {
+            $query['query']['bool']['filter'][] = [
+                'terms' => ['agent.id' => $agentIds]
+            ];
+        }
 
         try {
             $response = Http::withoutVerifying()
