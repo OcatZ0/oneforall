@@ -77,8 +77,15 @@
           <p class="card-title mb-0">Total Customers</p>
           <i class="mdi mdi-account-group text-info icon-lg"></i>
         </div>
-        <h2 class="font-weight-bold mb-1">124</h2>
-        <p class="text-muted mb-0"><span class="text-success me-1"><i class="mdi mdi-arrow-up"></i>7</span> dari bulan lalu</p>
+        <h2 class="font-weight-bold mb-1">{{ $customerStats['total'] }}</h2>
+        <p class="text-muted mb-0">
+          @if($customerStats['change'] >= 0)
+            <span class="text-success me-1"><i class="mdi mdi-arrow-up"></i>{{ $customerStats['change'] }}</span>
+          @else
+            <span class="text-danger me-1"><i class="mdi mdi-arrow-down"></i>{{ abs($customerStats['change']) }}</span>
+          @endif
+          dari bulan lalu
+        </p>
       </div>
     </div>
   </div>

@@ -789,4 +789,324 @@ class OpenSearchService
             ['id' => '031', 'name' => 'workstation-dev3', 'ip' => '192.168.3.11', 'os' => 'Windows 11', 'alert_count' => 892],
         ];
     }
+
+    /**
+     * Get FIM (File Integrity Monitoring) events for an agent
+     */
+    public function getFimEvents($agentId, $limit = 5)
+    {
+        $query = [
+            'size' => $limit,
+            'sort' => [['timestamp' => ['order' => 'desc']]],
+            'query' => [
+                'bool' => [
+                    'must' => [
+                        ['term' => ['agent.id' => $agentId]],
+                        ['match' => ['rule.groups' => 'syscheck']]
+                    ],
+                    'filter' => [
+                        ['range' => ['timestamp' => ['gte' => 'now-24h']]]
+                    ]
+                ]
+            ]
+        ];
+
+        try {
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+
+            if ($response->successful()) {
+                $hits = $response->json('hits.hits') ?? [];
+                $events = [];
+                
+                foreach ($hits as $hit) {
+                    $source = $hit['_source'] ?? [];
+                    $events[] = [
+                        'timestamp' => $source['timestamp'] ?? '',
+                        'path' => $source['syscheck']['path'] ?? $source['file']['path'] ?? 'Unknown',
+                        'action' => $source['syscheck']['event'] ?? 'unknown',
+                        'description' => $source['rule']['description'] ?? 'Unknown',
+                        'level' => $source['rule']['level'] ?? 0,
+                        'rule_id' => $source['rule']['id'] ?? '',
+                    ];
+                }
+                
+                return $events;
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch FIM events: ' . $e->getMessage());
+        }
+
+        return [];
+    }
+
+    /**
+     * Get events count evolution for an agent
+     */
+    public function getEventsCountEvolution($agentId, $timeRange = '24h')
+    {
+        $config = match($timeRange) {
+            '24h' => ['interval' => '1h', 'duration' => 1440],
+            '7d' => ['interval' => '6h', 'duration' => 10080],
+            '30d' => ['interval' => '1d', 'duration' => 43200],
+            default => ['interval' => '1h', 'duration' => 1440],
+        };
+
+        $query = [
+            'size' => 0,
+            'aggs' => [
+                'events_by_time' => [
+                    'date_histogram' => [
+                        'field' => 'timestamp',
+                        'fixed_interval' => $config['interval'],
+                        'min_doc_count' => 0,
+                    ]
+                ]
+            ],
+            'query' => [
+                'bool' => [
+                    'must' => [['term' => ['agent.id' => $agentId]]],
+                    'filter' => [
+                        ['range' => ['timestamp' => ['gte' => "now-{$timeRange}"]]]
+                    ]
+                ]
+            ]
+        ];
+
+        try {
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+
+            if ($response->successful()) {
+                $buckets = $response->json('aggregations.events_by_time.buckets') ?? [];
+                $labels = [];
+                $data = [];
+
+                foreach ($buckets as $bucket) {
+                    $time = Carbon::createFromTimestampMs($bucket['key']);
+                    $labels[] = $time->format('H:i');
+                    $data[] = $bucket['doc_count'];
+                }
+
+                return ['labels' => $labels, 'data' => $data];
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch events count evolution: ' . $e->getMessage());
+        }
+
+        return ['labels' => [], 'data' => []];
+    }
+
+    /**
+     * Get alert statistics for an agent
+     */
+    public function getAgentAlertStats($agentId)
+    {
+        $query = [
+            'size' => 0,
+            'aggs' => [
+                'alert_levels' => [
+                    'terms' => [
+                        'field' => 'rule.level',
+                        'size' => 20,
+                    ]
+                ]
+            ],
+            'query' => [
+                'bool' => [
+                    'must' => [['term' => ['agent.id' => $agentId]]],
+                    'filter' => [
+                        ['range' => ['timestamp' => ['gte' => 'now-24h']]]
+                    ]
+                ]
+            ]
+        ];
+
+        try {
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+
+            if ($response->successful()) {
+                $buckets = $response->json('aggregations.alert_levels.buckets') ?? [];
+                $stats = ['critical' => 0, 'high' => 0, 'medium' => 0, 'low' => 0];
+
+                foreach ($buckets as $bucket) {
+                    $level = $bucket['key'];
+                    $count = $bucket['doc_count'];
+
+                    if ($level >= 12) {
+                        $stats['critical'] += $count;
+                    } elseif ($level >= 9) {
+                        $stats['high'] += $count;
+                    } elseif ($level >= 6) {
+                        $stats['medium'] += $count;
+                    } else {
+                        $stats['low'] += $count;
+                    }
+                }
+
+                return $stats;
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch agent alert stats: ' . $e->getMessage());
+        }
+
+        return ['critical' => 0, 'high' => 0, 'medium' => 0, 'low' => 0];
+    }
+
+    /**
+     * Get compliance data for an agent (GDPR, PCI-DSS, etc.)
+     */
+    public function getAgentCompliance($agentId, $complianceType = 'gdpr', $timeRange = '30d')
+    {
+        $managerName = env('WAZUH_MANAGER_NAME', 'fadli');
+        
+        $query = [
+            'size' => 0,
+            'aggs' => [
+                'top_compliance' => [
+                    'terms' => [
+                        'field' => "rule.{$complianceType}",
+                        'size' => 10,
+                    ]
+                ]
+            ],
+            'query' => [
+                'bool' => [
+                    'must' => [],
+                    'filter' => [
+                        ['match_all' => (object)[]],
+                        ['match_phrase' => ['manager.name' => $managerName]],
+                        ['match_phrase' => ['agent.id' => $agentId]],
+                        ['exists' => ['field' => "rule.{$complianceType}"]],
+                        ['range' => ['timestamp' => ['from' => "now-{$timeRange}", 'to' => 'now']]]
+                    ],
+                    'should' => [],
+                    'must_not' => []
+                ]
+            ]
+        ];
+
+        try {
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+
+            if ($response->successful()) {
+                $buckets = $response->json('aggregations.top_compliance.buckets') ?? [];
+                $complianceData = [];
+
+                foreach ($buckets as $bucket) {
+                    $complianceData[] = [
+                        'name' => $bucket['key'],
+                        'count' => $bucket['doc_count'],
+                    ];
+                }
+
+                \Log::info("Compliance {$complianceType} data for agent {$agentId}: " . count($complianceData) . ' items');
+                return $complianceData;
+            }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            \Log::warning("Compliance query timeout for agent {$agentId}: " . $e->getMessage());
+        } catch (\Exception $e) {
+            \Log::warning("Failed to fetch compliance data for agent {$agentId}: " . $e->getMessage());
+        }
+
+        return [];
+    }
+
+    /**
+     * Get events count evolution filtered by compliance type for an agent
+     */
+    public function getEventsCountEvolutionByCompliance($agentId, $complianceType = 'gdpr', $timeRange = '24h')
+    {
+        $config = [
+            '24h' => ['interval' => '1h', 'duration' => 1440],
+            '7d' => ['interval' => '12h', 'duration' => 10080],
+            '30d' => ['interval' => '1d', 'duration' => 43200],
+        ];
+
+        $timeConfig = $config[$timeRange] ?? $config['24h'];
+        $labels = [];
+        $now = Carbon::now();
+        $endDate = $now->copy()->toIso8601String();
+        $startDate = $now->copy()->subMinutes($timeConfig['duration'])->toIso8601String();
+
+        $this->generateTimeLabels($timeRange, $timeConfig['interval'], $labels, $now);
+
+        $query = [
+            'size' => 0,
+            'aggs' => [
+                'events_by_time' => [
+                    'date_histogram' => [
+                        'field' => 'timestamp',
+                        'fixed_interval' => $timeConfig['interval'],
+                        'time_zone' => 'Asia/Jakarta',
+                        'min_doc_count' => 0,
+                    ]
+                ]
+            ],
+            'query' => [
+                'bool' => [
+                    'must' => [['term' => ['agent.id' => $agentId]]],
+                    'filter' => [
+                        ['exists' => ['field' => "rule.{$complianceType}"]],
+                        ['range' => [
+                            'timestamp' => [
+                                'gte' => $startDate,
+                                'lte' => $endDate,
+                                'format' => 'strict_date_optional_time'
+                            ]
+                        ]]
+                    ]
+                ]
+            ]
+        ];
+
+        try {
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+
+            if ($response->successful()) {
+                $buckets = $response->json('aggregations.events_by_time.buckets') ?? [];
+                $data = [];
+
+                foreach ($buckets as $bucket) {
+                    $data[] = $bucket['doc_count'];
+                }
+
+                \Log::info("Evolution data for compliance {$complianceType} agent {$agentId}: " . count($data) . ' time buckets');
+                
+                // If no data, return same structure as request for consistency
+                if (empty($data)) {
+                    $data = array_fill(0, count($labels), 0);
+                }
+
+                return [
+                    'labels' => $labels,
+                    'data' => $data
+                ];
+            }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            \Log::warning("Events evolution query timeout for compliance {$complianceType}: " . $e->getMessage());
+        } catch (\Exception $e) {
+            \Log::warning("Failed to fetch events evolution for compliance {$complianceType}: " . $e->getMessage());
+        }
+
+        return ['labels' => $labels, 'data' => array_fill(0, count($labels), 0)];
+    }
 }

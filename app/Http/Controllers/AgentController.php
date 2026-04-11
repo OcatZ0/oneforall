@@ -432,4 +432,109 @@ class AgentController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Display agent detail page
+     */
+    public function detail($id)
+    {
+        try {
+            $token = $this->getToken();
+            
+            if (!$token) {
+                \Log::warning('Agent detail: No token available');
+                return view('agent.detail', [
+                    'agent' => null,
+                    'error' => 'Unable to authenticate with Wazuh API'
+                ]);
+            }
+
+            // Fetch agent from Wazuh API
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(3)
+                ->withToken($token)
+                ->get("{$this->wazuhBase}/agents", [
+                    'agents_list' => $id
+                ]);
+
+            if (!$response->successful()) {
+                \Log::warning("Agent detail not found: $id");
+                return view('agent.detail', [
+                    'agent' => null,
+                    'error' => 'Agent not found'
+                ]);
+            }
+
+            $data = $response->json('data.affected_items');
+            if (empty($data)) {
+                \Log::warning("Agent detail empty response: $id");
+                return view('agent.detail', [
+                    'agent' => null,
+                    'error' => 'Agent not found'
+                ]);
+            }
+
+            $wazuhAgent = $data[0];
+            
+            // Map Wazuh agent fields to our view format
+            $agent = (object) [
+                'id_agent' => $wazuhAgent['id'] ?? null,
+                'nama' => $wazuhAgent['name'] ?? 'Unknown',
+                'ip' => $wazuhAgent['ip'] ?? 'N/A',
+                'os' => is_array($wazuhAgent['os']) ? ($wazuhAgent['os']['name'] ?? 'Unknown') : ($wazuhAgent['os'] ?? 'Unknown'),
+                'os_version' => is_array($wazuhAgent['os']) ? ($wazuhAgent['os']['version'] ?? 'N/A') : 'N/A',
+                'version' => $wazuhAgent['version'] ?? 'N/A',
+                'status' => $wazuhAgent['status'] ?? 'unknown',
+                'cluster_node' => $wazuhAgent['node_name'] ?? $wazuhAgent['group'] ?? 'N/A',
+                'dateAdd' => $wazuhAgent['dateAdd'] ?? null,
+                'lastKeepAlive' => $wazuhAgent['lastKeepAlive'] ?? null,
+                'group' => is_array($wazuhAgent['group']) ? implode(', ', $wazuhAgent['group']) : ($wazuhAgent['group'] ?? 'N/A'),
+                'manager' => $wazuhAgent['manager'] ?? 'N/A',
+                'user' => null,
+            ];
+
+            // Enrich with database information
+            $agent = $this->enrichAgentData($agent);
+
+            // Fetch data from OpenSearch
+            $alertStats = $this->openSearch->getAgentAlertStats($agent->id_agent);
+            $fimEvents = $this->openSearch->getFimEvents($agent->id_agent, 5);
+            $eventsEvolution = $this->openSearch->getEventsCountEvolution($agent->id_agent, '24h');
+            
+            // Fetch compliance data for all frameworks
+            $complianceGdpr = $this->openSearch->getAgentCompliance($agent->id_agent, 'gdpr', '30d');
+            $compliancePciDss = $this->openSearch->getAgentCompliance($agent->id_agent, 'pci_dss', '30d');
+            $complianceNist = $this->openSearch->getAgentCompliance($agent->id_agent, 'nist_800_53', '30d');
+            $complianceHipaa = $this->openSearch->getAgentCompliance($agent->id_agent, 'hipaa', '30d');
+            $complianceGpg13 = $this->openSearch->getAgentCompliance($agent->id_agent, 'gpg13', '30d');
+            $complianceTsc = $this->openSearch->getAgentCompliance($agent->id_agent, 'tsc', '30d');
+            
+            // Fetch events evolution for each compliance type (filtered)
+            $eventsEvolutionGdpr = $this->openSearch->getEventsCountEvolutionByCompliance($agent->id_agent, 'gdpr', '24h');
+            $eventsEvolutionPciDss = $this->openSearch->getEventsCountEvolutionByCompliance($agent->id_agent, 'pci_dss', '24h');
+            $eventsEvolutionNist = $this->openSearch->getEventsCountEvolutionByCompliance($agent->id_agent, 'nist_800_53', '24h');
+            $eventsEvolutionHipaa = $this->openSearch->getEventsCountEvolutionByCompliance($agent->id_agent, 'hipaa', '24h');
+            $eventsEvolutionGpg13 = $this->openSearch->getEventsCountEvolutionByCompliance($agent->id_agent, 'gpg13', '24h');
+            $eventsEvolutionTsc = $this->openSearch->getEventsCountEvolutionByCompliance($agent->id_agent, 'tsc', '24h');
+
+            return view('agent.detail', compact(
+                'agent', 'alertStats', 'fimEvents', 'eventsEvolution',
+                'complianceGdpr', 'compliancePciDss', 'complianceNist', 'complianceHipaa', 'complianceGpg13', 'complianceTsc',
+                'eventsEvolutionGdpr', 'eventsEvolutionPciDss', 'eventsEvolutionNist', 'eventsEvolutionHipaa', 'eventsEvolutionGpg13', 'eventsEvolutionTsc'
+            ));
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            \Log::error('Agent detail timeout: ' . $e->getMessage());
+            return view('agent.detail', [
+                'agent' => null,
+                'error' => 'Connection timeout while fetching agent details'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Agent detail error: ' . $e->getMessage());
+            return view('agent.detail', [
+                'agent' => null,
+                'error' => 'Error loading agent details: ' . $e->getMessage()
+            ]);
+        }
+    }
 }

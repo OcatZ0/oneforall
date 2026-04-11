@@ -1,9 +1,10 @@
-@extends('layouts.app')
+@extends('layouts.wazuh')
 
 @section('title', 'Agent - One For All')
 
 @section('content')
 
+<div class="content-wrapper">
 {{-- Agent Statistics --}}
 <div class="row grid-margin">
   <div class="col-md-3 stretch-card">
@@ -156,7 +157,7 @@
             </thead>
             <tbody>
               @forelse($agents as $agent)
-              <tr>
+              <tr onclick="window.location='{{ route('agent.detail', $agent->id_agent) }}'" style="cursor: pointer;">
                 <td>{{ ($agents->currentPage() - 1) * $agents->perPage() + $loop->iteration }}</td>
                 <td class="font-weight-bold">{{ $agent->id_agent }}</td>
                 <td>{{ $agent->nama }}</td>
@@ -227,6 +228,7 @@
       </div>
     </div>
   </div>
+</div>
 </div>
 
 <script>

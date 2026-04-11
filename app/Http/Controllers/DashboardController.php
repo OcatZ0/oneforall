@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Http;
 use App\Services\OpenSearchService;
+use App\Models\User;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -41,6 +43,51 @@ class DashboardController extends Controller
         } catch (\Exception $e) {
             \Log::warning('Wazuh API unreachable: ' . $e->getMessage());
             return null;
+        }
+    }
+
+    private function getCustomerStats()
+    {
+        try {
+            // Total customers (users with role 'customer')
+            $totalCustomers = User::where('peran', 'customer')->count();
+
+            // Calculate change from previous month
+            $now = Carbon::now();
+            $currentMonthStart = $now->copy()->startOfMonth();
+            $previousMonthStart = $now->copy()->subMonth()->startOfMonth();
+            $previousMonthEnd = $now->copy()->subMonth()->endOfMonth();
+
+            $currentMonthNewCustomers = User::where('peran', 'customer')
+                ->where('tanggal_dibuat', '>=', $currentMonthStart)
+                ->count();
+
+            $previousMonthNewCustomers = User::where('peran', 'customer')
+                ->whereBetween('tanggal_dibuat', [$previousMonthStart, $previousMonthEnd])
+                ->count();
+
+            // Calculate change (difference)
+            $change = $currentMonthNewCustomers - $previousMonthNewCustomers;
+            $changePercent = $previousMonthNewCustomers > 0 
+                ? round(($change / $previousMonthNewCustomers) * 100, 1)
+                : 0;
+
+            return [
+                'total' => $totalCustomers,
+                'change' => $change,
+                'changePercent' => $changePercent,
+                'currentMonthNew' => $currentMonthNewCustomers,
+                'previousMonthNew' => $previousMonthNewCustomers,
+            ];
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch customer stats: ' . $e->getMessage());
+            return [
+                'total' => 0,
+                'change' => 0,
+                'changePercent' => 0,
+                'currentMonthNew' => 0,
+                'previousMonthNew' => 0,
+            ];
         }
     }
 
@@ -91,7 +138,10 @@ class DashboardController extends Controller
             $topRules = $this->openSearch->getTopTriggeredRules(5);
             $topAgents = $this->openSearch->getTopAgentsByAlerts(5);
 
-            return view('home.index', compact('agentStats', 'alertTrend', 'alertSeverity', 'totalAlerts', 'osDistribution', 'topRules', 'topAgents'));
+            // Fetch customer statistics
+            $customerStats = $this->getCustomerStats();
+
+            return view('home.index', compact('agentStats', 'alertTrend', 'alertSeverity', 'totalAlerts', 'osDistribution', 'topRules', 'topAgents', 'customerStats'));
         } catch (\Exception $e) {
             \Log::error('Dashboard error: ' . $e->getMessage());
             return view('home.index', [
@@ -102,6 +152,7 @@ class DashboardController extends Controller
                 'osDistribution' => $this->openSearch->getOsDistribution(),
                 'topRules' => $this->openSearch->getTopTriggeredRules(5),
                 'topAgents' => $this->openSearch->getTopAgentsByAlerts(5),
+                'customerStats' => $this->getCustomerStats(),
             ]);
         }
     }

@@ -4,5 +4,5 @@
 <link rel="stylesheet" href="{{ asset('vendors/css/vendor.bundle.base.css') }}">
 <link rel="stylesheet" href="{{ asset('css/style.css') }}">
 <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-<link rel="shortcut icon" href="{{ asset('images/favicon.png') }}" />
+<link rel="shortcut icon" href="{{ asset('images/logo_dofa.png') }}" />
 @stack('styles')
