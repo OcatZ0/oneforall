@@ -50,7 +50,7 @@ class UserController extends Controller
             'username' => 'required|string|min:3|max:50|unique:pengguna,username',
             'email' => 'required|email|unique:pengguna,email',
             'password' => 'required|string|min:6',
-            'peran' => 'required|in:customer',
+            'peran' => 'required|in:admin,customer',
             'agents' => 'array',
             'agents.*' => 'string',
         ]);
@@ -99,7 +99,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'username' => "required|string|min:3|max:50|unique:pengguna,username,{$id},id_pengguna",
             'email' => "required|email|unique:pengguna,email,{$id},id_pengguna",
-            'peran' => 'required|in:customer',
+            'peran' => 'required|in:admin,customer',
             'agents' => 'array',
             'agents.*' => 'string',
         ]);

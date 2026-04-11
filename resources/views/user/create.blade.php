@@ -59,6 +59,7 @@
                   <label class="form-label" for="peran">Role <span class="text-danger">*</span></label>
                   <select id="peran" name="peran" class="form-control form-select @error('peran') is-invalid @enderror" required>
                     <option value="">Pilih Role</option>
+                    <option value="admin" {{ old('peran') === 'admin' ? 'selected' : '' }}>Admin</option>
                     <option value="customer" {{ old('peran') === 'customer' ? 'selected' : '' }}>Customer</option>
                   </select>
                   @error('peran')

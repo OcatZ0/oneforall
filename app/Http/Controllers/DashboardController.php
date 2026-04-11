@@ -94,6 +94,10 @@ class DashboardController extends Controller
     public function index()
     {
         try {
+            $user = auth()->user();
+            $userRole = $user->peran ?? null;
+            $userId = $user->id_pengguna ?? auth()->id();
+
             $token = $this->getToken();
 
             // Provide fallback data if token is null
@@ -107,6 +111,7 @@ class DashboardController extends Controller
 
             if ($token) {
                 try {
+                    // Get all agent statistics
                     $summary = Http::withoutVerifying()
                         ->connectTimeout(2)
                         ->timeout(2)
@@ -128,31 +133,29 @@ class DashboardController extends Controller
                 }
             }
 
-            // Fetch alert data from OpenSearch (has built-in fallback)
+            // Fetch alert data from OpenSearch
             $alertTrend = $this->openSearch->getAlertTrendLast7Days();
             $alertSeverity = $this->openSearch->getAlertSeverityDistribution();
             $totalAlerts = $this->openSearch->getTotalAlertCount();
-            
-            // Fetch additional analytics (has built-in fallback)
             $osDistribution = $this->openSearch->getOsDistribution();
             $topRules = $this->openSearch->getTopTriggeredRules(5);
             $topAgents = $this->openSearch->getTopAgentsByAlerts(5);
 
-            // Fetch customer statistics
-            $customerStats = $this->getCustomerStats();
+            // Fetch customer statistics (only for admin)
+            $customerStats = $userRole === 'admin' ? $this->getCustomerStats() : null;
 
             return view('home.index', compact('agentStats', 'alertTrend', 'alertSeverity', 'totalAlerts', 'osDistribution', 'topRules', 'topAgents', 'customerStats'));
         } catch (\Exception $e) {
             \Log::error('Dashboard error: ' . $e->getMessage());
             return view('home.index', [
                 'agentStats' => ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0],
-                'alertTrend' => $this->openSearch->getAlertTrendLast7Days(),
-                'alertSeverity' => $this->openSearch->getAlertSeverityDistribution(),
-                'totalAlerts' => $this->openSearch->getTotalAlertCount(),
-                'osDistribution' => $this->openSearch->getOsDistribution(),
-                'topRules' => $this->openSearch->getTopTriggeredRules(5),
-                'topAgents' => $this->openSearch->getTopAgentsByAlerts(5),
-                'customerStats' => $this->getCustomerStats(),
+                'alertTrend' => [],
+                'alertSeverity' => [],
+                'totalAlerts' => 0,
+                'osDistribution' => [],
+                'topRules' => [],
+                'topAgents' => [],
+                'customerStats' => null,
             ]);
         }
     }

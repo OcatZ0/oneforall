@@ -20,11 +20,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::post('auth/logout', [AuthController::class, 'logout'])->name('logout');
 
+    // Agent routes - available for both admin and customer
+    Route::get('/agent', [AgentController::class, 'index'])->name('agent');
+    Route::get('/agent/{id}/detail', [AgentController::class, 'detail'])->name('agent.detail');
+    Route::get('/agent/chart-data', [AgentController::class, 'getChartData'])->name('agent.chart-data');
+    Route::post('/agent/sync', [AgentController::class, 'syncAgentsFromWazuh'])->name('agent.sync');
+
     // Admin only routes
     Route::middleware('admin')->group(function () {
-        Route::get('/agent', [AgentController::class, 'index'])->name('agent');
-        Route::get('/agent/{id}/detail', [AgentController::class, 'detail'])->name('agent.detail');
-        Route::get('/agent/chart-data', [AgentController::class, 'getChartData'])->name('agent.chart-data');
         Route::get('/user', [UserController::class, 'index'])->name('user');
         Route::get('/user/create', [UserController::class, 'create'])->name('user.create');
         Route::post('/user', [UserController::class, 'store'])->name('user.store');

@@ -49,10 +49,10 @@
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label" for="peran">Role <span class="text-danger">*</span></label>
-                  <select id="peran" name="peran" class="form-control form-select @error('peran') is-invalid @enderror" required disabled>
+                  <select id="peran" name="peran" class="form-control form-select @error('peran') is-invalid @enderror" required>
+                    <option value="admin" {{ old('peran', $user->peran) === 'admin' ? 'selected' : '' }}>Admin</option>
                     <option value="customer" {{ old('peran', $user->peran) === 'customer' ? 'selected' : '' }}>Customer</option>
                   </select>
-                  <small class="text-muted">Role tidak dapat diubah</small>
                   @error('peran')
                     <div class="invalid-feedback">{{ $message }}</div>
                   @enderror

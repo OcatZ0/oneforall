@@ -70,6 +70,7 @@
       </div>
     </div>
   </div>
+  @if($customerStats)
   <div class="col-md-3 grid-margin stretch-card">
     <div class="card">
       <div class="card-body">
@@ -89,6 +90,7 @@
       </div>
     </div>
   </div>
+  @endif
 
   @php
     $total = $agentStats['total'] ?: 1; // avoid division by zero
@@ -98,7 +100,7 @@
     $neverConnectedPct  = round($agentStats['never_connected'] / $total * 100, 1);
   @endphp
 
-  <div class="col-md-6 grid-margin stretch-card">
+  <div class="col-md-{{ $customerStats ? '6' : '9' }} grid-margin stretch-card">
     <div class="card">
       <div class="card-body">
         <p class="card-title mb-1">Komposisi Status Agent</p>

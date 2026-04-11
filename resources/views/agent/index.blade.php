@@ -106,9 +106,11 @@
             <button class="btn btn-sm btn-primary" onclick="location.reload()">
               <i class="mdi mdi-refresh mr-1"></i> Refresh
             </button>
-            <button class="btn btn-sm btn-success" onclick="location.reload()">
-              <i class="mdi mdi-refresh mr-1"></i> Update Data Agent
+            @if(auth()->user()->peran === 'admin')
+            <button class="btn btn-sm btn-success" id="syncBtn" onclick="syncAgentsFromWazuh()">
+              <i class="mdi mdi-refresh mr-1"></i><span id="syncBtnText">Update Data Agent</span>
             </button>
+            @endif
           </div>
         </div>
 
@@ -423,6 +425,64 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+
+// Sync agents from Wazuh API to database
+function syncAgentsFromWazuh() {
+  const syncBtn = document.getElementById('syncBtn');
+  const syncBtnText = document.getElementById('syncBtnText');
+  
+  // Disable button and show loading state
+  syncBtn.disabled = true;
+  syncBtn.classList.remove('btn-success');
+  syncBtn.classList.add('btn-secondary');
+  const originalText = syncBtnText.textContent;
+  syncBtnText.textContent = 'Syncing...';
+  
+  fetch('{{ route("agent.sync") }}', {
+    method: 'POST',
+    headers: {
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log('Sync response:', data);
+    
+    if (data.success) {
+      // Show success message
+      const stats = data.data;
+      const message = `✓ Sync completed!\n\nCreated: ${stats.synced_new}\nUpdated: ${stats.updated_existing}\nTotal processed: ${stats.total_processed}\nErrors: ${stats.errors}`;
+      
+      alert(message);
+      
+      // Refresh the page after 1 second to show updated data
+      setTimeout(() => {
+        location.reload();
+      }, 1000);
+    } else {
+      // Show error message
+      alert(`✗ Sync failed!\n\n${data.message}`);
+      
+      // Restore button
+      syncBtn.disabled = false;
+      syncBtn.classList.add('btn-success');
+      syncBtn.classList.remove('btn-secondary');
+      syncBtnText.textContent = originalText;
+    }
+  })
+  .catch(error => {
+    console.error('Sync error:', error);
+    alert(`✗ Sync error!\n\n${error.message}`);
+    
+    // Restore button
+    syncBtn.disabled = false;
+    syncBtn.classList.add('btn-success');
+    syncBtn.classList.remove('btn-secondary');
+    syncBtnText.textContent = originalText;
+  });
+}
 </script>
 
 @endsection

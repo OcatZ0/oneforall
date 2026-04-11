@@ -11,7 +11,7 @@
           </a>
         </li>
 
-        @if(Auth::check() && Auth::user()->peran === 'admin')
+        @if(Auth::check())
         <li class="nav-item sidebar-category">
           <p>Monitoring Wazuh</p>
           <span></span>
@@ -22,6 +22,9 @@
             <span class="menu-title">Agents</span>
           </a>
         </li>
+        @endif
+
+        @if(Auth::check() && Auth::user()->peran === 'admin')
         <li class="nav-item sidebar-category">
           <p>Manajemen Pengguna</p>
           <span></span>

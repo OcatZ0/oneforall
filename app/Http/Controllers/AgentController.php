@@ -167,40 +167,9 @@ class AgentController extends Controller
     private function getAgentEvolution($timeRange = '24h', $baseTime = null)
     {
         try {
-            // Get current user and their role
-            $user = auth()->user();
-            $userId = $user->id_pengguna ?? auth()->id();
-            $userRole = $user->peran ?? null;
-            
-            \Log::info('Fetching agent evolution', [
-                'user_id' => $userId,
-                'user_role' => $userRole,
-                'time_range' => $timeRange,
-                'base_time' => $baseTime ? $baseTime->toIso8601String() : 'now'
-            ]);
-            
-            // Only filter by agent IDs if user is a customer
-            // Admin users see all agents
-            $userAgents = null;
-            if ($userRole === 'customer') {
-                $userAgents = Agent::where('id_pengguna', $userId)->pluck('id_agent')->toArray();
-                
-                \Log::info('Customer user - filtering by assigned agents', [
-                    'count' => count($userAgents),
-                    'agent_ids' => $userAgents
-                ]);
-            } else {
-                \Log::info('Admin/Manager user - showing all agents');
-            }
-
             // Fetch evolution data from OpenSearch with fixed base time
-            $evolution = $this->openSearch->getAgentEvolutionByTimeRange($timeRange, $userAgents ?: null, $baseTime);
+            $evolution = $this->openSearch->getAgentEvolutionByTimeRange($timeRange, null, $baseTime);
 
-            \Log::info('Agent evolution data fetched', [
-                'labels_count' => count($evolution['labels'] ?? []),
-                'data_count' => count($evolution['data'] ?? [])
-            ]);
-            
             return $evolution;
         } catch (\Exception $e) {
             \Log::error('Failed to fetch agent evolution data', [
@@ -277,8 +246,10 @@ class AgentController extends Controller
             \Log::info('Agent index request started');
             
             $token = $this->getToken();
+            
+            // Get agent statistics
             $stats = $this->getAgentStats($token);
-
+            
             // Get pagination parameters
             $perPage = request('per_page', 10);
             $page = max(request('page', 1), 1);
@@ -287,17 +258,13 @@ class AgentController extends Controller
             // Get filter parameters
             $search = request('search');
             $status = request('status');
-
-            \Log::info('Fetching agents', [
-                'page' => $page,
-                'per_page' => $perPage,
-                'offset' => $offset,
-                'search' => $search,
-                'status' => $status
-            ]);
-
+            
             // Fetch agents from Wazuh
             $wazuhData = $this->getAgentsFromWazuh($token, $offset, $perPage, $search, $status);
+
+            // Get pagination parameters
+            $perPage = request('per_page', 10);
+            $page = max(request('page', 1), 1);
             
             // Convert Wazuh agents to objects
             $agentsList = collect($wazuhData['agents'])->map(function ($agent) {
@@ -318,7 +285,7 @@ class AgentController extends Controller
 
             // Create a length-aware paginator
             $agents = new \Illuminate\Pagination\LengthAwarePaginator(
-                items: $agentsList,
+                items: $agentsList->forPage($page, $perPage)->values(),
                 total: $wazuhData['total'],
                 perPage: $perPage,
                 currentPage: $page,
@@ -535,6 +502,164 @@ class AgentController extends Controller
                 'agent' => null,
                 'error' => 'Error loading agent details: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    /**
+     * Sync agents from Wazuh API to database
+     */
+    public function syncAgentsFromWazuh()
+    {
+        try {
+            // Check if user is authenticated and is admin
+            if (!auth()->check()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized: Please login first'
+                ], 401);
+            }
+
+            $user = auth()->user();
+            $userRole = $user->peran ?? null;
+            
+            // Only allow admin users to sync
+            if ($userRole !== 'admin') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized: Only admins can sync agents'
+                ], 403);
+            }
+
+            \Log::info('Agent sync started', [
+                'user_id' => $user->id_pengguna,
+                'user_role' => $userRole
+            ]);
+
+            $token = $this->getToken();
+            
+            if (!$token) {
+                \Log::warning('Agent sync failed: Unable to authenticate with Wazuh');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to authenticate with Wazuh API'
+                ], 500);
+            }
+
+            $syncedCount = 0;
+            $updatedCount = 0;
+            $errorCount = 0;
+            $offset = 0;
+            $limit = 100;
+            $totalAgents = 0;
+            $processedAgents = 0;
+
+            \Log::info('Starting agent sync process', [
+                'limit_per_page' => $limit
+            ]);
+
+            // Fetch all agents from Wazuh API in batches
+            do {
+                $wazuhData = $this->getAgentsFromWazuh($token, $offset, $limit);
+                $agents = $wazuhData['agents'] ?? [];
+                $totalAgents = $wazuhData['total'] ?? 0;
+
+                if (empty($agents)) {
+                    break;
+                }
+
+                foreach ($agents as $wazuhAgent) {
+                    try {
+                        $agentId = $wazuhAgent['id'] ?? null;
+                        
+                        if (!$agentId) {
+                            \Log::warning('Skipping agent with no ID', ['agent' => $wazuhAgent]);
+                            continue;
+                        }
+
+                        // Prepare data for sync (only id_agent and nama)
+                        $agentData = [
+                            'id_agent' => $agentId,
+                            'nama' => $wazuhAgent['name'] ?? 'Unknown',
+                        ];
+
+                        // Check if agent exists
+                        $existingAgent = Agent::where('id_agent', $agentId)->first();
+
+                        if ($existingAgent) {
+                            // Update existing agent (only update nama if needed)
+                            if ($existingAgent->nama !== $agentData['nama']) {
+                                $existingAgent->update($agentData);
+                            }
+                            $updatedCount++;
+                            
+                            \Log::debug('Agent updated', [
+                                'id_agent' => $agentId
+                            ]);
+                        } else {
+                            // Create new agent if it doesn't exist
+                            $agentData['deskripsi'] = '';
+                            $agentData['tanggal_dibuat'] = Carbon::now();
+                            // id_pengguna is not set - agents are not assigned to any user by default
+
+                            Agent::create($agentData);
+                            $syncedCount++;
+                            
+                            \Log::debug('Agent created', [
+                                'id_agent' => $agentId
+                            ]);
+                        }
+
+                        $processedAgents++;
+
+                    } catch (\Exception $e) {
+                        $errorCount++;
+                        \Log::error('Error syncing agent', [
+                            'agent_id' => $agentId ?? 'unknown',
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+
+                // Move to next batch
+                $offset += $limit;
+
+            } while ($processedAgents < $totalAgents && count($agents) > 0);
+
+            \Log::info('Agent sync completed', [
+                'synced_new' => $syncedCount,
+                'updated_existing' => $updatedCount,
+                'errors' => $errorCount,
+                'total_processed' => $processedAgents,
+                'total_in_wazuh' => $totalAgents
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Agent sync completed successfully",
+                'data' => [
+                    'synced_new' => $syncedCount,
+                    'updated_existing' => $updatedCount,
+                    'total_processed' => $processedAgents,
+                    'errors' => $errorCount,
+                    'total_in_wazuh' => $totalAgents
+                ]
+            ]);
+
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            \Log::error('Agent sync connection error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Connection timeout: Unable to reach Wazuh API'
+            ], 500);
+        } catch (\Exception $e) {
+            \Log::error('Agent sync error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Sync failed: ' . $e->getMessage()
+            ], 500);
         }
     }
 }
