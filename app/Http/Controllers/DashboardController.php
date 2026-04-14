@@ -83,7 +83,15 @@ class DashboardController extends Controller
                 // For customers, get stats only for assigned agents
                 $accessibleIds = Agent::where('id_pengguna', $userId)
                     ->pluck('id_agent')
+                    ->map(fn($id) => (string)$id) // Ensure IDs are strings
+                    ->values()
                     ->toArray();
+                
+                \Log::info('Agent stats filtering by customer accessible agents', [
+                    'user_id' => $userId,
+                    'accessible_ids' => $accessibleIds,
+                    'count' => count($accessibleIds),
+                ]);
                 
                 if (!empty($accessibleIds)) {
                     $response = Http::withoutVerifying()
@@ -98,7 +106,8 @@ class DashboardController extends Controller
                         $allAgents = $response->json('data.affected_items', []);
                         
                         foreach ($allAgents as $agent) {
-                            if (in_array($agent['id'], $accessibleIds)) {
+                            $agentId = (string)($agent['id'] ?? null);
+                            if (in_array($agentId, $accessibleIds, true)) {
                                 $agentStats['total']++;
                                 $status = $agent['status'] ?? 'unknown';
                                 if (isset($agentStats[$status])) {
@@ -222,12 +231,16 @@ class DashboardController extends Controller
 
             // Get accessible agent IDs for filtering customer data
             $accessibleAgentIds = null;
-            if ($userRole !== 'admin') {
+            $isAdmin = $userRole === 'admin';
+            
+            if (!$isAdmin) {
                 $accessibleAgentIds = Agent::where('id_pengguna', $userId)
                     ->pluck('id_agent')
+                    ->map(fn($id) => (string)$id) // Ensure all IDs are strings
+                    ->values()
                     ->toArray();
                 
-                \Log::info('Dashboard customer - accessible agents', [
+                \Log::info('Dashboard customer - accessible agents retrieved', [
                     'user_id' => $userId,
                     'agent_ids' => $accessibleAgentIds,
                     'count' => count($accessibleAgentIds),
@@ -236,13 +249,13 @@ class DashboardController extends Controller
                 \Log::info('Dashboard admin - all agents visible');
             }
 
-            // Fetch alert data from OpenSearch (filtered by accessible agents for customers)
-            $alertTrend = $this->openSearch->getAlertTrendLast7Days($accessibleAgentIds);
-            $alertSeverity = $this->openSearch->getAlertSeverityDistribution($accessibleAgentIds);
-            $totalAlerts = $this->openSearch->getTotalAlertCount($accessibleAgentIds);
-            $osDistribution = $this->openSearch->getOsDistribution($accessibleAgentIds);
-            $topRules = $this->openSearch->getTopTriggeredRules(5, $accessibleAgentIds);
-            $topAgents = $this->openSearch->getTopAgentsByAlerts(5, $accessibleAgentIds);
+            // Fetch alert data from OpenSearch (filtered by accessible agents for customers, all for admin)
+            $alertTrend = $this->openSearch->getAlertTrendLast7Days($accessibleAgentIds, $isAdmin);
+            $alertSeverity = $this->openSearch->getAlertSeverityDistribution($accessibleAgentIds, $isAdmin);
+            $totalAlerts = $this->openSearch->getTotalAlertCount($accessibleAgentIds, $isAdmin);
+            $osDistribution = $this->openSearch->getOsDistribution($accessibleAgentIds, $isAdmin);
+            $topRules = $this->openSearch->getTopTriggeredRules(5, $accessibleAgentIds, $isAdmin);
+            $topAgents = $this->openSearch->getTopAgentsByAlerts(5, $accessibleAgentIds, $isAdmin);
 
             // Fetch customer statistics (only for admin)
             $customerStats = $userRole === 'admin' ? $this->getCustomerStats() : null;

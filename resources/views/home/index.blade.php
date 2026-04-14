@@ -291,7 +291,7 @@
       <div class="card-body">
         <div class="d-flex align-items-center justify-content-between mb-3">
           <p class="card-title mb-0">Top Agents dengan Security Alert Terbanyak</p>
-          <a href="#" class="btn btn-sm btn-outline-primary">Lihat Semua</a>
+          <a href="/agent" class="btn btn-sm btn-outline-primary">Lihat Semua</a>
         </div>
         <div class="table-responsive">
           <table class="table table-striped mb-0">
@@ -359,8 +359,11 @@
 <script>
 // Alert Trend Chart
 const alertTrendData = @json($alertTrend ?? []);
-const fallbackTrendData = [1420, 1835, 1230, 2105, 1784, 980, 1493];
-const trendData = alertTrendData.length > 0 ? alertTrendData : fallbackTrendData;
+
+// Only use fallback if data is truly missing (not just empty)
+// Empty array means no data for that customer (intentional)
+// Fallback is only for actual errors
+const trendData = alertTrendData.length > 0 ? alertTrendData : [];
 
 // Generate date labels for the last 7 days ending today
 function generateDateLabels(numDays = 7) {
@@ -368,6 +371,9 @@ function generateDateLabels(numDays = 7) {
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
   const today = new Date();
   const labels = [];
+  
+  // If no data, generate empty labels
+  if (numDays === 0) numDays = 7;
   
   // Start from 6 days ago (for 7 days total including today)
   const startDate = new Date(today);
@@ -385,75 +391,114 @@ function generateDateLabels(numDays = 7) {
   return labels;
 }
 
-const dateLabels = generateDateLabels(trendData.length);
+const dateLabels = generateDateLabels(trendData.length > 0 ? trendData.length : 7);
 
-new Chart(document.getElementById('alert-trend-chart').getContext('2d'), {
-  type: 'line',
-  data: {
-    labels: dateLabels,
-    datasets: [{
-      label: 'Total Alerts',
-      data: trendData,
-      borderColor: '#4B49AC',
-      backgroundColor: 'rgba(75, 73, 172, 0.1)',
-      borderWidth: 2,
-      fill: true,
-      tension: 0.4,
-      pointBackgroundColor: '#4B49AC',
-      pointRadius: 4,
-    }]
-  },
-  options: {
-    responsive: true,
-    plugins: { legend: { display: false } },
-    scales: {
-      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
-      x: { grid: { display: false } }
+// Only render the chart if we have data
+if (trendData.length > 0) {
+  new Chart(document.getElementById('alert-trend-chart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: dateLabels,
+      datasets: [{
+        label: 'Total Alerts',
+        data: trendData,
+        borderColor: '#4B49AC',
+        backgroundColor: 'rgba(75, 73, 172, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#4B49AC',
+        pointRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+        x: { grid: { display: false } }
+      }
     }
-  }
-});
+  });
+} else {
+  // Show "no data" message when customer has no agents
+  const canvas = document.getElementById('alert-trend-chart');
+  const container = canvas.parentElement;
+  canvas.style.display = 'none';
+  const noDataDiv = document.createElement('div');
+  noDataDiv.style.cssText = `display: flex; align-items: center; justify-content: center; height: ${canvas.height}px; color: #999; font-size: 14px;`;
+  noDataDiv.textContent = 'No data available';
+  container.appendChild(noDataDiv);
+}
 
 // Severity Chart
 const severityData = @json($alertSeverity);
-new Chart(document.getElementById('severity-chart').getContext('2d'), {
-  type: 'doughnut',
-  data: {
-    labels: ['Critical (12–15)', 'High (9–11)', 'Medium (6–8)', 'Low (1–5)'],
-    datasets: [{
-      data: [severityData.critical, severityData.high, severityData.medium, severityData.low],
-      backgroundColor: ['#FF4747', '#FFC542', '#17C1E8', '#82D616'],
-      borderWidth: 0,
-      hoverOffset: 6,
-    }]
-  },
-  options: {
-    responsive: true,
-    cutout: '70%',
-    plugins: { legend: { display: false } }
-  }
-});
+const severityTotal = severityData.critical + severityData.high + severityData.medium + severityData.low;
 
-new Chart(document.getElementById('os-chart').getContext('2d'), {
-  type: 'bar',
-  data: {
-    labels: @json(array_keys($osDistribution ?? [])),
-    datasets: [{
-      label: 'Agents',
-      data: @json(array_values($osDistribution ?? [])),
-      backgroundColor: ['#4B49AC', '#7978E9', '#F3797E', '#FFC542', '#82D616'],
-      borderRadius: 6,
-      borderWidth: 0,
-    }]
-  },
-  options: {
-    responsive: true,
-    indexAxis: 'y',
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
-      y: { grid: { display: false } }
+if (severityTotal > 0) {
+  new Chart(document.getElementById('severity-chart').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Critical (12–15)', 'High (9–11)', 'Medium (6–8)', 'Low (1–5)'],
+      datasets: [{
+        data: [severityData.critical, severityData.high, severityData.medium, severityData.low],
+        backgroundColor: ['#FF4747', '#FFC542', '#17C1E8', '#82D616'],
+        borderWidth: 0,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '70%',
+      plugins: { legend: { display: false } }
     }
-  }
-});
+  });
+} else {
+  const canvas = document.getElementById('severity-chart');
+  const container = canvas.parentElement;
+  canvas.style.display = 'none';
+  const noDataDiv = document.createElement('div');
+  noDataDiv.style.cssText = `display: flex; align-items: center; justify-content: center; height: ${canvas.height}px; color: #999; font-size: 14px;`;
+  noDataDiv.textContent = 'No data available';
+  container.appendChild(noDataDiv);
+}
+
+// OS Distribution Chart
+const osLabels = @json(array_keys($osDistribution ?? []));
+const osData = @json(array_values($osDistribution ?? []));
+const osTotal = osData.reduce((a, b) => a + b, 0);
+
+if (osTotal > 0) {
+  new Chart(document.getElementById('os-chart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: osLabels,
+      datasets: [{
+        label: 'Agents',
+        data: osData,
+        backgroundColor: ['#4B49AC', '#7978E9', '#F3797E', '#FFC542', '#82D616'],
+        borderRadius: 6,
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+} else {
+  const canvas = document.getElementById('os-chart');
+  const container = canvas.parentElement;
+  canvas.style.display = 'none';
+  const noDataDiv = document.createElement('div');
+  noDataDiv.style.cssText = `display: flex; align-items: center; justify-content: center; height: ${canvas.height}px; color: #999; font-size: 14px;`;
+  noDataDiv.textContent = 'No data available';
+  container.appendChild(noDataDiv);
+}
 </script>
 @endpush

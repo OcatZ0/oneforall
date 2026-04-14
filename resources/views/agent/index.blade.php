@@ -389,7 +389,34 @@ function updateChart(timeRange, event) {
     .then(data => {
       if (data.success) {
         const dataPoints = Array.isArray(data.data) ? data.data : (data.data.active ?? []);
-        initChart(data.labels, dataPoints);
+        const labels = data.labels ?? [];
+        
+        // Check if we have data to display
+        if (labels.length > 0 && dataPoints.length > 0) {
+          initChart(labels, dataPoints);
+        } else {
+          // Show "No data available" message
+          const chartContainer = evolutionChart?.parentNode;
+          if (chartContainer && evolutionChart) {
+            const noDataDiv = document.createElement('div');
+            noDataDiv.id = 'evolution-chart'; // Keep the same ID for consistency
+            noDataDiv.style.cssText = `
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: 100px;
+              background-color: #f8f9fa;
+              border-radius: 4px;
+              color: #6c757d;
+              font-size: 14px;
+              font-weight: 500;
+            `;
+            noDataDiv.textContent = 'No data available';
+            
+            // Replace canvas with message div
+            chartContainer.replaceChild(noDataDiv, evolutionChart);
+          }
+        }
 
         document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
         if (event?.target) event.target.classList.add('active');
@@ -423,6 +450,27 @@ document.addEventListener('DOMContentLoaded', function() {
       labels_count: labels.length,
       data_count: dataPoints.length
     });
+    
+    // Show "No data available" message
+    const evolutionChart = document.getElementById('evolution-chart');
+    if (evolutionChart) {
+      const noDataDiv = document.createElement('div');
+      noDataDiv.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: ${evolutionChart.height}px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        color: #6c757d;
+        font-size: 14px;
+        font-weight: 500;
+      `;
+      noDataDiv.textContent = 'No data available';
+      
+      // Replace canvas with message div
+      evolutionChart.parentNode.replaceChild(noDataDiv, evolutionChart);
+    }
   }
 });
 

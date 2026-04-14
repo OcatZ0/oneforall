@@ -162,13 +162,15 @@ class AgentController extends Controller
     /**
      * Get evolution data for user's agents using OpenSearch
      * @param string $timeRange The time range for the query
+     * @param array $agentIds Optional list of agent IDs to filter by (for non-admin users)
+     * @param bool $isAdmin Whether the user is admin
      * @param Carbon $baseTime Optional fixed point in time to use for queries (ensures consistency)
      */
-    private function getAgentEvolution($timeRange = '24h', $baseTime = null)
+    private function getAgentEvolution($timeRange = '24h', $agentIds = null, $isAdmin = true, $baseTime = null)
     {
         try {
             // Fetch evolution data from OpenSearch with fixed base time
-            $evolution = $this->openSearch->getAgentEvolutionByTimeRange($timeRange, null, $baseTime);
+            $evolution = $this->openSearch->getAgentEvolutionByTimeRange($timeRange, $agentIds, $baseTime, $isAdmin);
 
             return $evolution;
         } catch (\Exception $e) {
@@ -245,6 +247,9 @@ class AgentController extends Controller
     {
         $user = auth()->user();
         
+        // Ensure agentId is a string for comparison
+        $agentId = (string)$agentId;
+        
         // Admin has access to all agents
         if ($user->peran === 'admin') {
             return true;
@@ -255,11 +260,25 @@ class AgentController extends Controller
         
         if (!$dbAgent) {
             // Agent not in database - customer cannot access
+            \Log::warning('Agent not found in database', [
+                'agent_id' => $agentId,
+                'user_id' => $user->id_pengguna
+            ]);
             return false;
         }
         
         // Check if agent is assigned to this customer
-        return $dbAgent->id_pengguna === $user->id_pengguna;
+        $hasAccess = $dbAgent->id_pengguna === $user->id_pengguna;
+        
+        if (!$hasAccess) {
+            \Log::warning('Customer does not have access to agent', [
+                'agent_id' => $agentId,
+                'user_id' => $user->id_pengguna,
+                'agent_owner_id' => $dbAgent->id_pengguna
+            ]);
+        }
+        
+        return $hasAccess;
     }
 
     /**
@@ -441,7 +460,16 @@ class AgentController extends Controller
                 session([$sessionKey => $baseTime]);
             }
             
-            $evolution = $this->getAgentEvolution('24h', $baseTime);
+            // Get accessible agent IDs for filtering (non-admin users)
+            $isAdmin = $userRole === 'admin';
+            $accessibleAgentIds = null;
+            if (!$isAdmin) {
+                $accessibleAgentIds = $this->getAccessibleAgentIds();
+                // Convert to strings to match OpenSearch format
+                $accessibleAgentIds = array_map(fn($id) => (string)$id, $accessibleAgentIds ?? []);
+            }
+            
+            $evolution = $this->getAgentEvolution('24h', $accessibleAgentIds, $isAdmin, $baseTime);
             $evolutionLabels = json_encode($evolution['labels'] ?? []);
             $evolutionData   = json_encode($evolution['data']['active'] ?? $evolution['data'] ?? []);
 
@@ -526,6 +554,83 @@ class AgentController extends Controller
             ]);
         } catch (\Exception $e) {
             \Log::error('Get chart data error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch chart data'
+            ], 500);
+        }
+    }
+
+    /**
+     * Get chart data for detail page (agent-specific)
+     */
+    public function getDetailChartData($id)
+    {
+        try {
+            $agentId = (string)$id;  // Get from route parameter and ensure string type
+            $timeRange = request('time_range', '24h');
+            $complianceType = request('compliance_type', 'gdpr');
+            
+            $user = auth()->user();
+            
+            \Log::info('Detail chart data request initiated', [
+                'agent_id' => $agentId,
+                'user_id' => $user->id_pengguna ?? auth()->id(),
+                'user_role' => $user->peran,
+                'time_range' => $timeRange,
+                'compliance_type' => $complianceType
+            ]);
+            
+            // Check if user has access to this agent
+            if (!$this->userHasAccessToAgent($agentId)) {
+                \Log::warning('Unauthorized chart data access for agent detail', [
+                    'agent_id' => $agentId,
+                    'user_id' => auth()->id(),
+                    'user_role' => auth()->user()->peran
+                ]);
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized - You do not have access to this agent'
+                ], 403);
+            }
+            
+            \Log::info('Detail chart data request', [
+                'agent_id' => $agentId,
+                'time_range' => $timeRange,
+                'compliance_type' => $complianceType,
+                'user_id' => auth()->id()
+            ]);
+            
+            // Fetch events evolution for the agent
+            $eventsEvolution = $this->openSearch->getEventsCountEvolution($agentId, $timeRange);
+            
+            // Fetch compliance data for the agent
+            $complianceData = $this->openSearch->getAgentCompliance($agentId, $complianceType, $timeRange);
+            
+            // Fetch events evolution filtered by compliance type
+            $eventsComplianceEvolution = $this->openSearch->getEventsCountEvolutionByCompliance($agentId, $complianceType, $timeRange);
+            
+            \Log::info('Detail chart data generated', [
+                'agent_id' => $agentId,
+                'time_range' => $timeRange,
+                'events_labels_count' => count($eventsEvolution['labels'] ?? []),
+                'events_data_count' => count($eventsEvolution['data'] ?? []),
+                'compliance_count' => count($complianceData ?? [])
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'events_evolution' => $eventsEvolution,
+                'compliance_data' => $complianceData,
+                'events_compliance_evolution' => $eventsComplianceEvolution
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Get detail chart data error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -811,6 +916,325 @@ class AgentController extends Controller
                 'success' => false,
                 'message' => 'Sync failed: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Show security events page
+     */
+    public function securityEvents($id)
+    {
+        try {
+            if (!$this->userHasAccessToAgent($id)) {
+                \Log::warning('Unauthorized security events access', [
+                    'agent_id' => $id,
+                    'user_id' => auth()->id()
+                ]);
+                
+                return view('agent.security-events', [
+                    'agent' => null,
+                    'error' => 'You do not have permission to view this agent'
+                ]);
+            }
+            
+            $token = $this->getToken();
+            
+            if (!$token) {
+                return view('agent.security-events', [
+                    'agent' => null,
+                    'error' => 'Unable to authenticate with Wazuh API'
+                ]);
+            }
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(3)
+                ->withToken($token)
+                ->get("{$this->wazuhBase}/agents", [
+                    'agents_list' => $id
+                ]);
+
+            if (!$response->successful() || empty($response->json('data.affected_items'))) {
+                \Log::warning("Agent not found: $id");
+                return view('agent.security-events', [
+                    'agent' => null,
+                    'error' => 'Agent not found'
+                ]);
+            }
+
+            $wazuhAgent = $response->json('data.affected_items')[0];
+            
+            $agent = (object) [
+                'id_agent' => $wazuhAgent['id'] ?? null,
+                'nama' => $wazuhAgent['name'] ?? 'Unknown',
+                'ip' => $wazuhAgent['ip'] ?? 'N/A',
+                'os' => is_array($wazuhAgent['os']) ? ($wazuhAgent['os']['name'] ?? 'Unknown') : ($wazuhAgent['os'] ?? 'Unknown'),
+                'status' => $wazuhAgent['status'] ?? 'unknown',
+            ];
+
+            $agent = $this->enrichAgentData($agent);
+
+            // Fetch security events data from OpenSearch
+            $openSearch = new \App\Services\OpenSearchService();
+            $timeRange = request('time_range', '24h');
+            
+            $metrics = $openSearch->getSecurityEventsMetrics($id, 'now-' . $timeRange);
+            $alertGroupsEvolution = $openSearch->getAlertGroupsEvolution($id, $timeRange);
+            $alertsEvolutionByLevel = $openSearch->getAlertsEvolutionByLevel($id, $timeRange);
+            $topAlerts = $openSearch->getTopAlerts($id, $timeRange, 5);
+            $topRuleGroups = $openSearch->getTopRuleGroups($id, $timeRange, 5);
+            $topPCIDSS = $openSearch->getTopPCIDSS($id, $timeRange, 5);
+            $recentAlerts = $openSearch->getRecentAlerts($id, $timeRange, 10);
+
+            return view('agent.security-events', compact(
+                'agent',
+                'metrics',
+                'alertGroupsEvolution',
+                'alertsEvolutionByLevel',
+                'topAlerts',
+                'topRuleGroups',
+                'topPCIDSS',
+                'recentAlerts',
+                'timeRange'
+            ));
+        } catch (\Exception $e) {
+            \Log::error('Security events error: ' . $e->getMessage());
+            return view('agent.security-events', [
+                'agent' => null,
+                'error' => 'Error loading security events'
+            ]);
+        }
+    }
+
+    /**
+     * Show integrity monitoring page
+     */
+    public function integrityMonitoring($id)
+    {
+        try {
+            if (!$this->userHasAccessToAgent($id)) {
+                return view('agent.integrity-monitoring', [
+                    'agent' => null,
+                    'error' => 'You do not have permission to view this agent'
+                ]);
+            }
+            
+            $token = $this->getToken();
+            if (!$token) {
+                return view('agent.integrity-monitoring', [
+                    'agent' => null,
+                    'error' => 'Unable to authenticate with Wazuh API'
+                ]);
+            }
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(3)
+                ->withToken($token)
+                ->get("{$this->wazuhBase}/agents", [
+                    'agents_list' => $id
+                ]);
+
+            if (!$response->successful() || empty($response->json('data.affected_items'))) {
+                return view('agent.integrity-monitoring', [
+                    'agent' => null,
+                    'error' => 'Agent not found'
+                ]);
+            }
+
+            $wazuhAgent = $response->json('data.affected_items')[0];
+            
+            $agent = (object) [
+                'id_agent' => $wazuhAgent['id'] ?? null,
+                'nama' => $wazuhAgent['name'] ?? 'Unknown',
+                'ip' => $wazuhAgent['ip'] ?? 'N/A',
+                'os' => is_array($wazuhAgent['os']) ? ($wazuhAgent['os']['name'] ?? 'Unknown') : ($wazuhAgent['os'] ?? 'Unknown'),
+                'status' => $wazuhAgent['status'] ?? 'unknown',
+            ];
+
+            $agent = $this->enrichAgentData($agent);
+
+            return view('agent.integrity-monitoring', compact('agent'));
+        } catch (\Exception $e) {
+            \Log::error('Integrity monitoring error: ' . $e->getMessage());
+            return view('agent.integrity-monitoring', [
+                'agent' => null,
+                'error' => 'Error loading integrity monitoring'
+            ]);
+        }
+    }
+
+    /**
+     * Show SCA page
+     */
+    public function sca($id)
+    {
+        try {
+            if (!$this->userHasAccessToAgent($id)) {
+                return view('agent.sca', [
+                    'agent' => null,
+                    'error' => 'You do not have permission to view this agent'
+                ]);
+            }
+            
+            $token = $this->getToken();
+            if (!$token) {
+                return view('agent.sca', [
+                    'agent' => null,
+                    'error' => 'Unable to authenticate with Wazuh API'
+                ]);
+            }
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(3)
+                ->withToken($token)
+                ->get("{$this->wazuhBase}/agents", [
+                    'agents_list' => $id
+                ]);
+
+            if (!$response->successful() || empty($response->json('data.affected_items'))) {
+                return view('agent.sca', [
+                    'agent' => null,
+                    'error' => 'Agent not found'
+                ]);
+            }
+
+            $wazuhAgent = $response->json('data.affected_items')[0];
+            
+            $agent = (object) [
+                'id_agent' => $wazuhAgent['id'] ?? null,
+                'nama' => $wazuhAgent['name'] ?? 'Unknown',
+                'ip' => $wazuhAgent['ip'] ?? 'N/A',
+                'os' => is_array($wazuhAgent['os']) ? ($wazuhAgent['os']['name'] ?? 'Unknown') : ($wazuhAgent['os'] ?? 'Unknown'),
+                'status' => $wazuhAgent['status'] ?? 'unknown',
+            ];
+
+            $agent = $this->enrichAgentData($agent);
+
+            return view('agent.sca', compact('agent'));
+        } catch (\Exception $e) {
+            \Log::error('SCA error: ' . $e->getMessage());
+            return view('agent.sca', [
+                'agent' => null,
+                'error' => 'Error loading SCA'
+            ]);
+        }
+    }
+
+    /**
+     * Show vulnerabilities page
+     */
+    public function vulnerabilities($id)
+    {
+        try {
+            if (!$this->userHasAccessToAgent($id)) {
+                return view('agent.vulnerabilities', [
+                    'agent' => null,
+                    'error' => 'You do not have permission to view this agent'
+                ]);
+            }
+            
+            $token = $this->getToken();
+            if (!$token) {
+                return view('agent.vulnerabilities', [
+                    'agent' => null,
+                    'error' => 'Unable to authenticate with Wazuh API'
+                ]);
+            }
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(3)
+                ->withToken($token)
+                ->get("{$this->wazuhBase}/agents", [
+                    'agents_list' => $id
+                ]);
+
+            if (!$response->successful() || empty($response->json('data.affected_items'))) {
+                return view('agent.vulnerabilities', [
+                    'agent' => null,
+                    'error' => 'Agent not found'
+                ]);
+            }
+
+            $wazuhAgent = $response->json('data.affected_items')[0];
+            
+            $agent = (object) [
+                'id_agent' => $wazuhAgent['id'] ?? null,
+                'nama' => $wazuhAgent['name'] ?? 'Unknown',
+                'ip' => $wazuhAgent['ip'] ?? 'N/A',
+                'os' => is_array($wazuhAgent['os']) ? ($wazuhAgent['os']['name'] ?? 'Unknown') : ($wazuhAgent['os'] ?? 'Unknown'),
+                'status' => $wazuhAgent['status'] ?? 'unknown',
+            ];
+
+            $agent = $this->enrichAgentData($agent);
+
+            return view('agent.vulnerabilities', compact('agent'));
+        } catch (\Exception $e) {
+            \Log::error('Vulnerabilities error: ' . $e->getMessage());
+            return view('agent.vulnerabilities', [
+                'agent' => null,
+                'error' => 'Error loading vulnerabilities'
+            ]);
+        }
+    }
+
+    /**
+     * Show MITRE ATT&CK page
+     */
+    public function mitreAttack($id)
+    {
+        try {
+            if (!$this->userHasAccessToAgent($id)) {
+                return view('agent.mitre-attack', [
+                    'agent' => null,
+                    'error' => 'You do not have permission to view this agent'
+                ]);
+            }
+            
+            $token = $this->getToken();
+            if (!$token) {
+                return view('agent.mitre-attack', [
+                    'agent' => null,
+                    'error' => 'Unable to authenticate with Wazuh API'
+                ]);
+            }
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(3)
+                ->withToken($token)
+                ->get("{$this->wazuhBase}/agents", [
+                    'agents_list' => $id
+                ]);
+
+            if (!$response->successful() || empty($response->json('data.affected_items'))) {
+                return view('agent.mitre-attack', [
+                    'agent' => null,
+                    'error' => 'Agent not found'
+                ]);
+            }
+
+            $wazuhAgent = $response->json('data.affected_items')[0];
+            
+            $agent = (object) [
+                'id_agent' => $wazuhAgent['id'] ?? null,
+                'nama' => $wazuhAgent['name'] ?? 'Unknown',
+                'ip' => $wazuhAgent['ip'] ?? 'N/A',
+                'os' => is_array($wazuhAgent['os']) ? ($wazuhAgent['os']['name'] ?? 'Unknown') : ($wazuhAgent['os'] ?? 'Unknown'),
+                'status' => $wazuhAgent['status'] ?? 'unknown',
+            ];
+
+            $agent = $this->enrichAgentData($agent);
+
+            return view('agent.mitre-attack', compact('agent'));
+        } catch (\Exception $e) {
+            \Log::error('MITRE ATT&CK error: ' . $e->getMessage());
+            return view('agent.mitre-attack', [
+                'agent' => null,
+                'error' => 'Error loading MITRE ATT&CK'
+            ]);
         }
     }
 }

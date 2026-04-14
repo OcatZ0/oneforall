@@ -23,7 +23,13 @@ Route::middleware('auth')->group(function () {
     // Agent routes - available for both admin and customer
     Route::get('/agent', [AgentController::class, 'index'])->name('agent');
     Route::get('/agent/{id}/detail', [AgentController::class, 'detail'])->name('agent.detail');
+    Route::get('/agent/{id}/security-events', [AgentController::class, 'securityEvents'])->name('agent.security-events');
+    Route::get('/agent/{id}/integrity-monitoring', [AgentController::class, 'integrityMonitoring'])->name('agent.integrity-monitoring');
+    Route::get('/agent/{id}/sca', [AgentController::class, 'sca'])->name('agent.sca');
+    Route::get('/agent/{id}/vulnerabilities', [AgentController::class, 'vulnerabilities'])->name('agent.vulnerabilities');
+    Route::get('/agent/{id}/mitre-attack', [AgentController::class, 'mitreAttack'])->name('agent.mitre-attack');
     Route::get('/agent/chart-data', [AgentController::class, 'getChartData'])->name('agent.chart-data');
+    Route::get('/agent/{id}/chart-data', [AgentController::class, 'getDetailChartData'])->name('agent.detail-chart-data');
     Route::post('/agent/sync', [AgentController::class, 'syncAgentsFromWazuh'])->name('agent.sync');
 
     // Admin only routes

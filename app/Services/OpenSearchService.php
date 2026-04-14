@@ -30,9 +30,21 @@ class OpenSearchService
     /**
      * Get alert counts for the last 7 days
      * @param array $agentIds Optional list of agent IDs to filter by
+     * @param bool $isAdmin Whether the user is admin (true = show all, false = filter by agentIds)
      */
-    public function getAlertTrendLast7Days($agentIds = null)
+    public function getAlertTrendLast7Days($agentIds = null, $isAdmin = true)
     {
+        // For non-admin customers with no accessible agents, return empty
+        if (!$isAdmin && empty($agentIds)) {
+            \Log::info('Alert trend - customer with no accessible agents, returning empty');
+            return [];
+        }
+
+        // Ensure agent IDs are strings
+        if (is_array($agentIds) && !empty($agentIds)) {
+            $agentIds = array_map('strval', $agentIds);
+        }
+
         $query = [
             'size' => 0,
             'aggs' => [
@@ -60,19 +72,17 @@ class OpenSearchService
             ]
         ];
         
-        // Add agent filter if provided
-        if ($agentIds && !empty($agentIds)) {
+        // Add agent filter only for non-admin customers
+        if (!$isAdmin && is_array($agentIds) && !empty($agentIds)) {
             $query['query']['bool']['filter'][] = [
                 'terms' => ['agent.id' => $agentIds]
             ];
-            \Log::info('Alert trend query with agent filter', [
+            \Log::info('Alert trend - filtering by customer agent IDs', [
                 'agent_ids' => $agentIds,
                 'agent_count' => count($agentIds),
             ]);
-        } else {
-            \Log::info('Alert trend query - no agent filter (admin or no accessible agents)', [
-                'agent_ids' => $agentIds,
-            ]);
+        } else if ($isAdmin) {
+            \Log::info('Alert trend - admin mode, showing all agents');
         }
 
         try {
@@ -114,9 +124,21 @@ class OpenSearchService
     /**
      * Get alert severity distribution (Critical, High, Medium, Low)
      * @param array $agentIds Optional list of agent IDs to filter by
+     * @param bool $isAdmin Whether the user is admin (true = show all, false = filter by agentIds)
      */
-    public function getAlertSeverityDistribution($agentIds = null)
+    public function getAlertSeverityDistribution($agentIds = null, $isAdmin = true)
     {
+        // For non-admin customers with no accessible agents, return zero severity
+        if (!$isAdmin && empty($agentIds)) {
+            \Log::info('Alert severity - customer with no accessible agents, returning zeros');
+            return ['critical' => 0, 'high' => 0, 'medium' => 0, 'low' => 0];
+        }
+
+        // Ensure agent IDs are strings
+        if (is_array($agentIds) && !empty($agentIds)) {
+            $agentIds = array_map('strval', $agentIds);
+        }
+
         $query = [
             'size' => 0,
             'aggs' => [
@@ -142,11 +164,17 @@ class OpenSearchService
             ]
         ];
         
-        // Add agent filter if provided
-        if ($agentIds && !empty($agentIds)) {
+        // Add agent filter only for non-admin customers
+        if (!$isAdmin && is_array($agentIds) && !empty($agentIds)) {
             $query['query']['bool']['filter'][] = [
                 'terms' => ['agent.id' => $agentIds]
             ];
+            \Log::info('Alert severity - filtering by customer agent IDs', [
+                'agent_ids' => $agentIds,
+                'agent_count' => count($agentIds),
+            ]);
+        } else if ($isAdmin) {
+            \Log::info('Alert severity - admin mode');
         }
 
         try {
@@ -211,10 +239,11 @@ class OpenSearchService
     /**
      * Get total alert count
      * @param array $agentIds Optional list of agent IDs to filter by
+     * @param bool $isAdmin Whether the user is admin
      */
-    public function getTotalAlertCount($agentIds = null)
+    public function getTotalAlertCount($agentIds = null, $isAdmin = true)
     {
-        $severity = $this->getAlertSeverityDistribution($agentIds);
+        $severity = $this->getAlertSeverityDistribution($agentIds, $isAdmin);
         return array_sum($severity);
     }
 
@@ -223,10 +252,17 @@ class OpenSearchService
      * @param string $timeRange Time range identifier (15m, 30m, 1h, 24h, 7d, 30d, 90d, 1y, today, week)
      * @param array $agentIds Optional list of agent IDs to filter by
      * @param Carbon $baseTime Optional fixed timestamp to use as 'now' for consistent results
+     * @param bool $isAdmin Whether the user is admin (true = show all, false = filter by agentIds)
      * @return array Array with 'labels' and 'data' keys containing the evolution data
      */
-    public function getAgentEvolutionByTimeRange($timeRange = '24h', $agentIds = null, $baseTime = null)
+    public function getAgentEvolutionByTimeRange($timeRange = '24h', $agentIds = null, $baseTime = null, $isAdmin = true)
     {
+        // For non-admin customers with no accessible agents, return empty
+        if (!$isAdmin && empty($agentIds)) {
+            \Log::info('[AgentEvolution] Customer with no accessible agents, returning empty');
+            return ['labels' => [], 'data' => []];
+        }
+
         // Generate cache key
         $cacheKey = 'agent_evolution_' . $timeRange . '_' . md5(json_encode($agentIds ?? []));
         
@@ -331,6 +367,8 @@ class OpenSearchService
         ];
 
         if ($agentIds && !empty($agentIds)) {
+            // Convert agent IDs to strings for consistency
+            $agentIds = array_map('strval', $agentIds);
             $query['query']['bool']['filter'][] = [
                 'terms' => ['id' => $agentIds]
             ];
@@ -546,10 +584,23 @@ class OpenSearchService
 
     /**
      * Get OS distribution from Wazuh Agent API
+     * @param array $agentIds Optional list of agent IDs to filter by
+     * @param bool $isAdmin Whether the user is admin
      */
-    public function getOsDistribution($agentIds = null)
+    public function getOsDistribution($agentIds = null, $isAdmin = true)
     {
         try {
+            // For non-admin customers with no accessible agents, return empty
+            if (!$isAdmin && empty($agentIds)) {
+                \Log::info('OS distribution - customer with no accessible agents, returning empty');
+                return [];
+            }
+
+            // Ensure agent IDs are strings
+            if (is_array($agentIds) && !empty($agentIds)) {
+                $agentIds = array_map('strval', $agentIds);
+            }
+
             // Get Wazuh API token with aggressive timeout
             $tokenResponse = Http::withoutVerifying()
                 ->connectTimeout(2)
@@ -583,16 +634,32 @@ class OpenSearchService
             }
 
             $agents = $agentsResponse->json('data.affected_items') ?? [];
-            \Log::info('Agents retrieved: ' . count($agents));
+            \Log::info('Agents retrieved from Wazuh API', [
+                'total_count' => count($agents),
+                'is_admin' => $isAdmin,
+                'requested_agent_ids' => $agentIds,
+            ]);
             
             if (empty($agents)) {
                 \Log::warning('No agents returned from Wazuh API');
                 return $this->getOsFallbackData();
             }
 
-            // Filter agents if specified
-            if ($agentIds && !empty($agentIds)) {
-                $agents = array_filter($agents, fn($agent) => in_array($agent['id'] ?? null, $agentIds));
+            // Filter agents if specified (non-admin with agent IDs)
+            if (!$isAdmin && is_array($agentIds) && !empty($agentIds)) {
+                $originalCount = count($agents);
+                $agents = array_filter($agents, function($agent) use ($agentIds) {
+                    $agentId = (string)($agent['id'] ?? null);
+                    return in_array($agentId, $agentIds, true);
+                });
+                $filteredCount = count($agents);
+                \Log::info('OS distribution - filtering by customer agent IDs', [
+                    'original_count' => $originalCount,
+                    'filtered_count' => $filteredCount,
+                    'accessible_ids' => $agentIds,
+                ]);
+            } else if ($isAdmin) {
+                \Log::info('OS distribution - admin mode, showing all agents');
             }
 
             // Aggregate agents by OS
@@ -623,9 +690,23 @@ class OpenSearchService
 
     /**
      * Get top triggered rules
+     * @param int $limit Number of rules to return
+     * @param array $agentIds Optional list of agent IDs to filter by
+     * @param bool $isAdmin Whether the user is admin
      */
-    public function getTopTriggeredRules($limit = 5, $agentIds = null)
+    public function getTopTriggeredRules($limit = 5, $agentIds = null, $isAdmin = true)
     {
+        // For non-admin customers with no accessible agents, return empty
+        if (!$isAdmin && empty($agentIds)) {
+            \Log::info('Top rules - customer with no accessible agents, returning empty');
+            return [];
+        }
+
+        // Ensure agent IDs are strings
+        if (is_array($agentIds) && !empty($agentIds)) {
+            $agentIds = array_map('strval', $agentIds);
+        }
+
         $query = [
             'size' => 0,
             'aggs' => [
@@ -665,11 +746,17 @@ class OpenSearchService
             ]
         ];
         
-        // Add agent filter if provided
-        if ($agentIds && !empty($agentIds)) {
+        // Add agent filter only for non-admin customers
+        if (!$isAdmin && is_array($agentIds) && !empty($agentIds)) {
             $query['query']['bool']['filter'][] = [
                 'terms' => ['agent.id' => $agentIds]
             ];
+            \Log::info('Top rules - filtering by customer agent IDs', [
+                'agent_ids' => $agentIds,
+                'agent_count' => count($agentIds),
+            ]);
+        } else if ($isAdmin) {
+            \Log::info('Top rules - admin mode');
         }
 
         try {
@@ -718,9 +805,23 @@ class OpenSearchService
 
     /**
      * Get top agents by alert count
+     * @param int $limit Number of agents to return
+     * @param array $agentIds Optional list of agent IDs to filter by
+     * @param bool $isAdmin Whether the user is admin
      */
-    public function getTopAgentsByAlerts($limit = 5, $agentIds = null)
+    public function getTopAgentsByAlerts($limit = 5, $agentIds = null, $isAdmin = true)
     {
+        // For non-admin customers with no accessible agents, return empty
+        if (!$isAdmin && empty($agentIds)) {
+            \Log::info('Top agents - customer with no accessible agents, returning empty');
+            return [];
+        }
+
+        // Ensure agent IDs are strings
+        if (is_array($agentIds) && !empty($agentIds)) {
+            $agentIds = array_map('strval', $agentIds);
+        }
+
         $query = [
             'size' => 0,
             'aggs' => [
@@ -766,11 +867,17 @@ class OpenSearchService
             ]
         ];
         
-        // Add agent filter if provided
-        if ($agentIds && !empty($agentIds)) {
+        // Add agent filter only for non-admin customers
+        if (!$isAdmin && is_array($agentIds) && !empty($agentIds)) {
             $query['query']['bool']['filter'][] = [
                 'terms' => ['agent.id' => $agentIds]
             ];
+            \Log::info('Top agents - filtering by customer agent IDs', [
+                'agent_ids' => $agentIds,
+                'agent_count' => count($agentIds),
+            ]);
+        } else if ($isAdmin) {
+            \Log::info('Top agents - admin mode');
         }
 
         try {
@@ -824,7 +931,7 @@ class OpenSearchService
      */
     private function getFallbackData()
     {
-        return [1420, 1835, 1230, 2105, 1784, 980, 1493];
+        return [0, 0, 0, 0, 0, 0, 0];
     }
 
     private function getOsFallbackData()
@@ -1178,5 +1285,530 @@ class OpenSearchService
         }
 
         return ['labels' => $labels, 'data' => array_fill(0, count($labels), 0)];
+    }
+
+    /**
+     * Get security events metrics for an agent
+     */
+    public function getSecurityEventsMetrics($agentId, $timeRange = 'now-24h')
+    {
+        $metrics = [
+            'total' => 0,
+            'level12' => 0,
+            'auth_failure' => 0,
+            'auth_success' => 0,
+        ];
+
+        try {
+            // Total alerts
+            $totalQuery = [
+                'size' => 0,
+                'query' => [
+                    'bool' => [
+                        'must' => [['term' => ['agent.id' => $agentId]]],
+                        'filter' => [['range' => ['timestamp' => ['gte' => $timeRange]]]]
+                    ]
+                ]
+            ];
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $totalQuery);
+
+            if ($response->successful()) {
+                $metrics['total'] = $response->json('hits.total.value') ?? 0;
+            }
+
+            // Level 12+ alerts
+            $level12Query = $totalQuery;
+            $level12Query['query']['bool']['filter'][] = [
+                'range' => ['rule.level' => ['gte' => 12]]
+            ];
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $level12Query);
+
+            if ($response->successful()) {
+                $metrics['level12'] = $response->json('hits.total.value') ?? 0;
+            }
+
+            // Authentication failure
+            $authFailQuery = $totalQuery;
+            $authFailQuery['query']['bool']['filter'][] = [
+                'bool' => [
+                    'should' => [
+                        ['match' => ['rule.groups' => 'authentication_failed']],
+                        ['match' => ['rule.groups' => 'authentication_failures']],
+                        ['match' => ['rule.groups' => 'win_authentication_failed']]
+                    ],
+                    'minimum_should_match' => 1
+                ]
+            ];
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $authFailQuery);
+
+            if ($response->successful()) {
+                $metrics['auth_failure'] = $response->json('hits.total.value') ?? 0;
+            }
+
+            // Authentication success
+            $authSuccessQuery = $totalQuery;
+            $authSuccessQuery['query']['bool']['filter'][] = [
+                'match' => ['rule.groups' => 'authentication_success']
+            ];
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $authSuccessQuery);
+
+            if ($response->successful()) {
+                $metrics['auth_success'] = $response->json('hits.total.value') ?? 0;
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch security events metrics: ' . $e->getMessage());
+        }
+
+        return $metrics;
+    }
+
+    /**
+     * Get alert groups evolution chart data
+     */
+    public function getAlertGroupsEvolution($agentId, $timeRange = '24h')
+    {
+        $config = $this->getTimeRangeConfig($timeRange);
+        
+        try {
+            $query = [
+                'size' => 0,
+                'aggs' => [
+                    'groups_evolution' => [
+                        'date_histogram' => [
+                            'field' => 'timestamp',
+                            'fixed_interval' => $config['interval'],
+                            'min_doc_count' => 1,
+                        ],
+                        'aggs' => [
+                            'groups' => [
+                                'terms' => [
+                                    'field' => 'rule.groups',
+                                    'size' => 5,
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                'query' => [
+                    'bool' => [
+                        'must' => [['term' => ['agent.id' => $agentId]]],
+                        'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]]
+                    ]
+                ]
+            ];
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+
+            if ($response->successful()) {
+                return $this->parseGroupsEvolution($response->json());
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch alert groups evolution: ' . $e->getMessage());
+        }
+
+        return ['labels' => [], 'datasets' => []];
+    }
+
+    /**
+     * Parse groups evolution response
+     */
+    private function parseGroupsEvolution($data)
+    {
+        $buckets = $data['aggregations']['groups_evolution']['buckets'] ?? [];
+        $labels = [];
+        $groupsData = [];
+
+        foreach ($buckets as $bucket) {
+            // OpenSearch timestamps are in milliseconds and UTC
+            // Format as ISO string so JavaScript can handle timezone conversion
+            $time = Carbon::createFromTimestampMs($bucket['key'], 'UTC');
+            $labels[] = $time->toIso8601String();
+
+            $groups = $bucket['groups']['buckets'] ?? [];
+            foreach ($groups as $group) {
+                $groupName = $group['key'];
+                if (!isset($groupsData[$groupName])) {
+                    $groupsData[$groupName] = [];
+                }
+                $groupsData[$groupName][] = $group['doc_count'];
+            }
+        }
+
+        // Ensure all groups have data for all time buckets
+        foreach ($groupsData as &$data) {
+            while (count($data) < count($labels)) {
+                $data[] = 0;
+            }
+        }
+
+        $datasets = [];
+        $colors = ['#fd7e14', '#ffc107', '#dc3545', '#6f42c1', '#20c997', '#0d6efd'];
+        foreach ($groupsData as $groupName => $values) {
+            $datasets[] = [
+                'label' => $groupName,
+                'data' => $values,
+                'borderColor' => array_shift($colors) ?: '#6f42c1',
+                'fill' => true,
+                'tension' => 0.4,
+                'borderWidth' => 2
+            ];
+        }
+
+        return ['labels' => $labels, 'datasets' => $datasets];
+    }
+
+    /**
+     * Get top alerts
+     */
+    public function getTopAlerts($agentId, $timeRange = '24h', $limit = 5)
+    {
+        $config = $this->getTimeRangeConfig($timeRange);
+        
+        try {
+            $query = [
+                'size' => 0,
+                'aggs' => [
+                    'top_alerts' => [
+                        'terms' => [
+                            'field' => 'rule.description',
+                            'size' => $limit,
+                        ]
+                    ]
+                ],
+                'query' => [
+                    'bool' => [
+                        'must' => [['term' => ['agent.id' => $agentId]]],
+                        'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]]
+                    ]
+                ]
+            ];
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+
+            if ($response->successful()) {
+                $buckets = $response->json('aggregations.top_alerts.buckets') ?? [];
+                $labels = [];
+                $data = [];
+
+                foreach ($buckets as $bucket) {
+                    $labels[] = substr($bucket['key'], 0, 50);
+                    $data[] = $bucket['doc_count'];
+                }
+
+                return ['labels' => $labels, 'data' => $data];
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch top alerts: ' . $e->getMessage());
+        }
+
+        return ['labels' => [], 'data' => []];
+    }
+
+    /**
+     * Get top rule groups
+     */
+    public function getTopRuleGroups($agentId, $timeRange = '24h', $limit = 5)
+    {
+        $config = $this->getTimeRangeConfig($timeRange);
+        
+        try {
+            $query = [
+                'size' => 0,
+                'aggs' => [
+                    'top_groups' => [
+                        'terms' => [
+                            'field' => 'rule.groups',
+                            'size' => $limit,
+                        ]
+                    ]
+                ],
+                'query' => [
+                    'bool' => [
+                        'must' => [['term' => ['agent.id' => $agentId]]],
+                        'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]]
+                    ]
+                ]
+            ];
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+
+            if ($response->successful()) {
+                $buckets = $response->json('aggregations.top_groups.buckets') ?? [];
+                $labels = [];
+                $data = [];
+
+                foreach ($buckets as $bucket) {
+                    $labels[] = $bucket['key'];
+                    $data[] = $bucket['doc_count'];
+                }
+
+                return ['labels' => $labels, 'data' => $data];
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch top rule groups: ' . $e->getMessage());
+        }
+
+        return ['labels' => [], 'data' => []];
+    }
+
+    /**
+     * Get top PCI DSS requirements
+     */
+    public function getTopPCIDSS($agentId, $timeRange = '24h', $limit = 5)
+    {
+        $config = $this->getTimeRangeConfig($timeRange);
+        
+        try {
+            $query = [
+                'size' => 0,
+                'aggs' => [
+                    'top_pci_dss' => [
+                        'terms' => [
+                            'field' => 'rule.pci_dss',
+                            'size' => $limit,
+                        ]
+                    ]
+                ],
+                'query' => [
+                    'bool' => [
+                        'must' => [['term' => ['agent.id' => $agentId]]],
+                        'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]]
+                    ]
+                ]
+            ];
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+
+            if ($response->successful()) {
+                $buckets = $response->json('aggregations.top_pci_dss.buckets') ?? [];
+                $labels = [];
+                $data = [];
+
+                foreach ($buckets as $bucket) {
+                    $labels[] = $bucket['key'];
+                    $data[] = $bucket['doc_count'];
+                }
+
+                return ['labels' => $labels, 'data' => $data];
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch top PCI DSS: ' . $e->getMessage());
+        }
+
+        return ['labels' => [], 'data' => []];
+    }
+
+    /**
+     * Get recent alerts for table
+     */
+    public function getRecentAlerts($agentId, $timeRange = '24h', $limit = 10)
+    {
+        $config = $this->getTimeRangeConfig($timeRange);
+        
+        try {
+            $query = [
+                'size' => $limit,
+                'sort' => [['timestamp' => 'desc']],
+                '_source' => ['timestamp', 'rule.id', 'rule.description', 'rule.level', 'rule.groups'],
+                'query' => [
+                    'bool' => [
+                        'must' => [['term' => ['agent.id' => $agentId]]],
+                        'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]]
+                    ]
+                ]
+            ];
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+
+            if ($response->successful()) {
+                $hits = $response->json('hits.hits') ?? [];
+                $alerts = [];
+
+                foreach ($hits as $hit) {
+                    $source = $hit['_source'];
+                    $alerts[] = [
+                        'timestamp' => $source['timestamp'] ?? '',
+                        'rule_id' => $source['rule']['id'] ?? 'N/A',
+                        'description' => $source['rule']['description'] ?? 'No description',
+                        'level' => $source['rule']['level'] ?? 0,
+                        'groups' => is_array($source['rule']['groups'] ?? []) ? implode(', ', $source['rule']['groups']) : $source['rule']['groups'] ?? 'unknown',
+                        'count' => 1,
+                    ];
+                }
+
+                return $alerts;
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch recent alerts: ' . $e->getMessage());
+        }
+
+        return [];
+    }
+
+    /**
+     * Get alerts evolution by severity level
+     */
+    public function getAlertsEvolutionByLevel($agentId, $timeRange = '24h')
+    {
+        $config = $this->getTimeRangeConfig($timeRange);
+        
+        try {
+            $query = [
+                'size' => 0,
+                'aggs' => [
+                    'alerts_evolution' => [
+                        'date_histogram' => [
+                            'field' => 'timestamp',
+                            'fixed_interval' => $config['interval'],
+                            'min_doc_count' => 1,
+                        ],
+                        'aggs' => [
+                            'levels' => [
+                                'terms' => [
+                                    'field' => 'rule.level',
+                                    'size' => 10,
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                'query' => [
+                    'bool' => [
+                        'must' => [['term' => ['agent.id' => $agentId]]],
+                        'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]]
+                    ]
+                ]
+            ];
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query);
+
+            if ($response->successful()) {
+                return $this->parseAlertsEvolution($response->json());
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch alerts evolution by level: ' . $e->getMessage());
+        }
+
+        return ['labels' => [], 'datasets' => []];
+    }
+
+    /**
+     * Parse alerts evolution response
+     */
+    private function parseAlertsEvolution($data)
+    {
+        $buckets = $data['aggregations']['alerts_evolution']['buckets'] ?? [];
+        $labels = [];
+        $levelData = [];
+
+        foreach ($buckets as $bucket) {
+            // OpenSearch timestamps are in milliseconds and UTC
+            // Format as ISO string so JavaScript can handle timezone conversion
+            $time = Carbon::createFromTimestampMs($bucket['key'], 'UTC');
+            $labels[] = $time->toIso8601String();
+
+            $levels = $bucket['levels']['buckets'] ?? [];
+            foreach ($levels as $level) {
+                $levelValue = $level['key'];
+                if (!isset($levelData[$levelValue])) {
+                    $levelData[$levelValue] = [];
+                }
+                $levelData[$levelValue][] = $level['doc_count'];
+            }
+        }
+
+        // Ensure all levels have data for all time buckets
+        foreach ($levelData as &$data) {
+            while (count($data) < count($labels)) {
+                $data[] = 0;
+            }
+        }
+
+        // Sort levels in descending order and take top 5
+        krsort($levelData);
+        $levelData = array_slice($levelData, 0, 5, true);
+
+        $datasets = [];
+        $colors = ['#dc3545', '#fd7e14', '#ffc107', '#0d6efd', '#20c997'];
+        $colorIndex = 0;
+
+        foreach ($levelData as $level => $values) {
+            $datasets[] = [
+                'label' => "Level $level",
+                'data' => $values,
+                'borderColor' => $colors[$colorIndex % count($colors)],
+                'fill' => true,
+                'tension' => 0.4,
+                'borderWidth' => 2
+            ];
+            $colorIndex++;
+        }
+
+        return ['labels' => $labels, 'datasets' => $datasets];
+    }
+
+    /**
+     * Get time range configuration
+     */
+    private function getTimeRangeConfig($timeRange)
+    {
+        $config = [
+            '15m' => ['duration' => '15m', 'interval' => '3m'],
+            '30m' => ['duration' => '30m', 'interval' => '5m'],
+            '1h' => ['duration' => '1h', 'interval' => '10m'],
+            '24h' => ['duration' => '24h', 'interval' => '30m'],
+            '7d' => ['duration' => '7d', 'interval' => '12h'],
+            '30d' => ['duration' => '30d', 'interval' => '1d'],
+            '90d' => ['duration' => '90d', 'interval' => '1d'],
+            '1y' => ['duration' => '1y', 'interval' => '1d'],
+            'today' => ['duration' => '1d', 'interval' => '30m'],
+            'week' => ['duration' => '7d', 'interval' => '1d'],
+        ];
+
+        return $config[$timeRange] ?? $config['24h'];
     }
 }

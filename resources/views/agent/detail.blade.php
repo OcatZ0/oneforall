@@ -8,27 +8,32 @@
   <div class="d-flex align-items-center px-3">
     <ul class="nav flex-nowrap overflow-auto">
       <li class="nav-item">
-        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="#">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small active" href="{{ route('agent.detail', $agent->id_agent) }}">
+          <span class="mdi mdi-home"></span> Details
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small active" href="{{ route('agent.security-events', $agent->id_agent) }}">
           <span class="mdi mdi-format-list-bulleted"></span> Security events
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="#">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.integrity-monitoring', $agent->id_agent) }}">
           <span class="mdi mdi-shield"></span> Integrity monitoring
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="#">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.sca', $agent->id_agent) }}">
           <span class="mdi mdi-clock-outline"></span> SCA
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="#">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.vulnerabilities', $agent->id_agent) }}">
           <span class="mdi mdi-bug"></span> Vulnerabilities
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="#">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.mitre-attack', $agent->id_agent) }}">
           <span class="mdi mdi-target"></span> MITRE ATT&amp;CK
         </a>
       </li>
@@ -133,13 +138,13 @@
     </div>
 
     <!-- Dropdown di bawah card, pojok kanan -->
-    <div class="d-flex justify-content-end mt-1">
-      <div class="dropdown">
+    <div class="d-flex justify-content-end mt-1" style="position: relative; z-index: 1050;">
+      <div class="dropdown" style="position: relative;">
         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="timeRangeDropdown"
           data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="border: none; background: transparent; padding: 0; font-weight: normal;">
           <span id="timeRangeLabel">Last 24 hours</span>
         </button>
-        <div class="dropdown-menu dropdown-menu-end" aria-labelledby="timeRangeDropdown" style="min-width:150px;">
+        <div class="dropdown-menu dropdown-menu-end" aria-labelledby="timeRangeDropdown" style="min-width:150px; z-index: 1050;">
           <a class="dropdown-item" href="#" onclick="updateChart('15m', event); return false;">Last 15 minutes</a>
           <a class="dropdown-item" href="#" onclick="updateChart('30m', event); return false;">Last 30 minutes</a>
           <a class="dropdown-item" href="#" onclick="updateChart('1h', event); return false;">Last 1 hour</a>
@@ -268,6 +273,7 @@
         <div class="card-body">
           <p class="mb-2 small"><span class="text-success me-1">●</span> Count</p>
           <canvas id="eventsChart" height="90"></canvas>
+          <p class="text-center mb-0 mt-1"><small class="text-muted" id="chartIntervalText">timestamp per hour</small></p>
         </div>
       </div>
     </div>
@@ -343,8 +349,326 @@
 @endif
  
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
 <script>
+// Global variables
+let eventsChartInstance = null;
+let complianceChartInstance = null;
+let currentTimeRange = '24h';
+let currentComplianceType = 'gdpr';
+
+// Initialize dropdown when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  const dropdownBtn = document.getElementById('timeRangeDropdown');
+  if (dropdownBtn) {
+    // Initialize Bootstrap dropdown
+    if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+      new bootstrap.Dropdown(dropdownBtn);
+    }
+  }
+});
+
+const timeRangeLabels = {
+  '15m': 'Last 15 minutes',
+  '30m': 'Last 30 minutes',
+  '1h': 'Last 1 hour',
+  '24h': 'Last 24 hours',
+  '7d': 'Last 7 days',
+  '30d': 'Last 30 days',
+  '90d': 'Last 90 days',
+  '1y': 'Last 1 year',
+  'today': 'Today',
+  'week': 'This week'
+};
+
+const intervalTexts = {
+  '15m': 'timestamp per 3 minutes',
+  '30m': 'timestamp per 5 minutes',
+  '1h': 'timestamp per 10 minutes',
+  '24h': 'timestamp per hour',
+  '7d': 'timestamp per 12 hours',
+  '30d': 'timestamp per day',
+  '90d': 'timestamp per day',
+  '1y': 'timestamp per day',
+  'today': 'timestamp per hour',
+  'week': 'timestamp per day'
+};
+
+// Initialize events chart
+function initEventsChart(labels, data) {
+  const chartContainer = document.getElementById('eventsChart')?.parentElement;
+  if (!chartContainer) return;
+
+  if (labels.length === 0 || data.length === 0) {
+    // Destroy existing chart if any
+    if (eventsChartInstance) {
+      eventsChartInstance.destroy();
+      eventsChartInstance = null;
+    }
+    
+    // Show "No data available" message
+    const eventsChart = document.getElementById('eventsChart');
+    if (eventsChart && eventsChart.tagName === 'CANVAS') {
+      const noDataDiv = document.createElement('div');
+      noDataDiv.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 90px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        color: #6c757d;
+        font-size: 14px;
+        font-weight: 500;
+      `;
+      noDataDiv.textContent = 'No events data available';
+      eventsChart.parentNode.replaceChild(noDataDiv, eventsChart);
+    }
+    return;
+  }
+
+  // Replace div back to canvas if needed
+  const existingDiv = chartContainer.querySelector('div[style*="No events data"]');
+  if (existingDiv) {
+    const newCanvas = document.createElement('canvas');
+    newCanvas.id = 'eventsChart';
+    newCanvas.height = '90';
+    existingDiv.parentNode.replaceChild(newCanvas, existingDiv);
+  }
+
+  const ctx = document.getElementById('eventsChart')?.getContext('2d');
+  if (!ctx) return;
+
+  // Destroy existing chart
+  if (eventsChartInstance) {
+    eventsChartInstance.destroy();
+  }
+
+  eventsChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Count',
+        data,
+        borderColor: '#20c997',
+        backgroundColor: 'rgba(32,201,151,0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        pointBackgroundColor: '#20c997',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      animation: {
+        duration: 750,
+        easing: 'easeInOutQuart'
+      },
+      plugins: { 
+        legend: { display: false },
+        tooltip: { enabled: true }
+      },
+      interaction: { 
+        mode: 'index',
+        intersect: false
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: {
+          ticks: { maxTicksLimit: 8, maxRotation: 0 },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+// Initialize compliance chart
+function initComplianceChart(data) {
+  const chartContainer = document.getElementById('complianceChart')?.parentElement;
+  if (!chartContainer) return;
+
+  if (!data || data.length === 0) {
+    // Destroy existing chart if any
+    if (complianceChartInstance) {
+      complianceChartInstance.destroy();
+      complianceChartInstance = null;
+    }
+    
+    // Show "No data available" message
+    const complianceChart = document.getElementById('complianceChart');
+    if (complianceChart && complianceChart.tagName === 'CANVAS') {
+      const noDataDiv = document.createElement('div');
+      noDataDiv.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 350px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        color: #6c757d;
+        font-size: 14px;
+        font-weight: 500;
+      `;
+      noDataDiv.textContent = 'No compliance data available';
+      complianceChart.parentNode.replaceChild(noDataDiv, complianceChart);
+    }
+    return;
+  }
+
+  // Replace div back to canvas if needed
+  const existingDiv = chartContainer.querySelector('div[style*="No compliance data"]');
+  if (existingDiv) {
+    const newCanvas = document.createElement('canvas');
+    newCanvas.id = 'complianceChart';
+    existingDiv.parentNode.replaceChild(newCanvas, existingDiv);
+  }
+
+  const ctx = document.getElementById('complianceChart')?.getContext('2d');
+  if (!ctx) return;
+
+  // Destroy existing chart
+  if (complianceChartInstance) {
+    complianceChartInstance.destroy();
+  }
+
+  // Prepare data for chart
+  // Data structure: {name: 'compliance_framework', count: number}
+  const labels = data.map(item => item.name || 'Unknown').filter(l => l !== 'Unknown');
+  const chartData = data.map(item => item.count || 0);
+  
+  console.log('Compliance chart data:', { labels, chartData, rawData: data });
+  
+  if (labels.length === 0) {
+    console.warn('No valid compliance labels found');
+    return;
+  }
+
+  const colors = ['#20c997', '#0d6efd', '#dc3545', '#6f42c1', '#d63384', '#fd7e14', '#20c997', '#0dcaf0'];
+
+  complianceChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Alerts',
+        data: chartData,
+        backgroundColor: colors.slice(0, chartData.length),
+        borderColor: '#fff',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: { 
+        legend: { 
+          display: true,
+          position: 'bottom',
+          labels: {
+            boxWidth: 12,
+            font: { size: 11 },
+            padding: 10
+          }
+        },
+        tooltip: { enabled: true }
+      }
+    }
+  });
+}
+
+// Update chart based on time range
+function updateChart(timeRange, event) {
+  if (event) {
+    event.preventDefault();
+  }
+
+  console.log('updateChart called with:', { timeRange, currentComplianceType });
+
+  currentTimeRange = timeRange;
+  document.getElementById('timeRangeLabel').textContent = timeRangeLabels[timeRange] || 'Select time range';
+  document.getElementById('chartIntervalText').textContent = intervalTexts[timeRange] || 'loading...';
+
+  // Update active dropdown item
+  const dropdown = document.querySelector('.dropdown');
+  if (dropdown) {
+    const items = dropdown.querySelectorAll('.dropdown-item');
+    items.forEach(item => item.classList.remove('active'));
+    
+    // Get the label to match
+    const timeLabel = timeRangeLabels[timeRange];
+    if (timeLabel) {
+      items.forEach(item => {
+        if (item.textContent.includes(timeLabel)) {
+          item.classList.add('active');
+        }
+      });
+    }
+  }
+
+  // Fetch chart data
+  const agentId = '{{ $agent->id_agent ?? "" }}';
+  
+  if (!agentId) {
+    console.error('Agent ID is missing!');
+    return;
+  }
+  
+  // Construct URL using direct path
+  const fullUrl = '/agent/' + agentId + '/chart-data?time_range=' + timeRange + '&compliance_type=' + currentComplianceType;
+  
+  console.log('Fetching chart data:', {
+    agentId: agentId,
+    timeRange: timeRange,
+    complianceType: currentComplianceType,
+    url: fullUrl
+  });
+  
+  fetch(fullUrl)
+    .then(r => {
+      console.log('Response status:', r.status, r.statusText);
+      if (!r.ok) {
+        throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+      }
+      return r.json();
+    })
+    .then(data => {
+      if (data.success) {
+        console.log('Chart data received:', data);
+        
+        // Update events chart
+        const eventLabels = data.events_evolution?.labels ?? [];
+        const eventData = data.events_evolution?.data ?? [];
+        initEventsChart(eventLabels, eventData);
+        
+        // Update compliance chart if data available
+        const complianceData = data.compliance_data ?? [];
+        initComplianceChart(complianceData);
+      } else {
+        console.error('Error fetching chart data:', data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching chart data:', error);
+    });
+}
+
+// Update compliance chart based on compliance type
+function updateComplianceData() {
+  const complianceSelect = document.getElementById('complianceSelect');
+  if (complianceSelect) {
+    currentComplianceType = complianceSelect.value;
+    updateChart(currentTimeRange);
+  }
+}
+
 // Wait for Chart.js to load before initializing
 function initializeChart() {
   if (typeof Chart === 'undefined') {
@@ -352,63 +676,25 @@ function initializeChart() {
     return;
   }
 
+  // Initialize events chart with initial data
   @if(isset($eventsEvolution) && !empty($eventsEvolution['labels']))
-    const labels = @json($eventsEvolution['labels'] ?? []);
-    const data = @json($eventsEvolution['data'] ?? []);
+    const initialLabels = @json($eventsEvolution['labels'] ?? []);
+    const initialData = @json($eventsEvolution['data'] ?? []);
   @else
-    const labels = ['00:00','01:00','02:00','03:00','04:00','05:00','06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00','23:00'];
-    const data = [2, 1, 3, 5, 2, 4, 18, 95, 510, 85, 12, 6, 3, 4, 5, 3, 7, 4, 3, 5, 2, 4, 3, 2];
+    const initialLabels = [];
+    const initialData = [];
   @endif
 
-  const ctx = document.getElementById('eventsChart')?.getContext('2d');
-  if (ctx) {
-    console.log('Chart data:', { labels: labels.length, data: data.length });
-    window.eventsChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Count',
-          data,
-          borderColor: '#20c997',
-          backgroundColor: 'rgba(32,201,151,0.1)',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.3,
-          pointRadius: 3,
-          pointHoverRadius: 6,
-          pointBackgroundColor: '#20c997',
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        animation: {
-          duration: 750,
-          easing: 'easeInOutQuart'
-        },
-        plugins: { 
-          legend: { display: false },
-          tooltip: { enabled: true }
-        },
-        interaction: { 
-          mode: 'index',
-          intersect: false
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: { precision: 0 },
-            grid: { color: 'rgba(0,0,0,0.05)' }
-          },
-          x: {
-            ticks: { maxTicksLimit: 8, maxRotation: 0 },
-            grid: { display: false }
-          }
-        }
-      }
-    });
-  }
+  initEventsChart(initialLabels, initialData);
+
+  // Initialize compliance chart with initial data
+  @if(isset($complianceGdpr))
+    const initialCompliance = @json($complianceGdpr ?? []);
+  @else
+    const initialCompliance = [];
+  @endif
+
+  initComplianceChart(initialCompliance);
 }
 
 // Initialize chart when DOM is ready
@@ -417,122 +703,6 @@ if (document.readyState === 'loading') {
 } else {
   initializeChart();
 }
-
-// Initialize compliance pie chart
-function initializeComplianceChart() {
-  if (typeof Chart === 'undefined') {
-    setTimeout(initializeComplianceChart, 100);
-    return;
-  }
-  
-  setTimeout(() => {
-    const ctx = document.getElementById('complianceChart')?.getContext('2d');
-    if (ctx) {
-      const colors = ['#20c997', '#0d6efd', '#dc3545', '#6f42c1', '#d63384', '#fd7e14'];
-      const initialData = @json($complianceGdpr ?? []);
-      const labels = initialData.map(item => item.name);
-      const data = initialData.map(item => item.count);
-      
-      window.complianceChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels,
-          datasets: [{
-            data,
-            backgroundColor: colors.slice(0, labels.length),
-            borderColor: '#fff',
-            borderWidth: 2,
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: {
-              display: true,
-              position: 'bottom',
-              labels: {
-                boxWidth: 12,
-                font: { size: 11 },
-                padding: 10
-              }
-            }
-          }
-        }
-      });
-    }
-  }, 100);
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeComplianceChart);
-} else {
-  initializeComplianceChart();
-}
-
-@if($agent)
-// Compliance data switching
-const complianceData = {
-  gdpr: @json($complianceGdpr ?? []),
-  pci_dss: @json($compliancePciDss ?? []),
-  nist_800_53: @json($complianceNist ?? []),
-  hipaa: @json($complianceHipaa ?? []),
-  gpg13: @json($complianceGpg13 ?? []),
-  tsc: @json($complianceTsc ?? [])
-};
-
-function updateComplianceData() {
-  const select = document.getElementById('complianceSelect');
-  const complianceType = select?.value || 'gdpr';
-  
-  // Get compliance data
-  const data = complianceData[complianceType] || [];
-  
-  // Recreate compliance pie chart
-  const colors = ['#20c997', '#0d6efd', '#dc3545', '#6f42c1', '#d63384', '#fd7e14'];
-  const chartLabels = data.map(item => item.name);
-  const chartData = data.map(item => item.count);
-  
-  if (window.complianceChart) {
-    // Destroy old chart
-    window.complianceChart.destroy();
-    
-    // Create new chart
-    setTimeout(() => {
-      const ctx = document.getElementById('complianceChart')?.getContext('2d');
-      if (ctx) {
-        window.complianceChart = new Chart(ctx, {
-          type: 'doughnut',
-          data: {
-            labels: chartLabels,
-            datasets: [{
-              data: chartData,
-              backgroundColor: colors.slice(0, chartData.length),
-              borderColor: '#fff',
-              borderWidth: 2,
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-              legend: {
-                display: true,
-                position: 'bottom',
-                labels: {
-                  boxWidth: 12,
-                  font: { size: 11 },
-                  padding: 10
-                }
-              }
-            }
-          }
-        });
-      }
-    }, 50);
-  }
-}
-@endif
 </script>
 
 @endsection
