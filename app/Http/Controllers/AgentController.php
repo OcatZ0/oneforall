@@ -431,6 +431,10 @@ class AgentController extends Controller
                 
                 return $this->enrichAgentData($agentData);
             })->filter(function ($agent) use ($accessibleIds, $userRole) {
+                // Exclude agent ID 000 (Wazuh manager)
+                if ($agent->id_agent === '000') {
+                    return false;
+                }
                 // Filter agents based on user role
                 if ($userRole === 'admin') {
                     return true; // Admin sees all
@@ -615,19 +619,24 @@ class AgentController extends Controller
             // Fetch events evolution filtered by compliance type
             $eventsComplianceEvolution = $this->openSearch->getEventsCountEvolutionByCompliance($agentId, $complianceType, $timeRange);
             
+            // Fetch MITRE ATT&CK tactics
+            $mitreTactics = $this->openSearch->getMitreTactics($agentId, $timeRange);
+            
             \Log::info('Detail chart data generated', [
                 'agent_id' => $agentId,
                 'time_range' => $timeRange,
                 'events_labels_count' => count($eventsEvolution['labels'] ?? []),
                 'events_data_count' => count($eventsEvolution['data'] ?? []),
-                'compliance_count' => count($complianceData ?? [])
+                'compliance_count' => count($complianceData ?? []),
+                'mitre_tactics_count' => count($mitreTactics ?? [])
             ]);
             
             return response()->json([
                 'success' => true,
                 'events_evolution' => $eventsEvolution,
                 'compliance_data' => $complianceData,
-                'events_compliance_evolution' => $eventsComplianceEvolution
+                'events_compliance_evolution' => $eventsComplianceEvolution,
+                'mitre_tactics' => $mitreTactics
             ]);
         } catch (\Exception $e) {
             \Log::error('Get detail chart data error', [
@@ -741,10 +750,14 @@ class AgentController extends Controller
             $eventsEvolutionGpg13 = $this->openSearch->getEventsCountEvolutionByCompliance($agent->id_agent, 'gpg13', '24h');
             $eventsEvolutionTsc = $this->openSearch->getEventsCountEvolutionByCompliance($agent->id_agent, 'tsc', '24h');
 
+            // Fetch MITRE ATT&CK tactics
+            $mitreTactics = $this->openSearch->getMitreTactics($agent->id_agent, '24h');
+
             return view('agent.detail', compact(
                 'agent', 'alertStats', 'fimEvents', 'eventsEvolution',
                 'complianceGdpr', 'compliancePciDss', 'complianceNist', 'complianceHipaa', 'complianceGpg13', 'complianceTsc',
-                'eventsEvolutionGdpr', 'eventsEvolutionPciDss', 'eventsEvolutionNist', 'eventsEvolutionHipaa', 'eventsEvolutionGpg13', 'eventsEvolutionTsc'
+                'eventsEvolutionGdpr', 'eventsEvolutionPciDss', 'eventsEvolutionNist', 'eventsEvolutionHipaa', 'eventsEvolutionGpg13', 'eventsEvolutionTsc',
+                'mitreTactics'
             ));
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             \Log::error('Agent detail timeout: ' . $e->getMessage());
@@ -804,10 +817,12 @@ class AgentController extends Controller
             $syncedCount = 0;
             $updatedCount = 0;
             $errorCount = 0;
+            $deletedCount = 0;
             $offset = 0;
             $limit = 100;
             $totalAgents = 0;
             $processedAgents = 0;
+            $syncedAgentIds = []; // Track agents synced from Wazuh
 
             \Log::info('Starting agent sync process', [
                 'limit_per_page' => $limit
@@ -831,6 +846,12 @@ class AgentController extends Controller
                             \Log::warning('Skipping agent with no ID', ['agent' => $wazuhAgent]);
                             continue;
                         }
+                        
+                        // Skip agent ID 000 (Wazuh manager)
+                        if ($agentId === '000') {
+                            \Log::info('Skipping agent ID 000 (Wazuh manager)');
+                            continue;
+                        }
 
                         // Prepare data for sync (only id_agent and nama)
                         $agentData = [
@@ -840,6 +861,9 @@ class AgentController extends Controller
 
                         // Check if agent exists
                         $existingAgent = Agent::where('id_agent', $agentId)->first();
+
+                        // Track this agent ID as synced
+                        $syncedAgentIds[] = $agentId;
 
                         if ($existingAgent) {
                             // Update existing agent (only update nama if needed)
@@ -881,9 +905,22 @@ class AgentController extends Controller
 
             } while ($processedAgents < $totalAgents && count($agents) > 0);
 
+            // Delete agents from database that no longer exist in Wazuh
+            $deletedAgents = Agent::whereNotIn('id_agent', $syncedAgentIds)
+                ->where('id_agent', '<>', '000') // Don't delete ID 000 (already handled above)
+                ->delete();
+            
+            if ($deletedAgents > 0) {
+                $deletedCount = $deletedAgents;
+                \Log::info('Deleted agents no longer in Wazuh', [
+                    'deleted_count' => $deletedCount
+                ]);
+            }
+
             \Log::info('Agent sync completed', [
                 'synced_new' => $syncedCount,
                 'updated_existing' => $updatedCount,
+                'deleted_obsolete' => $deletedCount,
                 'errors' => $errorCount,
                 'total_processed' => $processedAgents,
                 'total_in_wazuh' => $totalAgents
@@ -895,6 +932,7 @@ class AgentController extends Controller
                 'data' => [
                     'synced_new' => $syncedCount,
                     'updated_existing' => $updatedCount,
+                    'deleted_obsolete' => $deletedCount,
                     'total_processed' => $processedAgents,
                     'errors' => $errorCount,
                     'total_in_wazuh' => $totalAgents

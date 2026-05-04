@@ -25,7 +25,7 @@
               </a>
               <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list" aria-labelledby="profileDropdown">
                 <p class="mb-0 font-weight-normal float-left dropdown-header">Profil</p>
-                <a class="dropdown-item preview-item" href="profile">
+                <a class="dropdown-item preview-item" href="/profile">
                   <div class="preview-thumbnail">
                     <div class="preview-icon bg-success">
                       <i class="mdi mdi-account mx-0"></i>
@@ -36,7 +36,7 @@
                     <p class="font-weight-light small-text mb-0 text-muted">Detail akun</p>
                   </div>
                 </a>
-                <a class="dropdown-item preview-item" href="auth/forgot-password">
+                <a class="dropdown-item preview-item" href="/auth/forgot-password">
                   <div class="preview-thumbnail">
                     <div class="preview-icon bg-warning">
                       <i class="mdi mdi-lock mx-0"></i>
@@ -47,7 +47,7 @@
                     <p class="font-weight-light small-text mb-0 text-muted">Pengaturan keamanan</p>
                   </div>
                 </a>
-                <a href="#" class="dropdown-item preview-item"
+                <a href="/auth/logout" class="dropdown-item preview-item"
                   onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                   <div class="preview-thumbnail">
                     <div class="preview-icon bg-danger">

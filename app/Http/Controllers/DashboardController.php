@@ -17,9 +17,9 @@ class DashboardController extends Controller
 
     public function __construct(OpenSearchService $openSearch)
     {
-        $this->wazuhBase = env('WAZUH_HOST', 'https://192.168.200.150:55000');
+        $this->wazuhBase = env('WAZUH_HOST', 'https://192.168.72.2:55000');
         $this->wazuhUser = env('WAZUH_USER', 'admin');
-        $this->wazuhPass = env('WAZUH_PASSWORD', 'admin');
+        $this->wazuhPass = env('WAZUH_PASSWORD', 'Admin123.');
         $this->openSearch = $openSearch;
     }
 
@@ -125,31 +125,24 @@ class DashboardController extends Controller
             $previousMonthStart = $now->copy()->subMonth()->startOfMonth();
             $previousMonthEnd = $now->copy()->subMonth()->endOfMonth();
 
-            // Filter change calculation by user role
             if ($userRole === 'admin') {
-                // Admin counts all agents
-                $currentMonthAgents = Agent::where('tanggal_dibuat', '>=', $currentMonthStart)->count();
-                $previousMonthAgents = Agent::whereBetween('tanggal_dibuat', [$previousMonthStart, $previousMonthEnd])->count();
+                $totalPreviousMonth  = Agent::where('tanggal_dibuat', '<=', $previousMonthEnd)->count();
             } else {
-                // Customer counts only their assigned agents
-                $currentMonthAgents = Agent::where('id_pengguna', $userId)
-                    ->where('tanggal_dibuat', '>=', $currentMonthStart)
-                    ->count();
-                $previousMonthAgents = Agent::where('id_pengguna', $userId)
-                    ->whereBetween('tanggal_dibuat', [$previousMonthStart, $previousMonthEnd])
+                $totalPreviousMonth  = Agent::where('id_pengguna', $userId)
+                    ->where('tanggal_dibuat', '<=', $previousMonthEnd)
                     ->count();
             }
 
-            $change = $currentMonthAgents - $previousMonthAgents;
-            $changePercent = $previousMonthAgents > 0 
-                ? round(($change / $previousMonthAgents) * 100, 1)
+            $change        = $agentStats['total'] - $totalPreviousMonth;
+            $changePercent = $totalPreviousMonth > 0
+                ? round(($change / $totalPreviousMonth) * 100, 1)
                 : 0;
 
             return array_merge($agentStats, [
-                'change' => $change,
-                'changePercent' => $changePercent,
-                'currentMonthNew' => $currentMonthAgents,
-                'previousMonthNew' => $previousMonthAgents,
+                'change'           => $change,
+                'changePercent'    => $changePercent,
+                'currentMonthNew'  => $change,
+                'previousMonthNew' => $totalPreviousMonth,
             ]);
         } catch (\Exception $e) {
             \Log::warning('Failed to fetch agent stats with change: ' . $e->getMessage());
@@ -168,49 +161,40 @@ class DashboardController extends Controller
     }
 
     private function getCustomerStats()
-    {
-        try {
-            // Total customers (users with role 'customer')
-            $totalCustomers = User::where('peran', 'customer')->count();
+{
+    try {
+        $totalCustomers = User::where('peran', 'customer')->count();
 
-            // Calculate change from previous month
-            $now = Carbon::now();
-            $currentMonthStart = $now->copy()->startOfMonth();
-            $previousMonthStart = $now->copy()->subMonth()->startOfMonth();
-            $previousMonthEnd = $now->copy()->subMonth()->endOfMonth();
+        $now = Carbon::now();
+        $previousMonthEnd = $now->copy()->subMonth()->endOfMonth();
 
-            $currentMonthNewCustomers = User::where('peran', 'customer')
-                ->where('tanggal_dibuat', '>=', $currentMonthStart)
-                ->count();
+        $totalPreviousMonth = User::where('peran', 'customer')
+            ->where('tanggal_dibuat', '<=', $previousMonthEnd)
+            ->count();
 
-            $previousMonthNewCustomers = User::where('peran', 'customer')
-                ->whereBetween('tanggal_dibuat', [$previousMonthStart, $previousMonthEnd])
-                ->count();
+        $change        = $totalCustomers - $totalPreviousMonth;
+        $changePercent = $totalPreviousMonth > 0
+            ? round(($change / $totalPreviousMonth) * 100, 1)
+            : 0;
 
-            // Calculate change (difference)
-            $change = $currentMonthNewCustomers - $previousMonthNewCustomers;
-            $changePercent = $previousMonthNewCustomers > 0 
-                ? round(($change / $previousMonthNewCustomers) * 100, 1)
-                : 0;
-
-            return [
-                'total' => $totalCustomers,
-                'change' => $change,
-                'changePercent' => $changePercent,
-                'currentMonthNew' => $currentMonthNewCustomers,
-                'previousMonthNew' => $previousMonthNewCustomers,
-            ];
-        } catch (\Exception $e) {
-            \Log::warning('Failed to fetch customer stats: ' . $e->getMessage());
-            return [
-                'total' => 0,
-                'change' => 0,
-                'changePercent' => 0,
-                'currentMonthNew' => 0,
-                'previousMonthNew' => 0,
-            ];
-        }
+        return [
+            'total'            => $totalCustomers,
+            'change'           => $change,
+            'changePercent'    => $changePercent,
+            'currentMonthNew'  => $change,
+            'previousMonthNew' => $totalPreviousMonth,
+        ];
+    } catch (\Exception $e) {
+        \Log::warning('Failed to fetch customer stats: ' . $e->getMessage());
+        return [
+            'total'            => 0,
+            'change'           => 0,
+            'changePercent'    => 0,
+            'currentMonthNew'  => 0,
+            'previousMonthNew' => 0,
+        ];
     }
+}
 
     public function index()
     {

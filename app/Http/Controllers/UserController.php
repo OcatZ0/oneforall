@@ -55,6 +55,16 @@ class UserController extends Controller
             'agents.*' => 'string',
         ]);
 
+        // Validate agents before assignment
+        if (!empty($validated['agents'])) {
+            $assignmentError = $this->validateAgentAssignment($validated['agents']);
+            if ($assignmentError) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', $assignmentError);
+            }
+        }
+
         // Create user
         $user = User::create([
             'username' => $validated['username'],
@@ -104,6 +114,16 @@ class UserController extends Controller
             'agents.*' => 'string',
         ]);
 
+        // Validate agents before assignment (exclude current user from check)
+        if (!empty($validated['agents'])) {
+            $assignmentError = $this->validateAgentAssignment($validated['agents'], $user->id_pengguna);
+            if ($assignmentError) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', $assignmentError);
+            }
+        }
+
         // Update user
         $user->update([
             'username' => $validated['username'],
@@ -149,6 +169,41 @@ class UserController extends Controller
         }
 
         return $agents;
+    }
+
+    /**
+     * Validate that agents being assigned are not already assigned to other customers
+     * 
+     * @param array $agentIds Agent IDs to validate
+     * @param int|null $excludeUserId User ID to exclude from check (for update operations)
+     * @return string|null Error message if validation fails, null if valid
+     */
+    private function validateAgentAssignment($agentIds, $excludeUserId = null)
+    {
+        if (empty($agentIds)) {
+            return null;
+        }
+
+        // Find agents that are assigned to other users
+        $query = Agent::whereIn('id_agent', $agentIds)
+            ->whereNotNull('id_pengguna');
+
+        // Exclude current user if updating
+        if ($excludeUserId !== null) {
+            $query->where('id_pengguna', '!=', $excludeUserId);
+        }
+
+        $conflictingAgents = $query->with('user')->get();
+
+        if ($conflictingAgents->isNotEmpty()) {
+            $agentNames = $conflictingAgents->map(function ($agent) {
+                return "{$agent->nama} (assigned to {$agent->user->username})";
+            })->implode(', ');
+
+            return "Gagal: Agent berikut sudah ditugaskan ke pengguna lain: {$agentNames}";
+        }
+
+        return null;
     }
 
     /**

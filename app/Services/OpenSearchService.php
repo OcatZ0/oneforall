@@ -936,35 +936,17 @@ class OpenSearchService
 
     private function getOsFallbackData()
     {
-        return [
-            'Linux' => 22,
-            'Windows' => 14,
-            'macOS' => 6,
-            'FreeBSD' => 3,
-            'Other' => 2,
-        ];
+        return [];
     }
 
     private function getTopRulesFallbackData()
     {
-        return [
-            ['id' => '5501', 'description' => 'User successfully logged in', 'level' => 3, 'count' => 2341],
-            ['id' => '40111', 'description' => 'Firewall Drop event', 'level' => 8, 'count' => 1892],
-            ['id' => '1002', 'description' => 'Unknown problem somewhere in the system', 'level' => 10, 'count' => 1204],
-            ['id' => '5402', 'description' => 'PAM: Login session opened', 'level' => 3, 'count' => 987],
-            ['id' => '31101', 'description' => 'Web server 400 error code', 'level' => 6, 'count' => 763],
-        ];
+        return [];
     }
 
     private function getTopAgentsFallbackData()
     {
-        return [
-            ['id' => '001', 'name' => 'web-server-prod', 'ip' => '192.168.1.10', 'os' => 'Ubuntu 22.04', 'alert_count' => 3241],
-            ['id' => '008', 'name' => 'db-server-01', 'ip' => '192.168.1.25', 'os' => 'CentOS 7', 'alert_count' => 2108],
-            ['id' => '014', 'name' => 'firewall-edge', 'ip' => '10.0.0.1', 'os' => 'Windows Server 2019', 'alert_count' => 1874],
-            ['id' => '022', 'name' => 'mail-server', 'ip' => '192.168.2.5', 'os' => 'Debian 11', 'alert_count' => 1102],
-            ['id' => '031', 'name' => 'workstation-dev3', 'ip' => '192.168.3.11', 'os' => 'Windows 11', 'alert_count' => 892],
-        ];
+        return [];
     }
 
     /**
@@ -1145,7 +1127,7 @@ class OpenSearchService
      */
     public function getAgentCompliance($agentId, $complianceType = 'gdpr', $timeRange = '30d')
     {
-        $managerName = env('WAZUH_MANAGER_NAME', 'fadli');
+        $managerName = env('WAZUH_MANAGER_NAME', 'ofa');
         
         $query = [
             'size' => 0,
@@ -1789,6 +1771,70 @@ class OpenSearchService
         }
 
         return ['labels' => $labels, 'datasets' => $datasets];
+    }
+
+    /**
+     * Get MITRE ATT&CK tactics for an agent
+     */
+    public function getMitreTactics($agentId, $timeRange = '24h')
+    {
+        $managerName = env('WAZUH_MANAGER_NAME', 'fadli');
+        $config = $this->getTimeRangeConfig($timeRange);
+        
+        $query = [
+            'index' => 'wazuh-alerts-*',
+            'body' => [
+                'query' => [
+                    'bool' => [
+                        'must' => [],
+                        'filter' => [
+                            ['match_all' => (object)[]],
+                            ['match_phrase' => ['manager.name' => $managerName]],
+                            ['match_phrase' => ['agent.id' => $agentId]],
+                            ['exists' => ['field' => 'rule.mitre.id']],
+                            ['range' => ['timestamp' => ['from' => "now-{$config['duration']}", 'to' => 'now']]]
+                        ],
+                        'should' => [],
+                        'must_not' => []
+                    ]
+                ],
+                'aggs' => [
+                    'tactics' => [
+                        'terms' => [
+                            'field' => 'rule.mitre.tactic',
+                            'size' => 10
+                        ]
+                    ]
+                ],
+                'size' => 0
+            ]
+        ];
+
+        try {
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)
+                ->timeout(5)
+                ->withBasicAuth($this->opensearchUser, $this->opensearchPassword)
+                ->post("{$this->opensearchHost}/wazuh-alerts-*/_search", $query['body']);
+
+            if ($response->successful()) {
+                $buckets = $response->json('aggregations.tactics.buckets') ?? [];
+                $data = [];
+
+                foreach ($buckets as $bucket) {
+                    $data[] = [
+                        'tactic' => $bucket['key'] ?? 'Unknown',
+                        'count' => $bucket['doc_count'] ?? 0
+                    ];
+                }
+
+                return $data;
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch MITRE tactics: ' . $e->getMessage());
+        }
+
+        return [];
     }
 
     /**

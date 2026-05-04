@@ -170,13 +170,24 @@
     <div class="col-md-3">
       <div class="card h-100">
         <div class="card-header d-flex align-items-center justify-content-between py-2">
-          <span class="fw-semibold small">MITRE</span>
-          <a href="#" class="text-secondary small"><span class="mdi mdi-open-in-new"></span></a>
+          <span class="fw-semibold small">MITRE ATT&CK</span>
+          <a href="https://attack.mitre.org/" target="_blank" class="text-secondary small"><span class="mdi mdi-open-in-new"></span></a>
         </div>
-        <div class="card-body d-flex flex-column align-items-center justify-content-center text-center py-5">
-          <span class="mdi mdi-chart-bar display-4 text-muted opacity-25 mb-3"></span>
-          <h6 class="text-muted">No results</h6>
-          <p class="text-muted small mb-0">No Mitre results were found in the selected time range.</p>
+        <div class="card-body" style="max-height: 400px; overflow-y: auto;" data-mitre-container>
+          @forelse($mitreTactics ?? [] as $tactic)
+          <div class="mb-2 pb-2" style="border-bottom: 1px solid #eee;">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <small class="fw-semibold text-truncate" title="{{ $tactic['tactic'] }}">{{ $tactic['tactic'] }}</small>
+              <span class="badge bg-danger">{{ $tactic['count'] }}</span>
+            </div>
+          </div>
+          @empty
+          <div class="d-flex flex-column align-items-center justify-content-center text-center py-5">
+            <span class="mdi mdi-chart-bar display-4 text-muted opacity-25 mb-3"></span>
+            <h6 class="text-muted">No results</h6>
+            <p class="text-muted small mb-0">No MITRE ATT&CK tactics in the last 24 hours</p>
+          </div>
+          @endforelse
         </div>
       </div>
     </div>
@@ -651,6 +662,10 @@ function updateChart(timeRange, event) {
         // Update compliance chart if data available
         const complianceData = data.compliance_data ?? [];
         initComplianceChart(complianceData);
+        
+        // Update MITRE tactics if data available
+        const mitreTactics = data.mitre_tactics ?? [];
+        updateMitreTactics(mitreTactics);
       } else {
         console.error('Error fetching chart data:', data.message);
       }
@@ -666,6 +681,40 @@ function updateComplianceData() {
   if (complianceSelect) {
     currentComplianceType = complianceSelect.value;
     updateChart(currentTimeRange);
+  }
+}
+
+// Update MITRE tactics card
+function updateMitreTactics(tactics) {
+  const mitreContainer = document.querySelector('[data-mitre-container]');
+  if (!mitreContainer) {
+    console.error('MITRE container not found');
+    return;
+  }
+
+  if (!tactics || tactics.length === 0) {
+    // Show "No results" message
+    mitreContainer.innerHTML = `
+      <div class="d-flex flex-column align-items-center justify-content-center text-center py-5">
+        <span class="mdi mdi-chart-bar display-4 text-muted opacity-25 mb-3"></span>
+        <h6 class="text-muted">No results</h6>
+        <p class="text-muted small mb-0">No MITRE ATT&CK tactics in the selected time range</p>
+      </div>
+    `;
+  } else {
+    // Build tactics list HTML
+    let html = '';
+    tactics.forEach(tactic => {
+      html += `
+        <div class="mb-2 pb-2" style="border-bottom: 1px solid #eee;">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <small class="fw-semibold text-truncate" title="${tactic.tactic}">${tactic.tactic}</small>
+            <span class="badge bg-danger">${tactic.count}</span>
+          </div>
+        </div>
+      `;
+    });
+    mitreContainer.innerHTML = html;
   }
 }
 
