@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Agent;
+use App\Services\OpenSearchService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -150,25 +153,100 @@ class UserController extends Controller
 
     /**
      * Get all agents with assignment status from database
-     * Enriched with fake Wazuh data (IP, status, OS, version)
+     * Enriched with real IP addresses from Wazuh API
      */
     private function getAvailableAgents()
     {
         // Get all agents from database
         $agentRecords = Agent::with('user')->get();
 
+        // Fetch real agent data from Wazuh API
+        $wazuhAgents = $this->getWazuhAgentsWithIPs();
+        $wazuhAgentsMap = [];
+        
+        if (!empty($wazuhAgents)) {
+            foreach ($wazuhAgents as $wazuhAgent) {
+                $wazuhAgentsMap[(string)$wazuhAgent['id']] = $wazuhAgent;
+            }
+        }
+
         $agents = [];
         foreach ($agentRecords as $agent) {
+            $agentId = (string)$agent->id_agent;
+            
+            // Get real IP from Wazuh API, fallback to N/A if not found
+            $ip = $wazuhAgentsMap[$agentId]['ip'] ?? 'N/A';
+            
             $agents[] = [
                 'id' => $agent->id_agent,
                 'name' => $agent->nama,
-                'ip' => $this->generateFakeIPForAgent($agent->id_agent),
+                'ip' => $ip,
                 'assigned' => !is_null($agent->id_pengguna),
                 'assigned_to' => $agent->user ? $agent->user->username : null,
             ];
         }
 
         return $agents;
+    }
+
+    /**
+     * Fetch agent information including IP addresses from Wazuh API
+     * Excludes agent 000 (manager)
+     * 
+     * @return array Array of agents with id, name, and ip
+     */
+    private function getWazuhAgentsWithIPs()
+    {
+        try {
+            $wazuhHost = env('WAZUH_HOST', 'https://192.168.200.150:55000');
+            $wazuhUser = env('WAZUH_USER', 'admin');
+            $wazuhPassword = env('WAZUH_PASSWORD', 'Admin123.');
+
+            // Get Wazuh API token
+            $tokenResponse = Http::withoutVerifying()
+                ->connectTimeout(2)
+                ->timeout(2)
+                ->withBasicAuth($wazuhUser, $wazuhPassword)
+                ->post("{$wazuhHost}/security/user/authenticate");
+
+            if (!$tokenResponse->successful()) {
+                Log::warning('Failed to authenticate with Wazuh API: ' . $tokenResponse->status());
+                return [];
+            }
+
+            $token = $tokenResponse->json('data.token');
+
+            // Get all agents from Wazuh API, excluding manager (000)
+            $agentsResponse = Http::withoutVerifying()
+                ->connectTimeout(2)
+                ->timeout(2)
+                ->withToken($token)
+                ->get("{$wazuhHost}/agents", [
+                    'limit' => 500,
+                    'select' => 'id,name,ip',
+                    'q' => 'id!=000'  // Exclude manager agent
+                ]);
+
+            if (!$agentsResponse->successful()) {
+                Log::warning('Wazuh agents API request failed: ' . $agentsResponse->status());
+                return [];
+            }
+
+            $agents = $agentsResponse->json('data.affected_items') ?? [];
+            
+            Log::info('Wazuh agents fetched successfully', [
+                'total_count' => count($agents),
+            ]);
+            
+            return $agents;
+
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::warning('Wazuh API connection timeout or unreachable: ' . $e->getMessage());
+            return [];
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch agents from Wazuh API: ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -204,39 +282,5 @@ class UserController extends Controller
         }
 
         return null;
-    }
-
-    /**
-     * Generate fake IP based on agent ID
-     */
-    private function generateFakeIPForAgent($agentId)
-    {
-        $id = intval($agentId);
-        return "192.168.1." . (10 + $id);
-    }
-
-    /**
-     * Generate fake agent status
-     */
-    private function generateFakeStatus()
-    {
-        $statuses = ['active', 'disconnected', 'pending', 'never_connected'];
-        return $statuses[array_rand($statuses)];
-    }
-
-    /**
-     * Generate fake OS
-     */
-    private function generateFakeOS()
-    {
-        $osList = [
-            'Microsoft Windows Server 2022 Datacenter 10.0.20348.469',
-            'Ubuntu 22.04 LTS',
-            'CentOS 7',
-            'Debian 11',
-            'Red Hat Enterprise Linux 8.5',
-            'Amazon Linux 2',
-        ];
-        return $osList[array_rand($osList)];
     }
 }

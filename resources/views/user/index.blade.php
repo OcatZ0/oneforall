@@ -49,9 +49,9 @@
                 <th style="width:50px">#</th>
                 <th>Username</th>
                 <th>Email</th>
-                <th>Role</th>
-                <th>Total Agents</th>
-                <th>Agents Assigned</th>
+                <th>Peran</th>
+                <th>Total Agent</th>
+                <th>Agents</th>
                 <th>Tanggal Dibuat</th>
                 <th style="width:100px">Aksi</th>
               </tr>

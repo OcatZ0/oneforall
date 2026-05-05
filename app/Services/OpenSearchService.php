@@ -67,6 +67,9 @@ class OpenSearchService
                                 ]
                             ]
                         ]
+                    ],
+                    'must_not' => [
+                        ['term' => ['agent.id' => '000']]
                     ]
                 ]
             ]
@@ -159,6 +162,9 @@ class OpenSearchService
                                 ]
                             ]
                         ]
+                    ],
+                    'must_not' => [
+                        ['term' => ['agent.id' => '000']]
                     ]
                 ]
             ]
@@ -361,7 +367,9 @@ class OpenSearchService
                         ]
                     ],
                     'should'   => [],
-                    'must_not' => []
+                    'must_not' => [
+                        ['term' => ['id' => '000']]
+                    ]
                 ]
             ],
         ];
@@ -645,12 +653,12 @@ class OpenSearchService
                 return $this->getOsFallbackData();
             }
 
-            // Filter agents if specified (non-admin with agent IDs)
+            // Filter agents if specified (non-admin with agent IDs) and exclude manager agent
             if (!$isAdmin && is_array($agentIds) && !empty($agentIds)) {
                 $originalCount = count($agents);
                 $agents = array_filter($agents, function($agent) use ($agentIds) {
                     $agentId = (string)($agent['id'] ?? null);
-                    return in_array($agentId, $agentIds, true);
+                    return in_array($agentId, $agentIds, true) && $agentId !== '000';
                 });
                 $filteredCount = count($agents);
                 \Log::info('OS distribution - filtering by customer agent IDs', [
@@ -659,7 +667,16 @@ class OpenSearchService
                     'accessible_ids' => $agentIds,
                 ]);
             } else if ($isAdmin) {
-                \Log::info('OS distribution - admin mode, showing all agents');
+                // Exclude agent 000 (manager) from results
+                $originalCount = count($agents);
+                $agents = array_filter($agents, function($agent) {
+                    $agentId = (string)($agent['id'] ?? null);
+                    return $agentId !== '000';
+                });
+                \Log::info('OS distribution - admin mode, showing all agents (excluding manager)', [
+                    'original_count' => $originalCount,
+                    'filtered_count' => count($agents),
+                ]);
             }
 
             // Aggregate agents by OS
@@ -741,6 +758,9 @@ class OpenSearchService
                                 ]
                             ]
                         ]
+                    ],
+                    'must_not' => [
+                        ['term' => ['agent.id' => '000']]
                     ]
                 ]
             ]
@@ -862,6 +882,9 @@ class OpenSearchService
                                 ]
                             ]
                         ]
+                    ],
+                    'must_not' => [
+                        ['term' => ['agent.id' => '000']]
                     ]
                 ]
             ]

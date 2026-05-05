@@ -91,7 +91,7 @@
 
         <div class="mt-3">
           <div class="d-flex align-items-center justify-content-between mb-3">
-            <h5 class="card-title mb-0">Activity Log</h5>
+            <h5 class="card-title mb-0">Log Aktivitas</h5>
           </div>
 
           <!-- Search Form -->
