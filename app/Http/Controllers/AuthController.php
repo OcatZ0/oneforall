@@ -46,7 +46,7 @@ class AuthController extends Controller
         }
 
         return back()->withErrors([
-            'email' => 'Password tidak sesuai.',
+            'email' => 'Username atau Password salah.',
         ])->onlyInput('email');
     }
 
@@ -59,7 +59,7 @@ class AuthController extends Controller
     {
         $request->validate(['email' => 'required|email']);
 
-        // Logic for sending password reset email goes here
+        // Logic for sending password reset email goes here, will be implemented later
 
         return back()->with('status', 'Tautan reset kata sandi telah dikirim ke email Anda.');
     }

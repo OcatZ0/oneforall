@@ -10,11 +10,13 @@
         <nav aria-label="breadcrumb" class="d-none d-md-block align-self-center">
             <ol class="breadcrumb mb-0 bg-transparent p-0 align-items-center">
                 <li class="breadcrumb-item fs-5">
-                    <a href="/agents" class="text-light text-decoration-none">Agents</a>
+                    <a href="/agent" class="text-light text-decoration-none">Agents</a>
                 </li>
+                @if($agent && !in_array(Route::currentRouteName(), ['agent']))
                 <li class="breadcrumb-item active text-light fs-5" aria-current="page">
-                windows-10
+                {{ $agent->nama ?? $agent->id_agent ?? 'Unknown' }}
                 </li>
+                @endif
             </ol>
         </nav>
           <ul class="navbar-nav navbar-nav-right">

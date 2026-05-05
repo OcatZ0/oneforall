@@ -87,6 +87,77 @@
           @endif
         </div>
 
+        <hr class="my-4">
+
+        <div class="mt-3">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="card-title mb-0">Activity Log</h5>
+          </div>
+
+          <!-- Search Form -->
+          <form method="GET" action="{{ route('profile') }}" class="mb-3">
+            <div class="input-group">
+              <input type="text" name="search" class="form-control" placeholder="Cari aktivitas..." value="{{ $search }}">
+              <button class="btn btn-primary" type="submit">
+                <i class="mdi mdi-magnify mr-1"></i> Cari
+              </button>
+              @if($search)
+                <a href="{{ route('profile') }}" class="btn btn-secondary">
+                  <i class="mdi mdi-close mr-1"></i> Reset
+                </a>
+              @endif
+            </div>
+          </form>
+
+          @if($logs->count() > 0)
+          <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+              <thead>
+                <tr>
+                  <th style="width:50px">#</th>
+                  <th>Aktivitas</th>
+                  <th>Tanggal</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach($logs as $log)
+                <tr>
+                  <td>{{ ($logs->currentPage() - 1) * $logs->perPage() + $loop->iteration }}</td>
+                  <td>{{ $log->aktivitas }}</td>
+                  <td>
+                    <span class="text-muted" title="{{ \Carbon\Carbon::parse($log->tanggal)->format('d M Y H:i:s') }}">
+                      {{ \Carbon\Carbon::parse($log->tanggal)->translatedFormat('d M Y H:i') }}
+                    </span>
+                  </td>
+                </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="d-flex align-items-center justify-content-between mt-3">
+            <div class="text-muted small">
+              @php
+                $from = ($logs->currentPage() - 1) * $logs->perPage() + 1;
+                $to = min($logs->currentPage() * $logs->perPage(), $logs->total());
+              @endphp
+              Menampilkan {{ $from }} hingga {{ $to }} dari {{ $logs->total() }} aktivitas
+            </div>
+            {{ $logs->appends(request()->query())->links() }}
+          </div>
+          @else
+          <div class="alert alert-info">
+            <i class="mdi mdi-information-outline mr-2"></i> 
+            @if($search)
+              Tidak ada aktivitas yang ditemukan untuk pencarian "{{ $search }}"
+            @else
+              Belum ada activity log
+            @endif
+          </div>
+          @endif
+        </div>
+
       </div>
     </div>
 

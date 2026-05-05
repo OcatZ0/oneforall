@@ -13,7 +13,7 @@
     @include('partials._sidebar')
 
     <div class="container-fluid page-body-wrapper">
-      @include('partials._topbar-wazuh')
+      @include('partials._topbar-wazuh', ['agent' => $agent ?? null])
       <div class="main-panel">
         @yield('content')
       </div>
