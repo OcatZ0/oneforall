@@ -414,7 +414,7 @@
                         </li>
                     </ul>
 
-
+                    
                     <div class="d-flex gap-3 mt-3">
                         <a href="#" class="text-white-50 fs-5"><i class="bi bi-linkedin"></i></a>
                         <a href="#" class="text-white-50 fs-5"><i class="bi bi-github"></i></a>
