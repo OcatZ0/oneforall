@@ -41,3 +41,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/user/{id}', [UserController::class, 'update'])->name('user.update');
     });
 });
+
+Route::get('/', function () {
+    return view('landing');
+});
