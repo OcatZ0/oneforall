@@ -3,8 +3,7 @@
 @section('title', 'Landing Page - One For All')
 
 @section('content')
-
-<!-- Navbar -->
+{{-- Navbar --}}
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
         <div class="container">
             <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="#">
@@ -363,3 +362,4 @@
             </div>
         </div>
     </footer>
+@endsection
