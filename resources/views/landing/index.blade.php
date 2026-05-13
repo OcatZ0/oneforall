@@ -1,365 +1,535 @@
 @extends('layouts.landing')
 
-@section('title', 'Landing Page - One For All')
+@section('title', 'One For All — Security Monitoring Dashboard')
 
 @section('content')
-{{-- Navbar --}}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="#">
-                <img src="{{ asset('images/logo_dofa.png') }}" alt="Logo" width="45" height="45">
-                <span>Dashboard One For All</span>
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
 
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#features">Fitur</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#about">Tentang</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#frontoffice">FrontOffice</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#dashboard">BackOffice</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#benefits">Keunggulan</a>
-                    </li>
-                </ul>
-            </div>
+{{-- ══════════════════════════════════════════════
+     NAVBAR
+══════════════════════════════════════════════ --}}
+<nav class="navbar navbar-expand-lg navbar-dark">
+  <div class="container">
+    <a class="navbar-brand" href="#">
+      <div class="brand-icon">
+        <i class="bi bi-shield-shaded" style="color:#fff;"></i>
+      </div>
+      <span>OneForAll</span>
+    </a>
+
+    <button class="navbar-toggler" type="button"
+            data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
+        <li class="nav-item"><a class="nav-link" href="#features">Fitur</a></li>
+        <li class="nav-item"><a class="nav-link" href="#about">Tentang</a></li>
+        <li class="nav-item"><a class="nav-link" href="#frontoffice">FrontOffice</a></li>
+        <li class="nav-item"><a class="nav-link" href="#dashboard">BackOffice</a></li>
+        <li class="nav-item"><a class="nav-link" href="#benefits">Keunggulan</a></li>
+        <li class="nav-item ms-lg-3">
+          <a href="#frontoffice" class="btn-primary-custom" style="padding:10px 22px;font-size:0.83rem;">
+            Mulai Sekarang <i class="bi bi-arrow-right"></i>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+{{-- ══════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════ --}}
+<section id="hero" style="min-height:100vh; display:flex; align-items:center; padding-top:72px;">
+
+  {{-- Orbs --}}
+  <div class="orb" style="width:500px;height:500px;background:radial-gradient(circle,rgba(0,87,255,0.18),transparent 70%);top:-100px;left:-150px;"></div>
+  <div class="orb" style="width:400px;height:400px;background:radial-gradient(circle,rgba(0,212,255,0.12),transparent 70%);top:20%;right:-100px;"></div>
+
+  <div class="container position-relative z-1">
+    <div class="row align-items-center g-5">
+
+      {{-- Left --}}
+      <div class="col-lg-6">
+        <div class="stat-pill mb-4 anim-1">
+          <span class="dot"></span>
+          System Active · Wazuh v4.x
         </div>
-    </nav>
 
-    <!-- Hero -->
-    <section class="hero section-equal">
-        <div class="container">
-            <div class="row align-items-center">
+        <h1 class="anim-2" style="font-family:var(--font-display);font-weight:800;font-size:clamp(2.2rem,5vw,3.6rem);line-height:1.1;letter-spacing:-1px;margin-bottom:24px;">
+          Security Monitoring<br>
+          <span style="background:linear-gradient(90deg,var(--clr-accent2),var(--clr-accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+            Berbasis Wazuh
+          </span>
+        </h1>
 
-                <div class="col-lg-6">
-                    <h1 class="display-4 fw-bold mb-4">
-                        Security Monitoring Dashboard Berbasis Wazuh
-                    </h1>
-                    <p class="lead mb-4">
-                        Monitor keamanan website secara realtime menggunakan Wazuh Agent dan Dashboard yang modern, aman, dan mudah digunakan.
-                    </p>
-                </div>
+        <p class="anim-3" style="color:var(--clr-muted);font-size:1.05rem;line-height:1.7;max-width:480px;margin-bottom:36px;">
+          Monitor keamanan website secara realtime menggunakan Wazuh Agent dan Dashboard
+          yang modern, aman, serta mudah digunakan untuk tim Anda.
+        </p>
 
-                <div class="col-lg-6 text-center">
-                    <img src="{{ asset('images/wallpaper1.jpg') }}"
-                        class="img-fluid rounded-4 shadow-lg"
-                        alt="Dashboard">
-                </div>
-
-            </div>
+        <div class="d-flex flex-wrap gap-3 anim-4">
+          <a href="#frontoffice" class="btn-primary-custom">
+            Lihat Dashboard <i class="bi bi-arrow-right"></i>
+          </a>
+          <a href="#about" class="btn-outline-custom">
+            <i class="bi bi-play-circle"></i> Pelajari Lebih Lanjut
+          </a>
         </div>
-    </section>
 
-    <!-- Features -->
-    <section class="section-equal" id="features">
-        <div class="container">
-
-            <div class="text-center mb-5">
-                <h2 class="section-title">Fitur Utama</h2>
-                <p class="text-muted">
-                    Solusi monitoring keamanan website yang lengkap
-                </p>
-            </div>
-
-            <div class="row g-4">
-
-                <div class="col-md-4">
-                    <div class="card feature-card h-100 p-4">
-                        <div class="mb-3 text-primary">
-                            <i class="bi bi-speedometer2 fs-1"></i>
-                        </div>
-                        <h4>Wazuh Dashboard</h4>
-                        <p class="text-muted">
-                            Menampilkan rekap data security website secara realtime dan mudah dipahami.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card feature-card h-100 p-4">
-                        <div class="mb-3 text-success">
-                            <i class="bi bi-hdd-network fs-1"></i>
-                        </div>
-                        <h4>Wazuh Agent</h4>
-                        <p class="text-muted">
-                            Agent dipasang pada server website untuk mengambil log dan aktivitas keamanan.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card feature-card h-100 p-4">
-                        <div class="mb-3 text-danger">
-                            <i class="bi bi-shield-check fs-1"></i>
-                        </div>
-                        <h4>Threat Detection</h4>
-                        <p class="text-muted">
-                            Deteksi ancaman, malware, brute force, dan aktivitas mencurigakan secara otomatis.
-                        </p>
-                    </div>
-                </div>
-
-            </div>
+        {{-- Mini stats --}}
+        <div class="d-flex flex-wrap gap-4 mt-5 anim-4">
+          <div>
+            <div style="font-family:var(--font-display);font-weight:800;font-size:1.8rem;color:var(--clr-accent);">250+</div>
+            <div style="font-size:0.8rem;color:var(--clr-muted);">Active Agents</div>
+          </div>
+          <div style="width:1px;background:var(--clr-border);"></div>
+          <div>
+            <div style="font-family:var(--font-display);font-weight:800;font-size:1.8rem;color:var(--clr-success);">99.9%</div>
+            <div style="font-size:0.8rem;color:var(--clr-muted);">Uptime SLA</div>
+          </div>
+          <div style="width:1px;background:var(--clr-border);"></div>
+          <div>
+            <div style="font-family:var(--font-display);font-weight:800;font-size:1.8rem;color:var(--clr-text);">24/7</div>
+            <div style="font-size:0.8rem;color:var(--clr-muted);">Monitoring</div>
+          </div>
         </div>
-    </section>
+      </div>
 
+      {{-- Right: Dashboard mockup --}}
+      <div class="col-lg-6 anim-img">
+        <div style="position:relative;">
+          {{-- Glow behind image --}}
+          <div style="position:absolute;inset:-20px;background:radial-gradient(ellipse at 50% 50%,rgba(0,87,255,0.2),transparent 70%);border-radius:50%;filter:blur(30px);"></div>
 
-    <section id="about" class="section-equal section-alt">
+          <div class="img-frame" style="position:relative;z-index:1;">
+            <img src="{{ asset('images/wallpaper1.jpg') }}" alt="Dashboard Preview">
+          </div>
 
-        <div class="container">
-
-            <div class="row align-items-center">
-
-                <div class="col-lg-6 text-center">
-                    <img src="{{ asset('images/wallpaper3.jpg') }}"
-                        class="img-fluid rounded shadow"
-                        alt="Application">
-                </div>
-
-                <div class="col-lg-6">
-                    <h2 class="fw-bold mb-4">
-                        Tentang Aplikasi
-                    </h2>
-                    <p class="text-muted">
-                        Dashboard One For All merupakan platform monitoring keamanan berbasis Wazuh
-                        yang membantu perusahaan memonitor aktivitas website, server,
-                        dan ancaman keamanan secara realtime.
-                    </p>
-                    <p class="text-muted">
-                        Sistem ini terdiri dari FrontOffice untuk customer dan BackOffice
-                        untuk administrator dalam mengelola seluruh agent dan data keamanan.
-                    </p>
-
-                    <div class="row mt-4 g-3">
-                        <div class="col-6">
-                            <div class="bg-primary text-white text-center rounded p-3">
-                                <h4 class="fw-bold">24/7</h4>
-                                <p class="mb-0">Monitoring</p>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="bg-success text-white text-center rounded p-3">
-                                <h4 class="fw-bold">Realtime</h4>
-                                <p class="mb-0">Alert System</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
+          {{-- Floating badge: Threat --}}
+          <div style="position:absolute;bottom:-18px;left:-24px;background:var(--clr-card);border:1px solid var(--clr-border);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,0.4);z-index:2;">
+            <div style="width:38px;height:38px;background:rgba(255,58,92,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+              <i class="bi bi-shield-exclamation" style="color:var(--clr-danger);font-size:1.1rem;"></i>
             </div>
+            <div>
+              <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--clr-muted);margin-bottom:2px;">THREAT DETECTED</div>
+              <div style="font-weight:700;font-size:0.9rem;">Brute Force Attack</div>
+            </div>
+          </div>
+
+          {{-- Floating badge: Status --}}
+          <div style="position:absolute;top:-14px;right:-18px;background:var(--clr-card);border:1px solid var(--clr-border);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,0.4);z-index:2;">
+            <div class="dot"></div>
+            <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--clr-success);">All Systems Operational</span>
+          </div>
         </div>
-    </section>
+      </div>
+
+    </div>
+  </div>
+</section>
 
 
-    <section class="section-equal" id="frontoffice">
-        <div class="container">
+{{-- ══════════════════════════════════════════════
+     FEATURES
+══════════════════════════════════════════════ --}}
+<section id="features" class="section-alt">
+  <div class="orb" style="width:350px;height:350px;background:radial-gradient(circle,rgba(0,212,255,0.08),transparent 70%);top:50%;right:-80px;transform:translateY(-50%);"></div>
 
-            <div class="row align-items-center">
+  <div class="container position-relative z-1">
 
-                <div class="col-lg-6">
-                    <h2 class="section-title">
-                        Website FrontOffice
-                    </h2>
-                    <p class="text-muted">
-                        Customer dapat melihat data security website mereka secara realtime melalui dashboard interaktif.
-                    </p>
+    <div class="text-center mb-5 reveal">
+      <div class="section-label">Platform</div>
+      <h2 class="section-title">Fitur Utama</h2>
+      <p style="color:var(--clr-muted);max-width:500px;margin:0 auto;">
+        Solusi monitoring keamanan website yang lengkap, andal, dan mudah diintegrasikan.
+      </p>
+    </div>
 
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item">
-                            <i class="bi bi-check-circle-fill text-success me-2"></i>
-                            Monitoring keamanan realtime
-                        </li>
-                        <li class="list-group-item">
-                            <i class="bi bi-check-circle-fill text-success me-2"></i>
-                            Custom widget dashboard
-                        </li>
-                        <li class="list-group-item">
-                            <i class="bi bi-check-circle-fill text-success me-2"></i>
-                            Statistik ancaman keamanan
-                        </li>
-                        <li class="list-group-item">
-                            <i class="bi bi-check-circle-fill text-success me-2"></i>
-                            Notifikasi dan alert
-                        </li>
-                    </ul>
-                </div>
+    <div class="row g-4">
 
-                <div class="col-lg-6">
-                    <div class="dashboard-preview">
-                        <img src="{{ asset('images/wallpaper2.jpg') }}" class="img-fluid"
-                            alt="FrontOffice">
-                    </div>
-                </div>
-
-            </div>
+      <div class="col-md-4 reveal">
+        <div class="glass-card p-4 h-100">
+          <div class="feat-icon" style="background:rgba(0,87,255,0.12);">
+            <i class="bi bi-speedometer2" style="color:var(--clr-accent2);"></i>
+          </div>
+          <span class="chip mb-3 d-inline-block" style="background:rgba(0,87,255,0.1);color:var(--clr-accent2);">Dashboard</span>
+          <h4 style="font-family:var(--font-display);font-weight:700;font-size:1.15rem;margin-bottom:10px;">Wazuh Dashboard</h4>
+          <p style="color:var(--clr-muted);font-size:0.875rem;line-height:1.65;margin:0;">
+            Rekap data security website secara realtime dengan visualisasi yang intuitif dan mudah dipahami oleh semua level pengguna.
+          </p>
         </div>
-    </section>
+      </div>
 
-    <section class="section-equal section-alt" id="dashboard">
-        <div class="container">
-
-            <div class="row align-items-center flex-lg-row-reverse">
-
-                <div class="col-lg-6">
-                    <h2 class="section-title">
-                        Website BackOffice
-                    </h2>
-                    <p class="text-muted">
-                        Admin dapat mengelola seluruh Wazuh Agent dan menentukan agent dimiliki oleh customer tertentu.
-                    </p>
-
-                    <div class="row g-3 mt-3">
-                        <div class="col-6">
-                            <div class="stats-box">
-                                <h3 class="fw-bold text-primary">250+</h3>
-                                <p class="mb-0">Active Agents</p>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="stats-box">
-                                <h3 class="fw-bold text-danger">99.9%</h3>
-                                <p class="mb-0">Threat Detection</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-6">
-                    <div class="dashboard-preview">
-                        <img src="{{ asset('images/wallpaper4.jpg') }}" class="img-fluid"
-                            class="img-fluid"
-                            alt="BackOffice">
-                    </div>
-                </div>
-
-            </div>
+      <div class="col-md-4 reveal" style="transition-delay:0.1s;">
+        <div class="glass-card p-4 h-100">
+          <div class="feat-icon" style="background:rgba(0,229,160,0.1);">
+            <i class="bi bi-hdd-network" style="color:var(--clr-success);"></i>
+          </div>
+          <span class="chip mb-3 d-inline-block" style="background:rgba(0,229,160,0.1);color:var(--clr-success);">Agent</span>
+          <h4 style="font-family:var(--font-display);font-weight:700;font-size:1.15rem;margin-bottom:10px;">Wazuh Agent</h4>
+          <p style="color:var(--clr-muted);font-size:0.875rem;line-height:1.65;margin:0;">
+            Agent dipasang pada server website untuk mengambil log dan aktivitas keamanan secara otomatis dan aman.
+          </p>
         </div>
-    </section>
+      </div>
 
-
-    <section class="section-equal" id="benefits">
-        <div class="container">
-
-            <div class="text-center mb-5">
-                <h2 class="section-title">
-                    Kenapa Memilih Platform Ini?
-                </h2>
-            </div>
-
-            <div class="row g-4">
-
-                <div class="col-md-3">
-                    <div class="card text-center border-0 shadow-sm p-4 h-100">
-                        <i class="bi bi-lightning-charge-fill fs-1 text-warning"></i>
-                        <h5 class="mt-3">Realtime</h5>
-                        <p class="text-muted">
-                            Data keamanan tampil secara realtime.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card text-center border-0 shadow-sm p-4 h-100">
-                        <i class="bi bi-sliders fs-1 text-primary"></i>
-                        <h5 class="mt-3">Customizable</h5>
-                        <p class="text-muted">
-                            Customer bebas memilih data dashboard.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card text-center border-0 shadow-sm p-4 h-100">
-                        <i class="bi bi-person-lock fs-1 text-success"></i>
-                        <h5 class="mt-3">Secure</h5>
-                        <p class="text-muted">
-                            Keamanan data dan monitoring terjamin.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card text-center border-0 shadow-sm p-4 h-100">
-                        <i class="bi bi-cloud-arrow-up-fill fs-1 text-danger"></i>
-                        <h5 class="mt-3">Scalable</h5>
-                        <p class="text-muted">
-                            Mudah dikembangkan untuk banyak client.
-                        </p>
-                    </div>
-                </div>
-
-            </div>
+      <div class="col-md-4 reveal" style="transition-delay:0.2s;">
+        <div class="glass-card p-4 h-100">
+          <div class="feat-icon" style="background:rgba(255,58,92,0.1);">
+            <i class="bi bi-shield-check" style="color:var(--clr-danger);"></i>
+          </div>
+          <span class="chip mb-3 d-inline-block" style="background:rgba(255,58,92,0.1);color:var(--clr-danger);">Detection</span>
+          <h4 style="font-family:var(--font-display);font-weight:700;font-size:1.15rem;margin-bottom:10px;">Threat Detection</h4>
+          <p style="color:var(--clr-muted);font-size:0.875rem;line-height:1.65;margin:0;">
+            Deteksi ancaman, malware, brute force, dan aktivitas mencurigakan secara otomatis dengan notifikasi realtime.
+          </p>
         </div>
-    </section>
+      </div>
+
+    </div>
+  </div>
+</section>
 
 
-    <footer class="pt-5 pb-3">
-        <div class="container">
-            <div class="row mb-4">
+{{-- ══════════════════════════════════════════════
+     ABOUT
+══════════════════════════════════════════════ --}}
+<section id="about">
+  <div class="orb" style="width:400px;height:400px;background:radial-gradient(circle,rgba(0,87,255,0.12),transparent 70%);bottom:-50px;left:-100px;"></div>
 
-                <!-- Kolom 1: Brand & Deskripsi -->
-                <div class="col-lg-4 mb-4 mb-lg-0">
-                    <h5 class="fw-bold text-white mb-3">
-                        <i class="bi bi-shield-lock-fill me-2"></i>Dashboard OneForAll
-                    </h5>
-                    <p class="text-white-50 small">
-                        Platform monitoring keamanan berbasis Wazuh yang membantu memproteksi website dan server Anda dari ancaman siber secara realtime.
-                    </p>
-                </div>
+  <div class="container position-relative z-1">
+    <div class="row align-items-center g-5">
 
-
-                <div class="col-lg-4 mb-4 mb-lg-0">
-                    <h5 class="fw-bold text-white mb-3">Quick Links</h5>
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><a href="#features" class="text-white-50 text-decoration-none">Fitur Utama</a></li>
-                        <li class="mb-2"><a href="#about" class="text-white-50 text-decoration-none">Tentang Aplikasi</a></li>
-                        <li class="mb-2"><a href="#frontoffice" class="text-white-50 text-decoration-none">FrontOffice</a></li>
-                        <li class="mb-2"><a href="#dashboard" class="text-white-50 text-decoration-none">BackOffice</a></li>
-                    </ul>
-                </div>
-
-
-                <div class="col-lg-4">
-                    <h5 class="fw-bold text-white mb-3">Hubungi Kami</h5>
-                    <ul class="list-unstyled text-white-50 small">
-                        <li class="mb-2">
-                            <i class="bi bi-envelope-fill me-2"></i> support@oneforall.id
-                        </li>
-                        <li class="mb-2">
-                            <i class="bi bi-telephone-fill me-2"></i> +62
-                        </li>
-                    </ul>
-
-                    
-                    <div class="d-flex gap-3 mt-3">
-                        <a href="#" class="text-white-50 fs-5"><i class="bi bi-linkedin"></i></a>
-                        <a href="#" class="text-white-50 fs-5"><i class="bi bi-github"></i></a>
-                        <a href="#" class="text-white-50 fs-5"><i class="bi bi-twitter-x"></i></a>
-                        <a href="#" class="text-white-50 fs-5"><i class="bi bi-instagram"></i></a>
-                    </div>
-                </div>
-
-            </div>
-
-
-            <div class="row">
-                <div class="col-12">
-                    <hr class="border-secondary">
-                    <p class="text-center text-white-50 small mb-0">
-                        © 2026 Wazuh Monitor System. All Rights Reserved.
-                    </p>
-                </div>
-            </div>
+      <div class="col-lg-6 reveal">
+        <div class="img-frame">
+          <img src="{{ asset('images/wallpaper3.jpg') }}" alt="About Application">
         </div>
-    </footer>
+      </div>
+
+      <div class="col-lg-6 reveal">
+        <div class="section-label">Tentang</div>
+        <h2 class="section-title">Platform Security<br>All-In-One</h2>
+        <p style="color:var(--clr-muted);line-height:1.75;margin-bottom:16px;">
+          Dashboard One For All merupakan platform monitoring keamanan berbasis Wazuh
+          yang membantu perusahaan memonitor aktivitas website, server,
+          dan ancaman keamanan secara realtime.
+        </p>
+        <p style="color:var(--clr-muted);line-height:1.75;margin-bottom:32px;">
+          Sistem ini terdiri dari FrontOffice untuk customer dan BackOffice
+          untuk administrator dalam mengelola seluruh agent dan data keamanan secara terpusat.
+        </p>
+
+        <div class="row g-3">
+          <div class="col-6">
+            <div class="stat-block">
+              <h3 style="color:var(--clr-accent);">24/7</h3>
+              <p>Monitoring Aktif</p>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="stat-block">
+              <h3 style="color:var(--clr-success);">Realtime</h3>
+              <p>Alert System</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+{{-- ══════════════════════════════════════════════
+     FRONTOFFICE
+══════════════════════════════════════════════ --}}
+<section id="frontoffice" class="section-alt">
+  <div class="container position-relative z-1">
+    <div class="row align-items-center g-5">
+
+      <div class="col-lg-6 reveal">
+        <div class="section-label">Customer Portal</div>
+        <h2 class="section-title">Website FrontOffice</h2>
+        <p style="color:var(--clr-muted);line-height:1.7;margin-bottom:28px;">
+          Customer dapat melihat data security website mereka secara realtime
+          melalui dashboard interaktif yang bisa dikustomisasi sesuai kebutuhan.
+        </p>
+
+        <ul class="check-list reveal">
+          <li>
+            <i class="bi bi-check-circle-fill"></i>
+            <div>
+              <strong style="color:var(--clr-text);">Monitoring Keamanan Realtime</strong><br>
+              <span style="font-size:0.82rem;">Data diperbarui setiap detik dari Wazuh Agent.</span>
+            </div>
+          </li>
+          <li>
+            <i class="bi bi-check-circle-fill"></i>
+            <div>
+              <strong style="color:var(--clr-text);">Custom Widget Dashboard</strong><br>
+              <span style="font-size:0.82rem;">Pilih widget sesuai prioritas monitoring Anda.</span>
+            </div>
+          </li>
+          <li>
+            <i class="bi bi-check-circle-fill"></i>
+            <div>
+              <strong style="color:var(--clr-text);">Statistik Ancaman Keamanan</strong><br>
+              <span style="font-size:0.82rem;">Laporan harian, mingguan, dan bulanan.</span>
+            </div>
+          </li>
+          <li>
+            <i class="bi bi-check-circle-fill"></i>
+            <div>
+              <strong style="color:var(--clr-text);">Notifikasi & Alert</strong><br>
+              <span style="font-size:0.82rem;">Email dan push notification saat ancaman terdeteksi.</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="col-lg-6 reveal">
+        <div class="img-frame">
+          <img src="{{ asset('images/wallpaper2.jpg') }}" alt="FrontOffice">
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+{{-- ══════════════════════════════════════════════
+     BACKOFFICE
+══════════════════════════════════════════════ --}}
+<section id="dashboard">
+  <div class="orb" style="width:450px;height:450px;background:radial-gradient(circle,rgba(0,212,255,0.1),transparent 70%);top:50%;right:-120px;transform:translateY(-50%);"></div>
+
+  <div class="container position-relative z-1">
+    <div class="row align-items-center g-5 flex-lg-row-reverse">
+
+      <div class="col-lg-6 reveal">
+        <div class="section-label">Admin Panel</div>
+        <h2 class="section-title">Website BackOffice</h2>
+        <p style="color:var(--clr-muted);line-height:1.7;margin-bottom:32px;">
+          Admin dapat mengelola seluruh Wazuh Agent dan menentukan agent yang dimiliki
+          oleh customer tertentu dari satu panel terpusat yang powerful.
+        </p>
+
+        <div class="row g-3 mb-4">
+          <div class="col-6">
+            <div class="stat-block">
+              <h3 style="color:var(--clr-accent2);">250+</h3>
+              <p>Active Agents</p>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="stat-block">
+              <h3 style="color:var(--clr-danger);">99.9%</h3>
+              <p>Threat Detection</p>
+            </div>
+          </div>
+        </div>
+
+        <ul class="check-list reveal">
+          <li>
+            <i class="bi bi-check-circle-fill"></i>
+            <div><strong style="color:var(--clr-text);">Manajemen Multi-Agent</strong><br>
+            <span style="font-size:0.82rem;">Kelola ratusan agent dari satu dashboard.</span></div>
+          </li>
+          <li>
+            <i class="bi bi-check-circle-fill"></i>
+            <div><strong style="color:var(--clr-text);">Alokasi Agent ke Customer</strong><br>
+            <span style="font-size:0.82rem;">Tetapkan agent ke customer tertentu dengan mudah.</span></div>
+          </li>
+          <li>
+            <i class="bi bi-check-circle-fill"></i>
+            <div><strong style="color:var(--clr-text);">Log & Audit Trail</strong><br>
+            <span style="font-size:0.82rem;">Semua aktivitas tercatat untuk keperluan audit.</span></div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="col-lg-6 reveal">
+        <div class="img-frame">
+          <img src="{{ asset('images/wallpaper4.jpg') }}" alt="BackOffice">
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+{{-- ══════════════════════════════════════════════
+     BENEFITS
+══════════════════════════════════════════════ --}}
+<section id="benefits" class="section-alt">
+  <div class="container position-relative z-1">
+
+    <div class="text-center mb-5 reveal">
+      <div class="section-label">Keunggulan</div>
+      <h2 class="section-title">Kenapa Memilih Platform Ini?</h2>
+      <p style="color:var(--clr-muted);max-width:480px;margin:0 auto;">
+        Dirancang untuk keamanan enterprise dengan antarmuka yang tetap ramah pengguna.
+      </p>
+    </div>
+
+    <div class="row g-4">
+
+      <div class="col-md-3 col-sm-6 reveal">
+        <div class="benefit-card">
+          <div class="benefit-icon" style="background:rgba(255,186,0,0.1);">
+            <i class="bi bi-lightning-charge-fill" style="color:#ffba00;"></i>
+          </div>
+          <h5>Realtime</h5>
+          <p>Data keamanan tampil secara realtime tanpa delay.</p>
+        </div>
+      </div>
+
+      <div class="col-md-3 col-sm-6 reveal" style="transition-delay:0.1s;">
+        <div class="benefit-card">
+          <div class="benefit-icon" style="background:rgba(0,87,255,0.12);">
+            <i class="bi bi-sliders" style="color:var(--clr-accent2);"></i>
+          </div>
+          <h5>Customizable</h5>
+          <p>Customer bebas memilih dan menyusun widget dashboard.</p>
+        </div>
+      </div>
+
+      <div class="col-md-3 col-sm-6 reveal" style="transition-delay:0.2s;">
+        <div class="benefit-card">
+          <div class="benefit-icon" style="background:rgba(0,229,160,0.1);">
+            <i class="bi bi-person-lock" style="color:var(--clr-success);"></i>
+          </div>
+          <h5>Secure</h5>
+          <p>Keamanan data dan monitoring terjamin dengan enkripsi.</p>
+        </div>
+      </div>
+
+      <div class="col-md-3 col-sm-6 reveal" style="transition-delay:0.3s;">
+        <div class="benefit-card">
+          <div class="benefit-icon" style="background:rgba(255,58,92,0.1);">
+            <i class="bi bi-cloud-arrow-up-fill" style="color:var(--clr-danger);"></i>
+          </div>
+          <h5>Scalable</h5>
+          <p>Mudah dikembangkan untuk ratusan hingga ribuan client.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+{{-- ══════════════════════════════════════════════
+     CTA BANNER
+══════════════════════════════════════════════ --}}
+<section style="padding:80px 0;">
+  <div class="container">
+    <div class="glass-card reveal" style="padding:60px 48px;text-align:center;background:linear-gradient(135deg,rgba(0,87,255,0.12),rgba(0,212,255,0.06));border-color:rgba(0,212,255,0.15);position:relative;overflow:hidden;">
+      <div class="orb" style="width:300px;height:300px;background:radial-gradient(circle,rgba(0,87,255,0.2),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);"></div>
+      <div class="position-relative z-1">
+        <div class="section-label" style="justify-content:center;">Mulai Hari Ini</div>
+        <h2 class="section-title mb-3">Siap Mengamankan Website Anda?</h2>
+        <p style="color:var(--clr-muted);max-width:480px;margin:0 auto 32px;">
+          Bergabunglah dengan ratusan perusahaan yang sudah mempercayakan keamanan website mereka kepada One For All.
+        </p>
+        <div class="d-flex flex-wrap gap-3 justify-content-center">
+          <a href="#frontoffice" class="btn-primary-custom">
+            Coba Dashboard <i class="bi bi-arrow-right"></i>
+          </a>
+          <a href="#about" class="btn-outline-custom">
+            <i class="bi bi-info-circle"></i> Pelajari Lebih
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+{{-- ══════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════ --}}
+<footer>
+  <div class="container">
+    <div class="row g-5 mb-5">
+
+      {{-- Brand --}}
+      <div class="col-lg-4">
+        <div class="d-flex align-items-center gap-2 mb-16" style="margin-bottom:16px;">
+          <div class="brand-icon">
+            <i class="bi bi-shield-shaded" style="color:#fff;"></i>
+          </div>
+          <span style="font-family:var(--font-display);font-weight:800;font-size:1.05rem;">OneForAll</span>
+        </div>
+        <p style="color:var(--clr-muted);font-size:0.875rem;line-height:1.7;margin-bottom:24px;">
+          Platform monitoring keamanan berbasis Wazuh yang membantu memproteksi website
+          dan server Anda dari ancaman siber secara realtime.
+        </p>
+        <div class="stat-pill" style="font-size:0.7rem;">
+          <span class="dot"></span> Semua sistem berjalan normal
+        </div>
+      </div>
+
+      {{-- Quick Links --}}
+      <div class="col-lg-2 col-6">
+        <h5>Platform</h5>
+        <a href="#features" class="footer-link">Fitur Utama</a>
+        <a href="#about" class="footer-link">Tentang</a>
+        <a href="#frontoffice" class="footer-link">FrontOffice</a>
+        <a href="#dashboard" class="footer-link">BackOffice</a>
+        <a href="#benefits" class="footer-link">Keunggulan</a>
+      </div>
+
+      {{-- Legal --}}
+      <div class="col-lg-2 col-6">
+        <h5>Legal</h5>
+        <a href="#" class="footer-link">Privacy Policy</a>
+        <a href="#" class="footer-link">Terms of Service</a>
+        <a href="#" class="footer-link">Cookie Policy</a>
+      </div>
+
+      {{-- Contact --}}
+      <div class="col-lg-4">
+        <h5>Hubungi Kami</h5>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.875rem;color:var(--clr-muted);">
+            <i class="bi bi-envelope-fill" style="color:var(--clr-accent);"></i>
+            support@oneforall.id
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.875rem;color:var(--clr-muted);">
+            <i class="bi bi-telephone-fill" style="color:var(--clr-accent);"></i>
+            +62 xxx-xxxx-xxxx
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:0.875rem;color:var(--clr-muted);">
+            <i class="bi bi-geo-alt-fill" style="color:var(--clr-accent);"></i>
+            Indonesia
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="#" class="social-btn"><i class="bi bi-linkedin"></i></a>
+          <a href="#" class="social-btn"><i class="bi bi-github"></i></a>
+          <a href="#" class="social-btn"><i class="bi bi-twitter-x"></i></a>
+          <a href="#" class="social-btn"><i class="bi bi-instagram"></i></a>
+        </div>
+      </div>
+
+    </div>
+
+    <hr class="hr-custom">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pt-3">
+      <p style="color:var(--clr-muted);font-size:0.8rem;margin:0;">
+        © 2026 OneForAll — Wazuh Monitor System. All rights reserved.
+      </p>
+      <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--clr-muted);">
+        v2.0.0 · Built with Wazuh
+      </span>
+    </div>
+  </div>
+</footer>
+
 @endsection
