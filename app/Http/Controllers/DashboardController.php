@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agent;
+use App\Models\DashboardLayout;
 use App\Models\User;
 use App\Services\Interfaces\IOpenSearchService;
 use App\Services\Interfaces\IWazuhService;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
@@ -43,10 +45,11 @@ class DashboardController extends Controller
             $topRules       = $this->openSearch->getTopTriggeredRules(5, $accessibleAgentIds, $isAdmin);
             $topAgents      = $this->openSearch->getTopAgentsByAlerts(5, $accessibleAgentIds, $isAdmin);
             $customerStats  = $isAdmin ? $this->getCustomerStats() : null;
+            $savedLayout    = DashboardLayout::where('id_pengguna', $userId)->where('page', 'home')->value('layout');
 
             return view('home.index', compact(
                 'agentStats', 'alertTrend', 'alertSeverity', 'totalAlerts',
-                'osDistribution', 'topRules', 'topAgents', 'customerStats'
+                'osDistribution', 'topRules', 'topAgents', 'customerStats', 'savedLayout'
             ));
         } catch (\Exception $e) {
             Log::error('Dashboard error: ' . $e->getMessage());
@@ -59,8 +62,24 @@ class DashboardController extends Controller
                 'topRules'       => [],
                 'topAgents'      => [],
                 'customerStats'  => null,
+                'savedLayout'    => null,
             ]);
         }
+    }
+
+    public function saveLayout(Request $request)
+    {
+        $validated = $request->validate([
+            'layout' => 'required|array',
+            'page'   => 'required|string|max:50',
+        ]);
+
+        DashboardLayout::updateOrCreate(
+            ['id_pengguna' => auth()->user()->id_pengguna, 'page' => $validated['page']],
+            ['layout'      => $validated['layout']]
+        );
+
+        return response()->json(['success' => true]);
     }
 
     private function getAgentStatsWithChange(?string $token, bool $isAdmin, $userId): array

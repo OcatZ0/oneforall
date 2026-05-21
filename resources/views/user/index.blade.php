@@ -5,7 +5,32 @@
 @section('content')
 
 <div class="row">
-  <div class="col-md-12 grid-margin stretch-card">
+
+  {{-- User Stats --}}
+  <div class="col-xl-3 col-lg-4 mb-4">
+    <div class="card h-100">
+      <div class="card-body">
+        <p class="card-title mb-3">Ringkasan Pengguna</p>
+        <div class="d-flex justify-content-around text-center">
+          <div>
+            <h3 class="font-weight-bold mb-0">{{ $userStats['total'] }}</h3>
+            <small class="text-muted">Total</small>
+          </div>
+          <div>
+            <h3 class="font-weight-bold mb-0 text-danger">{{ $userStats['admin'] }}</h3>
+            <small class="text-muted">Admin</small>
+          </div>
+          <div>
+            <h3 class="font-weight-bold mb-0 text-primary">{{ $userStats['customer'] }}</h3>
+            <small class="text-muted">Customer</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- User Table --}}
+  <div class="col-xl-9 col-lg-8">
     <div class="card">
       <div class="card-body">
         <div class="d-flex align-items-center justify-content-between mb-3">
@@ -15,7 +40,6 @@
           </a>
         </div>
 
-        <!-- Search and Filter Form -->
         <form method="GET" action="{{ route('user') }}" id="filterForm" class="mb-3">
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <div class="input-group" style="max-width:350px">
@@ -28,20 +52,17 @@
                 placeholder="Cari username atau email..."
                 value="{{ request('search') }}">
             </div>
-
             <select id="roleFilter" name="role" class="form-control form-select" style="width:180px">
               <option value="">Semua Role</option>
-              <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>Admin</option>
+              <option value="admin"    {{ request('role') === 'admin'    ? 'selected' : '' }}>Admin</option>
               <option value="customer" {{ request('role') === 'customer' ? 'selected' : '' }}>Customer</option>
             </select>
-
             <a href="{{ route('user') }}" class="btn btn-sm btn-outline-secondary">
               <i class="mdi mdi-refresh mr-1"></i>Reset
             </a>
           </div>
         </form>
 
-        <!-- Users Table -->
         <div class="table-responsive">
           <table class="table table-striped table-hover mb-0">
             <thead>
@@ -74,9 +95,9 @@
                 <td><span class="font-weight-bold">{{ $user->agents()->count() }}</span></td>
                 <td>
                   @php
-                    $agents = $user->agents()->limit(2)->get();
+                    $agents     = $user->agents()->limit(2)->get();
                     $agentCount = $user->agents()->count();
-                    $moreCount = $agentCount - 2;
+                    $moreCount  = $agentCount - 2;
                   @endphp
                   @if($agentCount > 0)
                     @foreach($agents as $agent)
@@ -110,7 +131,6 @@
           </table>
         </div>
 
-        <!-- Pagination Controls -->
         @if($users->count() > 0)
         <div class="d-flex align-items-center justify-content-between mt-3">
           <div class="d-flex align-items-center">
@@ -129,14 +149,8 @@
               </select>
             </form>
           </div>
-
-          <!-- Pagination Links -->
-          <div>
-            {{ $users->appends(request()->query())->links('pagination::bootstrap-4') }}
-          </div>
+          <div>{{ $users->appends(request()->query())->links('pagination::bootstrap-4') }}</div>
         </div>
-
-        <!-- Pagination Info -->
         <div class="text-muted text-sm mt-2">
           Menampilkan {{ ($users->currentPage() - 1) * $users->perPage() + 1 }} hingga
           {{ min($users->currentPage() * $users->perPage(), $users->total()) }} dari {{ $users->total() }} pengguna
@@ -146,47 +160,39 @@
       </div>
     </div>
   </div>
+
 </div>
 
-<script>
-// Debounce function for search
-function debounce(func, delay) {
-  let timeoutId;
-  return function(...args) {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func.apply(this, args), delay);
-  };
-}
-
-// Auto-submit form on search input (debounced)
-const searchInput = document.getElementById('searchInput');
-if (searchInput) {
-  searchInput.addEventListener('input', debounce(function() {
-    // Reset to page 1 when searching
-    const form = document.getElementById('filterForm');
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'page';
-    input.value = '1';
-    form.appendChild(input);
-    form.submit();
-  }, 500));
-}
-
-// Auto-submit form on role filter change
-const roleFilter = document.getElementById('roleFilter');
-if (roleFilter) {
-  roleFilter.addEventListener('change', function() {
-    const form = document.getElementById('filterForm');
-    // Reset to page 1 when filtering
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = 'page';
-    input.value = '1';
-    form.appendChild(input);
-    form.submit();
-  });
-}
-</script>
-
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+  function debounce(fn, ms) {
+    let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+  }
+
+  const searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('input', debounce(() => {
+      const form = document.getElementById('filterForm');
+      const p = document.createElement('input');
+      p.type = 'hidden'; p.name = 'page'; p.value = '1';
+      form.appendChild(p);
+      form.submit();
+    }, 500));
+  }
+
+  const roleFilter = document.getElementById('roleFilter');
+  if (roleFilter) {
+    roleFilter.addEventListener('change', () => {
+      const form = document.getElementById('filterForm');
+      const p = document.createElement('input');
+      p.type = 'hidden'; p.name = 'page'; p.value = '1';
+      form.appendChild(p);
+      form.submit();
+    });
+  }
+})();
+</script>
+@endpush

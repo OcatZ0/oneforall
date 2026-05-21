@@ -21,6 +21,7 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/dashboard/layout', [DashboardController::class, 'saveLayout'])->name('dashboard.layout');
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::post('auth/logout', [AuthController::class, 'logout'])->name('logout');
 
