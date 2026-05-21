@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Implementations;
 
+use App\Services\Interfaces\IOpenSearchService;
 use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 
-class OpenSearchService
+class OpenSearchService implements IOpenSearchService
 {
     private $opensearchHost;
     private $opensearchUser;
@@ -18,13 +19,13 @@ class OpenSearchService
 
     public function __construct()
     {
-        $this->opensearchHost = env('OPENSEARCH_HOST', 'https://192.168.200.150:9200');
-        $this->opensearchUser = env('OPENSEARCH_USER', 'admin');
-        $this->opensearchPassword = env('OPENSEARCH_PASSWORD', 'Admin123.');
-        
-        $this->wazuhHost = env('WAZUH_HOST', 'https://192.168.200.150:55000');
-        $this->wazuhUser = env('WAZUH_USER', 'admin');
-        $this->wazuhPassword = env('WAZUH_PASSWORD', 'Admin123.');
+        $this->opensearchHost     = config('opensearch.host');
+        $this->opensearchUser     = config('opensearch.user');
+        $this->opensearchPassword = config('opensearch.password');
+
+        $this->wazuhHost     = config('wazuh.host');
+        $this->wazuhUser     = config('wazuh.user');
+        $this->wazuhPassword = config('wazuh.password');
     }
 
     /**

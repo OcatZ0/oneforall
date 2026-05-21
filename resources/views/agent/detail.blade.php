@@ -105,7 +105,7 @@
           <div>
             <div class="text-uppercase text-muted fw-semibold" style="font-size:10px;letter-spacing:.05em">Operating System</div>
             <div class="d-flex align-items-center">
-              <i class="mdi {{ \App\Http\Controllers\AgentController::getOSIcon($agent->os ?? '') }} text-primary"></i>
+              <i class="mdi {{ \App\Services\Utilities\AgentHelper::getOSIcon($agent->os ?? '') }} text-primary"></i>
               {{ $agent->os ?? 'Unknown' }}
             </div>
           </div>

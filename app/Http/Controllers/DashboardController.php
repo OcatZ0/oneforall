@@ -2,141 +2,105 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\Http;
-use App\Services\OpenSearchService;
-use App\Models\User;
 use App\Models\Agent;
+use App\Models\User;
+use App\Services\Interfaces\IOpenSearchService;
+use App\Services\Interfaces\IWazuhService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
-    private $wazuhBase;
-    private $wazuhUser;
-    private $wazuhPass;
-    private $openSearch;
+    public function __construct(
+        private IWazuhService $wazuhService,
+        private IOpenSearchService $openSearch
+    ) {}
 
-    public function __construct(OpenSearchService $openSearch)
-    {
-        $this->wazuhBase = env('WAZUH_HOST', 'https://192.168.72.2:55000');
-        $this->wazuhUser = env('WAZUH_USER', 'admin');
-        $this->wazuhPass = env('WAZUH_PASSWORD', 'Admin123.');
-        $this->openSearch = $openSearch;
-    }
-
-    private function getToken()
+    public function index()
     {
         try {
-            $response = Http::withoutVerifying()
-                ->connectTimeout(2)
-                ->timeout(2)
-                ->withBasicAuth($this->wazuhUser, $this->wazuhPass)
-                ->post("{$this->wazuhBase}/security/user/authenticate");
+            $user     = auth()->user();
+            $userRole = $user->peran ?? null;
+            $userId   = $user->id_pengguna ?? auth()->id();
+            $isAdmin  = $userRole === 'admin';
 
-            if (!$response->successful()) {
-                \Log::warning('Wazuh token request failed: ' . $response->status());
-                return null;
+            $token      = $this->wazuhService->getToken();
+            $agentStats = $this->getAgentStatsWithChange($token, $isAdmin, $userId);
+
+            $accessibleAgentIds = null;
+            if (!$isAdmin) {
+                $accessibleAgentIds = Agent::where('id_pengguna', $userId)
+                    ->pluck('id_agent')
+                    ->map(fn($id) => (string) $id)
+                    ->values()
+                    ->toArray();
             }
 
-            return $response->json('data.token');
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            \Log::warning('Wazuh API connection timeout: ' . $e->getMessage());
-            return null;
+            $alertTrend     = $this->openSearch->getAlertTrendLast7Days($accessibleAgentIds, $isAdmin);
+            $alertSeverity  = $this->openSearch->getAlertSeverityDistribution($accessibleAgentIds, $isAdmin);
+            $totalAlerts    = $this->openSearch->getTotalAlertCount($accessibleAgentIds, $isAdmin);
+            $osDistribution = $this->openSearch->getOsDistribution($accessibleAgentIds, $isAdmin);
+            $topRules       = $this->openSearch->getTopTriggeredRules(5, $accessibleAgentIds, $isAdmin);
+            $topAgents      = $this->openSearch->getTopAgentsByAlerts(5, $accessibleAgentIds, $isAdmin);
+            $customerStats  = $isAdmin ? $this->getCustomerStats() : null;
+
+            return view('home.index', compact(
+                'agentStats', 'alertTrend', 'alertSeverity', 'totalAlerts',
+                'osDistribution', 'topRules', 'topAgents', 'customerStats'
+            ));
         } catch (\Exception $e) {
-            \Log::warning('Wazuh API unreachable: ' . $e->getMessage());
-            return null;
+            Log::error('Dashboard error: ' . $e->getMessage());
+            return view('home.index', [
+                'agentStats'     => ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0, 'change' => 0, 'changePercent' => 0],
+                'alertTrend'     => [],
+                'alertSeverity'  => [],
+                'totalAlerts'    => 0,
+                'osDistribution' => [],
+                'topRules'       => [],
+                'topAgents'      => [],
+                'customerStats'  => null,
+            ]);
         }
     }
 
-    private function getAgentStatsWithChange($token, $userRole, $userId = null)
+    private function getAgentStatsWithChange(?string $token, bool $isAdmin, $userId): array
     {
+        $empty = ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0, 'change' => 0, 'changePercent' => 0, 'currentMonthNew' => 0, 'previousMonthNew' => 0];
+
         try {
-            // Get current agent stats
-            $agentStats = [
-                'total'           => 0,
-                'active'          => 0,
-                'disconnected'    => 0,
-                'pending'         => 0,
-                'never_connected' => 0,
-            ];
+            if (!$token) return $empty;
 
-            if (!$token) {
-                return array_merge($agentStats, ['change' => 0, 'changePercent' => 0]);
-            }
-
-            // Fetch current stats
-            if ($userRole === 'admin') {
-                $summary = Http::withoutVerifying()
-                    ->connectTimeout(2)
-                    ->timeout(2)
-                    ->withToken($token)
-                    ->get("{$this->wazuhBase}/agents/summary/status")
-                    ->json('data.connection');
-
-                $agentStats = [
-                    'total'           => $summary['total'] ?? 0,
-                    'active'          => $summary['active'] ?? 0,
-                    'disconnected'    => $summary['disconnected'] ?? 0,
-                    'pending'         => $summary['pending'] ?? 0,
-                    'never_connected' => $summary['never_connected'] ?? 0,
-                ];
+            if ($isAdmin) {
+                $agentStats = $this->wazuhService->getAgentSummaryStatus($token);
             } else {
-                // For customers, get stats only for assigned agents
                 $accessibleIds = Agent::where('id_pengguna', $userId)
                     ->pluck('id_agent')
-                    ->map(fn($id) => (string)$id) // Ensure IDs are strings
+                    ->map(fn($id) => (string) $id)
                     ->values()
                     ->toArray();
-                
-                \Log::info('Agent stats filtering by customer accessible agents', [
-                    'user_id' => $userId,
-                    'accessible_ids' => $accessibleIds,
-                    'count' => count($accessibleIds),
-                ]);
-                
-                if (!empty($accessibleIds)) {
-                    $response = Http::withoutVerifying()
-                        ->connectTimeout(3)
-                        ->timeout(3)
-                        ->withToken($token)
-                        ->get("{$this->wazuhBase}/agents", [
-                            'limit' => 50000,
-                        ]);
 
-                    if ($response->successful()) {
-                        $allAgents = $response->json('data.affected_items', []);
-                        
-                        foreach ($allAgents as $agent) {
-                            $agentId = (string)($agent['id'] ?? null);
-                            if (in_array($agentId, $accessibleIds, true)) {
-                                $agentStats['total']++;
-                                $status = $agent['status'] ?? 'unknown';
-                                if (isset($agentStats[$status])) {
-                                    $agentStats[$status]++;
-                                }
-                            }
+                $agentStats = ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0];
+
+                if (!empty($accessibleIds)) {
+                    $data = $this->wazuhService->getAgents($token, 0, 50000);
+                    foreach ($data['agents'] as $agent) {
+                        $agentId = (string) ($agent['id'] ?? null);
+                        if (in_array($agentId, $accessibleIds, true)) {
+                            $agentStats['total']++;
+                            $status = $agent['status'] ?? 'unknown';
+                            if (isset($agentStats[$status])) $agentStats[$status]++;
                         }
                     }
                 }
             }
 
-            // Calculate change from database records
-            $now = Carbon::now();
-            $currentMonthStart = $now->copy()->startOfMonth();
-            $previousMonthStart = $now->copy()->subMonth()->startOfMonth();
-            $previousMonthEnd = $now->copy()->subMonth()->endOfMonth();
-
-            if ($userRole === 'admin') {
-                $totalPreviousMonth  = Agent::where('tanggal_dibuat', '<=', $previousMonthEnd)->count();
-            } else {
-                $totalPreviousMonth  = Agent::where('id_pengguna', $userId)
-                    ->where('tanggal_dibuat', '<=', $previousMonthEnd)
-                    ->count();
-            }
+            $previousMonthEnd   = Carbon::now()->subMonth()->endOfMonth();
+            $totalPreviousMonth = $isAdmin
+                ? Agent::where('tanggal_dibuat', '<=', $previousMonthEnd)->count()
+                : Agent::where('id_pengguna', $userId)->where('tanggal_dibuat', '<=', $previousMonthEnd)->count();
 
             $change        = $agentStats['total'] - $totalPreviousMonth;
-            $changePercent = $totalPreviousMonth > 0
-                ? round(($change / $totalPreviousMonth) * 100, 1)
-                : 0;
+            $changePercent = $totalPreviousMonth > 0 ? round(($change / $totalPreviousMonth) * 100, 1) : 0;
 
             return array_merge($agentStats, [
                 'change'           => $change,
@@ -145,118 +109,30 @@ class DashboardController extends Controller
                 'previousMonthNew' => $totalPreviousMonth,
             ]);
         } catch (\Exception $e) {
-            \Log::warning('Failed to fetch agent stats with change: ' . $e->getMessage());
-            return [
-                'total'           => 0,
-                'active'          => 0,
-                'disconnected'    => 0,
-                'pending'         => 0,
-                'never_connected' => 0,
-                'change'          => 0,
-                'changePercent'   => 0,
-                'currentMonthNew' => 0,
-                'previousMonthNew' => 0,
-            ];
+            Log::warning('Failed to fetch agent stats with change: ' . $e->getMessage());
+            return $empty;
         }
     }
 
-    private function getCustomerStats()
-{
-    try {
-        $totalCustomers = User::where('peran', 'customer')->count();
-
-        $now = Carbon::now();
-        $previousMonthEnd = $now->copy()->subMonth()->endOfMonth();
-
-        $totalPreviousMonth = User::where('peran', 'customer')
-            ->where('tanggal_dibuat', '<=', $previousMonthEnd)
-            ->count();
-
-        $change        = $totalCustomers - $totalPreviousMonth;
-        $changePercent = $totalPreviousMonth > 0
-            ? round(($change / $totalPreviousMonth) * 100, 1)
-            : 0;
-
-        return [
-            'total'            => $totalCustomers,
-            'change'           => $change,
-            'changePercent'    => $changePercent,
-            'currentMonthNew'  => $change,
-            'previousMonthNew' => $totalPreviousMonth,
-        ];
-    } catch (\Exception $e) {
-        \Log::warning('Failed to fetch customer stats: ' . $e->getMessage());
-        return [
-            'total'            => 0,
-            'change'           => 0,
-            'changePercent'    => 0,
-            'currentMonthNew'  => 0,
-            'previousMonthNew' => 0,
-        ];
-    }
-}
-
-    public function index()
+    private function getCustomerStats(): array
     {
         try {
-            $user = auth()->user();
-            $userRole = $user->peran ?? null;
-            $userId = $user->id_pengguna ?? auth()->id();
+            $totalCustomers     = User::where('peran', 'customer')->count();
+            $previousMonthEnd   = Carbon::now()->subMonth()->endOfMonth();
+            $totalPreviousMonth = User::where('peran', 'customer')->where('tanggal_dibuat', '<=', $previousMonthEnd)->count();
+            $change             = $totalCustomers - $totalPreviousMonth;
+            $changePercent      = $totalPreviousMonth > 0 ? round(($change / $totalPreviousMonth) * 100, 1) : 0;
 
-            \Log::info('Dashboard request', [
-                'user_id' => $userId,
-                'user_role' => $userRole,
-            ]);
-
-            $token = $this->getToken();
-
-            // Get agent statistics with change calculation
-            $agentStats = $this->getAgentStatsWithChange($token, $userRole, $userId);
-
-            // Get accessible agent IDs for filtering customer data
-            $accessibleAgentIds = null;
-            $isAdmin = $userRole === 'admin';
-            
-            if (!$isAdmin) {
-                $accessibleAgentIds = Agent::where('id_pengguna', $userId)
-                    ->pluck('id_agent')
-                    ->map(fn($id) => (string)$id) // Ensure all IDs are strings
-                    ->values()
-                    ->toArray();
-                
-                \Log::info('Dashboard customer - accessible agents retrieved', [
-                    'user_id' => $userId,
-                    'agent_ids' => $accessibleAgentIds,
-                    'count' => count($accessibleAgentIds),
-                ]);
-            } else {
-                \Log::info('Dashboard admin - all agents visible');
-            }
-
-            // Fetch alert data from OpenSearch (filtered by accessible agents for customers, all for admin)
-            $alertTrend = $this->openSearch->getAlertTrendLast7Days($accessibleAgentIds, $isAdmin);
-            $alertSeverity = $this->openSearch->getAlertSeverityDistribution($accessibleAgentIds, $isAdmin);
-            $totalAlerts = $this->openSearch->getTotalAlertCount($accessibleAgentIds, $isAdmin);
-            $osDistribution = $this->openSearch->getOsDistribution($accessibleAgentIds, $isAdmin);
-            $topRules = $this->openSearch->getTopTriggeredRules(5, $accessibleAgentIds, $isAdmin);
-            $topAgents = $this->openSearch->getTopAgentsByAlerts(5, $accessibleAgentIds, $isAdmin);
-
-            // Fetch customer statistics (only for admin)
-            $customerStats = $userRole === 'admin' ? $this->getCustomerStats() : null;
-
-            return view('home.index', compact('agentStats', 'alertTrend', 'alertSeverity', 'totalAlerts', 'osDistribution', 'topRules', 'topAgents', 'customerStats'));
+            return [
+                'total'            => $totalCustomers,
+                'change'           => $change,
+                'changePercent'    => $changePercent,
+                'currentMonthNew'  => $change,
+                'previousMonthNew' => $totalPreviousMonth,
+            ];
         } catch (\Exception $e) {
-            \Log::error('Dashboard error: ' . $e->getMessage());
-            return view('home.index', [
-                'agentStats' => ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0, 'change' => 0, 'changePercent' => 0],
-                'alertTrend' => [],
-                'alertSeverity' => [],
-                'totalAlerts' => 0,
-                'osDistribution' => [],
-                'topRules' => [],
-                'topAgents' => [],
-                'customerStats' => null,
-            ]);
+            Log::warning('Failed to fetch customer stats: ' . $e->getMessage());
+            return ['total' => 0, 'change' => 0, 'changePercent' => 0, 'currentMonthNew' => 0, 'previousMonthNew' => 0];
         }
     }
 }
