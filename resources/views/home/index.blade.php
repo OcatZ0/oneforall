@@ -80,6 +80,11 @@
   /* Cards always fill their grid item */
   .gs-card { height: 100%; display: flex; flex-direction: column; }
   .gs-card .card-body { flex: 1; overflow: auto; }
+
+  /* Hide edit controls on mobile — drag/resize not usable on touch */
+  @media (max-width: 767px) {
+    #gs-fab, #gs-edit-toolbar { display: none !important; }
+  }
 </style>
 @endpush
 
@@ -153,7 +158,7 @@
   </div>
 
   {{-- Total Agents --}}
-  <div class="grid-stack-item" gs-id="total-agents" gs-x="0" gs-y="4" gs-w="3" gs-h="4">
+  <div class="grid-stack-item" gs-id="total-agents" gs-x="0" gs-y="4" gs-w="3" gs-h="5">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -177,7 +182,7 @@
 
   @if($customerStats)
   {{-- Total Customers (admin only) --}}
-  <div class="grid-stack-item" gs-id="total-customers" gs-x="3" gs-y="4" gs-w="3" gs-h="4">
+  <div class="grid-stack-item" gs-id="total-customers" gs-x="3" gs-y="4" gs-w="3" gs-h="5">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -210,7 +215,7 @@
     $pendingPct        = round($agentStats['pending'] / $total * 100, 1);
     $neverConnectedPct = round($agentStats['never_connected'] / $total * 100, 1);
   @endphp
-  <div class="grid-stack-item" gs-id="agent-composition" gs-x="{{ $compX }}" gs-y="4" gs-w="{{ $compW }}" gs-h="8">
+  <div class="grid-stack-item" gs-id="agent-composition" gs-x="{{ $compX }}" gs-y="4" gs-w="{{ $compW }}" gs-h="5">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -428,8 +433,12 @@
     cellHeight: 60,
     margin: 8,
     float: false,
-    staticGrid: true,           // locked until edit mode
+    staticGrid: true,
     resizable: { handles: 'se' },
+    columnOpts: {
+      breakpointForWindow: true,
+      breakpoints: [{ w: 768, c: 1 }],
+    },
   });
 
   // Apply saved layout if exists

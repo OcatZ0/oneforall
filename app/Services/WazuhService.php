@@ -1,12 +1,11 @@
 <?php
 
-namespace App\Services\Implementations;
+namespace App\Services;
 
-use App\Services\Interfaces\IWazuhService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class WazuhService implements IWazuhService
+class WazuhService
 {
     private string $_host;
     private string $_user;
@@ -115,6 +114,49 @@ class WazuhService implements IWazuhService
         }
 
         return null;
+    }
+
+    public function getSCAPolicies(string $token, string $agentId): array
+    {
+        try {
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)->timeout(5)
+                ->withToken($token)
+                ->get("{$this->_host}/sca/{$agentId}");
+
+            if ($response->successful()) {
+                return $response->json('data.affected_items') ?? [];
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to fetch SCA policies: ' . $e->getMessage());
+        }
+        return [];
+    }
+
+    public function getSCAChecks(string $token, string $agentId, string $policyId, int $limit = 10, int $offset = 0, ?string $result = null): array
+    {
+        try {
+            $params = ['limit' => $limit, 'offset' => $offset];
+            if ($result && in_array($result, ['passed', 'failed', 'not_applicable'])) {
+                $params['result'] = $result;
+            }
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)->timeout(5)
+                ->withToken($token)
+                ->get("{$this->_host}/sca/{$agentId}/checks/{$policyId}", $params);
+
+            if ($response->successful()) {
+                $data = $response->json('data');
+                return [
+                    'data'  => $data['affected_items'] ?? [],
+                    'total' => $data['total_affected_items'] ?? 0,
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to fetch SCA checks: ' . $e->getMessage());
+        }
+        return ['data' => [], 'total' => 0];
     }
 
     public function getAgentsWithIPs(): array

@@ -33,6 +33,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/agent/{id}/sca', [AgentController::class, 'sca'])->name('agent.sca');
     Route::get('/agent/{id}/vulnerabilities', [AgentController::class, 'vulnerabilities'])->name('agent.vulnerabilities');
     Route::get('/agent/{id}/mitre-attack', [AgentController::class, 'mitreAttack'])->name('agent.mitre-attack');
+    Route::get('/agent/{id}/security-events/alerts', [AgentController::class, 'getSeAlerts'])->name('agent.se.alerts');
+    Route::get('/agent/{id}/security-events/groups', [AgentController::class, 'getSeGroups'])->name('agent.se.groups');
+    Route::get('/agent/{id}/integrity-monitoring/events', [AgentController::class, 'getIntegrityEvents'])->name('agent.fim.events');
+    Route::get('/agent/{id}/sca/checks', [AgentController::class, 'getScaChecksJson'])->name('agent.sca.checks');
     Route::get('/agent/chart-data', [AgentController::class, 'getChartData'])->name('agent.chart-data');
     Route::get('/agent/{id}/chart-data', [AgentController::class, 'getDetailChartData'])->name('agent.detail-chart-data');
     Route::post('/agent/sync', [AgentController::class, 'syncAgentsFromWazuh'])->name('agent.sync');

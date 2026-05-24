@@ -3,14 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agent;
+use App\Models\DashboardLayout;
 use App\Models\User;
-use App\Services\Interfaces\IAgentService;
+use App\Services\WazuhService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    public function __construct(private IAgentService $agentService) {}
+    private WazuhService $_wazuhService;
+
+    public function __construct()
+    {
+        $this->_wazuhService = new WazuhService();
+    }
 
     public function index(Request $request)
     {
@@ -35,18 +41,21 @@ class UserController extends Controller
 
         $users = $query->paginate($perPage);
 
-        $userStats = [
+        $userStats   = [
             'total'    => User::count(),
             'admin'    => User::where('peran', 'admin')->count(),
             'customer' => User::where('peran', 'customer')->count(),
         ];
+        $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
+                                      ->where('page', 'user')
+                                      ->value('layout');
 
-        return view('user.index', compact('users', 'userStats'));
+        return view('user.index', compact('users', 'userStats', 'savedLayout'));
     }
 
     public function create()
     {
-        $availableAgents = $this->agentService->getAvailableAgents();
+        $availableAgents = $this->getAvailableAgents();
         return view('user.create', compact('availableAgents'));
     }
 
@@ -62,7 +71,7 @@ class UserController extends Controller
         ]);
 
         if (!empty($validated['agents'])) {
-            $assignmentError = $this->agentService->validateAgentAssignment($validated['agents']);
+            $assignmentError = $this->validateAgentAssignment($validated['agents']);
             if ($assignmentError) {
                 return redirect()->back()->withInput()->with('error', $assignmentError);
             }
@@ -91,7 +100,7 @@ class UserController extends Controller
             return redirect()->route('user')->with('error', 'User tidak ditemukan.');
         }
 
-        $availableAgents = $this->agentService->getAvailableAgents();
+        $availableAgents = $this->getAvailableAgents();
         $userAgentIds    = $user->agents()->pluck('id_agent')->toArray();
 
         return view('user.edit-user', compact('user', 'availableAgents', 'userAgentIds'));
@@ -113,7 +122,7 @@ class UserController extends Controller
         ]);
 
         if (!empty($validated['agents'])) {
-            $assignmentError = $this->agentService->validateAgentAssignment($validated['agents'], $user->id_pengguna);
+            $assignmentError = $this->validateAgentAssignment($validated['agents'], $user->id_pengguna);
             if ($assignmentError) {
                 return redirect()->back()->withInput()->with('error', $assignmentError);
             }
@@ -134,5 +143,46 @@ class UserController extends Controller
         }
 
         return redirect()->route('user')->with('success', "User '{$validated['username']}' berhasil diperbarui.");
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    private function getAvailableAgents(): array
+    {
+        $agentRecords   = Agent::with('user')->get();
+        $wazuhAgents    = $this->_wazuhService->getAgentsWithIPs();
+        $wazuhAgentsMap = [];
+        foreach ($wazuhAgents as $wa) {
+            $wazuhAgentsMap[(string) $wa['id']] = $wa;
+        }
+
+        return $agentRecords->map(function ($agent) use ($wazuhAgentsMap) {
+            $agentId = (string) $agent->id_agent;
+            return [
+                'id'          => $agent->id_agent,
+                'name'        => $agent->nama,
+                'ip'          => $wazuhAgentsMap[$agentId]['ip'] ?? 'N/A',
+                'assigned'    => !is_null($agent->id_pengguna),
+                'assigned_to' => $agent->user?->username,
+            ];
+        })->toArray();
+    }
+
+    private function validateAgentAssignment(array $agentIds, ?int $excludeUserId = null): ?string
+    {
+        if (empty($agentIds)) return null;
+
+        $query = Agent::whereIn('id_agent', $agentIds)->whereNotNull('id_pengguna');
+        if ($excludeUserId !== null) {
+            $query->where('id_pengguna', '!=', $excludeUserId);
+        }
+
+        $conflicting = $query->with('user')->get();
+        if ($conflicting->isNotEmpty()) {
+            $names = $conflicting->map(fn($a) => "{$a->nama} (assigned to {$a->user->username})")->implode(', ');
+            return "Gagal: Agent berikut sudah ditugaskan ke pengguna lain: {$names}";
+        }
+
+        return null;
     }
 }

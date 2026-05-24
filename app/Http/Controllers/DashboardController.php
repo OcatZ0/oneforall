@@ -5,18 +5,22 @@ namespace App\Http\Controllers;
 use App\Models\Agent;
 use App\Models\DashboardLayout;
 use App\Models\User;
-use App\Services\Interfaces\IOpenSearchService;
-use App\Services\Interfaces\IWazuhService;
+use App\Services\OpenSearchService;
+use App\Services\WazuhService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
-    public function __construct(
-        private IWazuhService $wazuhService,
-        private IOpenSearchService $openSearch
-    ) {}
+    private WazuhService $_wazuhService;
+    private OpenSearchService $_openSearch;
+
+    public function __construct()
+    {
+        $this->_wazuhService = new WazuhService();
+        $this->_openSearch   = new OpenSearchService();
+    }
 
     public function index()
     {
@@ -26,7 +30,7 @@ class DashboardController extends Controller
             $userId   = $user->id_pengguna ?? auth()->id();
             $isAdmin  = $userRole === 'admin';
 
-            $token      = $this->wazuhService->getToken();
+            $token      = $this->_wazuhService->getToken();
             $agentStats = $this->getAgentStatsWithChange($token, $isAdmin, $userId);
 
             $accessibleAgentIds = null;
@@ -38,12 +42,12 @@ class DashboardController extends Controller
                     ->toArray();
             }
 
-            $alertTrend     = $this->openSearch->getAlertTrendLast7Days($accessibleAgentIds, $isAdmin);
-            $alertSeverity  = $this->openSearch->getAlertSeverityDistribution($accessibleAgentIds, $isAdmin);
-            $totalAlerts    = $this->openSearch->getTotalAlertCount($accessibleAgentIds, $isAdmin);
-            $osDistribution = $this->openSearch->getOsDistribution($accessibleAgentIds, $isAdmin);
-            $topRules       = $this->openSearch->getTopTriggeredRules(5, $accessibleAgentIds, $isAdmin);
-            $topAgents      = $this->openSearch->getTopAgentsByAlerts(5, $accessibleAgentIds, $isAdmin);
+            $alertTrend     = $this->_openSearch->getAlertTrendLast7Days($accessibleAgentIds, $isAdmin);
+            $alertSeverity  = $this->_openSearch->getAlertSeverityDistribution($accessibleAgentIds, $isAdmin);
+            $totalAlerts    = $this->_openSearch->getTotalAlertCount($accessibleAgentIds, $isAdmin);
+            $osDistribution = $this->_openSearch->getOsDistribution($accessibleAgentIds, $isAdmin);
+            $topRules       = $this->_openSearch->getTopTriggeredRules(5, $accessibleAgentIds, $isAdmin);
+            $topAgents      = $this->_openSearch->getTopAgentsByAlerts(5, $accessibleAgentIds, $isAdmin);
             $customerStats  = $isAdmin ? $this->getCustomerStats() : null;
             $savedLayout    = DashboardLayout::where('id_pengguna', $userId)->where('page', 'home')->value('layout');
 
@@ -90,7 +94,7 @@ class DashboardController extends Controller
             if (!$token) return $empty;
 
             if ($isAdmin) {
-                $agentStats = $this->wazuhService->getAgentSummaryStatus($token);
+                $agentStats = $this->_wazuhService->getAgentSummaryStatus($token);
             } else {
                 $accessibleIds = Agent::where('id_pengguna', $userId)
                     ->pluck('id_agent')
@@ -101,7 +105,7 @@ class DashboardController extends Controller
                 $agentStats = ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0];
 
                 if (!empty($accessibleIds)) {
-                    $data = $this->wazuhService->getAgents($token, 0, 50000);
+                    $data = $this->_wazuhService->getAgents($token, 0, 50000);
                     foreach ($data['agents'] as $agent) {
                         $agentId = (string) ($agent['id'] ?? null);
                         if (in_array($agentId, $accessibleIds, true)) {
