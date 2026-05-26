@@ -7,15 +7,39 @@
             <a class="navbar-brand brand-logo" href="/"><img src="{{ asset('images/logo_dofa.png') }}" alt="DOFA Logo" style="display: block;height: 50px; width: auto;"></a>
             <a class="navbar-brand brand-logo-mini" href="/"><img src="{{ asset('images/logo_dofa.png') }}" alt="DOFA Logo" style="display: block;height: 82px; width: auto;"></a>
           </div>
+        @php
+            $breadcrumbPageLabels = [
+                'agent.detail'               => 'Details',
+                'agent.security-events'      => 'Security Events',
+                'agent.integrity-monitoring' => 'Integrity Monitoring',
+                'agent.sca'                  => 'SCA',
+                'agent.vulnerabilities'      => 'Vulnerabilities',
+                'agent.mitre-attack'         => 'MITRE ATT&CK',
+                'agent.compliance'           => 'Compliance',
+            ];
+            $currentRoute     = Route::currentRouteName();
+            $currentPageLabel = $breadcrumbPageLabels[$currentRoute] ?? null;
+        @endphp
         <nav aria-label="breadcrumb" class="d-none d-md-block align-self-center">
             <ol class="breadcrumb mb-0 bg-transparent p-0 align-items-center">
                 <li class="breadcrumb-item fs-5">
-                    <a href="/agent" class="text-light text-decoration-none">Agents</a>
+                    <a href="{{ route('agent') }}" class="text-light text-decoration-none">Agents</a>
                 </li>
-                @if($agent && !in_array(Route::currentRouteName(), ['agent']))
-                <li class="breadcrumb-item active text-light fs-5" aria-current="page">
-                {{ $agent->nama ?? $agent->id_agent ?? 'Unknown' }}
-                </li>
+                @if($agent && $currentRoute !== 'agent')
+                    @if($currentPageLabel)
+                    <li class="breadcrumb-item fs-5">
+                        <a href="{{ route('agent.detail', $agent->id_agent) }}" class="text-light text-decoration-none">
+                            {{ $agent->nama ?? $agent->id_agent ?? 'Unknown' }}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active text-light fs-5" aria-current="page">
+                        {{ $currentPageLabel }}
+                    </li>
+                    @else
+                    <li class="breadcrumb-item active text-light fs-5" aria-current="page">
+                        {{ $agent->nama ?? $agent->id_agent ?? 'Unknown' }}
+                    </li>
+                    @endif
                 @endif
             </ol>
         </nav>

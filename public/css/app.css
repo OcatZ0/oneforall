@@ -545,6 +545,18 @@ select.form-control option,
   color:       #ffffff;
 }
 
+/* Navbar user dropdown hover / active states */
+.navbar .navbar-menu-wrapper .navbar-nav .nav-item.dropdown .navbar-dropdown .dropdown-item:hover,
+.navbar .navbar-menu-wrapper .navbar-nav .nav-item.dropdown .navbar-dropdown .dropdown-item:focus {
+  background-color: #f0f4ff;
+  color: var(--primary);
+}
+
+.navbar .navbar-menu-wrapper .navbar-nav .nav-item.dropdown .navbar-dropdown .dropdown-item:active {
+  background-color: var(--primary) !important;
+  color: #ffffff !important;
+}
+
 .btn-sm {
   font-size: 12px;
   padding:   7px 14px;

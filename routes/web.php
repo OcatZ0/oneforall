@@ -14,6 +14,8 @@ Route::middleware('guest')->group(function () {
 
 Route::get('auth/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.request');
 Route::post('auth/forgot-password', [AuthController::class, 'sendPasswordReset'])->name('password.email');
+Route::get('auth/reset-password/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
+Route::post('auth/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 
 Route::get('/', function () {
     return auth()->check() ? redirect('/dashboard') : view('landing.index');

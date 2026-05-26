@@ -21,6 +21,9 @@
     --text-muted: rgba(255,255,255,0.55);
     --placeholder: rgba(255,255,255,0.35);
     --danger: #ff6b6b;
+    --success: #4ade80;
+    --success-bg: rgba(74,222,128,0.1);
+    --success-border: rgba(74,222,128,0.2);
     --btn-bg: rgba(200,215,240,0.75);
     --btn-hover: rgba(220,230,250,0.88);
     --btn-text: #ffffff;
@@ -155,6 +158,17 @@
     margin-top: 5px;
   }
 
+  .alert-success {
+    background: var(--success-bg);
+    border: 1px solid var(--success-border);
+    border-radius: 0px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--success);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
   .btn-submit {
     width: 100%;
     background: var(--btn-bg);
@@ -209,6 +223,10 @@
 
       <h1 class="auth-heading">Selamat Datang</h1>
       <p class="auth-subheading">Masuk ke akun Anda</p>
+
+      @if (session('status'))
+        <div class="alert-success">{{ session('status') }}</div>
+      @endif
 
       <form method="POST" action="{{ route('login') }}">
         @csrf

@@ -4,8 +4,8 @@
           <p>Navigation</p>
           <span></span>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/">
+        <li class="nav-item {{ Route::is('home', 'dashboard') ? 'active' : '' }}">
+          <a class="nav-link" href="{{ route('dashboard') }}">
             <i class="mdi mdi-view-quilt menu-icon"></i>
             <span class="menu-title">Dashboard</span>
           </a>
@@ -16,8 +16,8 @@
           <p>Monitoring Wazuh</p>
           <span></span>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/agent">
+        <li class="nav-item {{ Route::is('agent', 'agent.*') ? 'active' : '' }}">
+          <a class="nav-link" href="{{ route('agent') }}">
             <i class="mdi mdi-laptop menu-icon"></i>
             <span class="menu-title">Agents</span>
           </a>
@@ -29,8 +29,8 @@
           <p>Manajemen Pengguna</p>
           <span></span>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/user">
+        <li class="nav-item {{ Route::is('user', 'user.*', 'edit-user') ? 'active' : '' }}">
+          <a class="nav-link" href="{{ route('user') }}">
             <i class="mdi mdi-account menu-icon"></i>
             <span class="menu-title">Pengguna</span>
           </a>
