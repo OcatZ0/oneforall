@@ -1,0 +1,802 @@
+@extends('layouts.wazuh')
+
+@section('title', 'MITRE ATT&CK - One For All')
+
+@section('content')
+
+@if(!$agent)
+<div class="container-fluid py-5">
+  <div class="alert alert-danger d-flex align-items-center gap-3" role="alert">
+    <i class="mdi mdi-alert-circle-outline display-4"></i>
+    <div>
+      <h5 class="alert-heading mb-1">Agent Not Found</h5>
+      <p class="mb-0">Unable to load agent details. The agent may no longer exist or access has been denied.</p>
+      <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2">
+        <i class="mdi mdi-arrow-left me-1"></i> Back to Agents
+      </a>
+    </div>
+  </div>
+</div>
+@else
+
+{{-- SECONDARY NAV --}}
+<div class="bg-dark border-bottom border-secondary">
+  <div class="d-flex align-items-center px-3">
+    <ul class="nav flex-nowrap overflow-auto">
+      <li class="nav-item">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.detail', $agent->id_agent) }}">
+          <span class="mdi mdi-home"></span> Details
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.security-events', $agent->id_agent) }}">
+          <span class="mdi mdi-format-list-bulleted"></span> Security events
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.integrity-monitoring', $agent->id_agent) }}">
+          <span class="mdi mdi-shield"></span> Integrity monitoring
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.sca', $agent->id_agent) }}">
+          <span class="mdi mdi-clock-outline"></span> SCA
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.vulnerabilities', $agent->id_agent) }}">
+          <span class="mdi mdi-bug"></span> Vulnerabilities
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small active" href="{{ route('agent.mitre-attack', $agent->id_agent) }}">
+          <span class="mdi mdi-sword-cross"></span> MITRE ATT&amp;CK
+        </a>
+      </li>
+      <li class="nav-item dropdown">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <span class="mdi mdi-check-decagram"></span> Compliance
+        </a>
+        <ul class="dropdown-menu dropdown-menu-dark">
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent) }}?compliance_type=pci_dss">PCI DSS</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent) }}?compliance_type=gdpr">GDPR</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent) }}?compliance_type=hipaa">HIPAA</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent) }}?compliance_type=nist_800_53">NIST 800-53</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent) }}?compliance_type=tsc">TSC</a></li>
+        </ul>
+      </li>
+    </ul>
+    <div class="ms-auto d-flex gap-2 flex-shrink-0 py-1">
+      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Back to Agents List">
+        <span class="mdi mdi-arrow-left"></span> Back
+      </a>
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack.min.css"/>
+<style>
+  .grid-stack { background: transparent; }
+  .grid-stack-item-content { overflow: auto; }
+
+  body.gs-edit-mode .grid-stack-item-content {
+    outline: 2px dashed rgba(75,73,172,0.4);
+    outline-offset: -2px;
+  }
+  body.gs-edit-mode .grid-stack {
+    background-image: linear-gradient(rgba(75,73,172,.04) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(75,73,172,.04) 1px, transparent 1px);
+    background-size: calc(100% / 12) 60px;
+  }
+
+  #gs-fab {
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  }
+  #gs-fab-main {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: #4B49AC; color: #fff; border: none;
+    box-shadow: 0 4px 14px rgba(75,73,172,.45);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; cursor: pointer; transition: background .2s, transform .15s;
+  }
+  #gs-fab-main:hover { background: #3b3a8c; transform: scale(1.06); }
+  #gs-fab-main.active { background: #e74c3c; }
+
+  #gs-edit-toolbar {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    z-index: 9998; display: none; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.97); padding: 8px 16px;
+    border-radius: 32px; box-shadow: 0 4px 20px rgba(0,0,0,.18); white-space: nowrap;
+  }
+  #gs-edit-toolbar.visible { display: flex; }
+
+  .gs-tb-btn { padding: 6px 18px; border-radius: 20px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity .15s; }
+  .gs-tb-btn:hover { opacity: .82; }
+  .gs-tb-btn-save   { background: #27ae60; color: #fff; }
+  .gs-tb-btn-reset  { background: #f39c12; color: #fff; }
+  .gs-tb-btn-cancel { background: #f0f0f0; color: #333; }
+
+  .gs-card { height: 100%; display: flex; flex-direction: column; }
+  .gs-card .card-body { flex: 1; overflow: auto; }
+
+  /* Allow dropdown to escape overflow clipping in the timerange card */
+  #mitre-grid [gs-id="mitre-timerange"] .grid-stack-item-content,
+  #mitre-grid [gs-id="mitre-timerange"] .card,
+  #mitre-grid [gs-id="mitre-timerange"] .card-body {
+    overflow: visible !important;
+  }
+
+  .no-data-placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#aaa; font-size:12px; }
+  .no-data-placeholder .mdi { font-size:2.5rem; margin-bottom:8px; }
+
+  .level-badge {
+    display:inline-block; width:22px; height:22px; line-height:22px;
+    border-radius:4px; text-align:center; font-size:10px; font-weight:700; color:#fff;
+  }
+
+  /* ── Hide card button ── */
+  .gs-hide-btn {
+    display: none;
+    position: absolute;
+    top: 10px; right: 10px;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(231,76,60,0.1);
+    border: 1px solid rgba(231,76,60,0.35);
+    color: #e74c3c; font-size: 13px; cursor: pointer;
+    align-items: center; justify-content: center;
+    z-index: 100; transition: background .15s, color .15s, border-color .15s; line-height: 1;
+  }
+  .gs-hide-btn:hover { background: #e74c3c; color: #fff; }
+  body.gs-edit-mode .gs-hide-btn { display: flex; }
+
+  .gs-card-hidden .grid-stack-item-content { opacity: 0.25; pointer-events: none; filter: grayscale(0.4); }
+  .gs-card-hidden .gs-hide-btn { pointer-events: all; background: rgba(39,174,96,0.1); border-color: rgba(39,174,96,0.35); color: #27ae60; }
+  .gs-card-hidden .gs-hide-btn:hover { background: #27ae60; color: #fff; }
+
+  @media (max-width: 767px) {
+    #gs-fab, #gs-edit-toolbar { display: none !important; }
+  }
+</style>
+
+<div class="grid-stack" id="mitre-grid">
+
+  {{-- ROW 1: Alerts evolution | Time range + Top tactics --}}
+
+  {{-- ALERTS EVOLUTION --}}
+  <div class="grid-stack-item" gs-id="mitre-evolution" data-label="Alerts Evolution" gs-x="0" gs-y="0" gs-w="9" gs-h="8">
+    <div class="grid-stack-item-content">
+      <div class="card gs-card">
+        <div class="card-header py-2">
+          <span class="fw-semibold small">Alerts evolution over time</span>
+        </div>
+        <div class="card-body p-2">
+          @if(count($evolution['datasets'] ?? []) > 0)
+          <div style="position:relative;width:100%;height:100%;min-height:160px;">
+            <canvas id="mitreEvolutionChart"></canvas>
+          </div>
+          @else
+          <div class="no-data-placeholder">
+            <span class="mdi mdi-chart-line"></span>
+            <div>No data for this time range</div>
+          </div>
+          @endif
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- TIME RANGE --}}
+  <div class="grid-stack-item" gs-id="mitre-timerange" data-label="Time Range" gs-x="9" gs-y="0" gs-w="3" gs-h="3">
+    <div class="grid-stack-item-content">
+      <div class="card gs-card">
+        <div class="card-header py-2">
+          <span class="fw-semibold small">Time Range</span>
+        </div>
+        <div class="card-body d-flex flex-column align-items-center justify-content-center gap-2">
+          <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="timeRangeDropdown"
+              data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="mdi mdi-calendar-outline me-1"></span>
+              <span id="timeRangeLabel">{{ ['15m'=>'Last 15 minutes','30m'=>'Last 30 minutes','1h'=>'Last 1 hour','24h'=>'Last 24 hours','7d'=>'Last 7 days','30d'=>'Last 30 days','90d'=>'Last 90 days','1y'=>'Last 1 year','today'=>'Today','week'=>'This week'][$timeRange] ?? 'Last 24 hours' }}</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="timeRangeDropdown">
+              <li><a class="dropdown-item {{ $timeRange === '15m'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('15m',  event)">Last 15 minutes</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '30m'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('30m',  event)">Last 30 minutes</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '1h'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('1h',   event)">Last 1 hour</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '24h'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('24h',  event)">Last 24 hours</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '7d'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('7d',   event)">Last 7 days</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '30d'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('30d',  event)">Last 30 days</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '90d'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('90d',  event)">Last 90 days</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '1y'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('1y',   event)">Last 1 year</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item {{ $timeRange === 'today' ? 'active' : '' }}" href="#" onclick="updateTimeRange('today', event)">Today</a></li>
+              <li><a class="dropdown-item {{ $timeRange === 'week'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('week',  event)">This week</a></li>
+            </ul>
+          </div>
+          <button class="btn btn-outline-warning btn-sm" onclick="updateTimeRange('24h', event)" title="Reset to default (Last 24 hours)">
+            <span class="mdi mdi-restore me-1"></span> Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- TOP TACTICS PIE --}}
+  <div class="grid-stack-item" gs-id="mitre-top-tactics" data-label="Top Tactics" gs-x="9" gs-y="3" gs-w="3" gs-h="5">
+    <div class="grid-stack-item-content">
+      <div class="card gs-card">
+        <div class="card-header py-2">
+          <span class="fw-semibold small">Top tactics</span>
+        </div>
+        <div class="card-body p-2 d-flex align-items-center justify-content-center">
+          @if(count($tactics) > 0)
+          <div style="position:relative;width:100%;height:100%;min-height:120px;">
+            <canvas id="mitreTopTacticsChart"></canvas>
+          </div>
+          @else
+          <div class="no-data-placeholder">
+            <span class="mdi mdi-chart-pie"></span>
+            <div>No tactic data</div>
+          </div>
+          @endif
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- ROW 2: Rule level by attack + MITRE attacks by tactic + Rule level by tactic --}}
+
+  {{-- RULE LEVEL BY ATTACK --}}
+  <div class="grid-stack-item" gs-id="mitre-level-by-attack" data-label="Rule Level by Attack" gs-x="0" gs-y="8" gs-w="4" gs-h="8">
+    <div class="grid-stack-item-content">
+      <div class="card gs-card">
+        <div class="card-header py-2">
+          <span class="fw-semibold small">Rule level by attack</span>
+        </div>
+        <div class="card-body p-2 d-flex align-items-center justify-content-center">
+          @if(count($techniques) > 0 || count($ruleLevelCounts) > 0)
+          <div style="position:relative;width:100%;height:100%;min-height:160px;">
+            <canvas id="mitreLevelByAttackChart"></canvas>
+          </div>
+          @else
+          <div class="no-data-placeholder">
+            <span class="mdi mdi-chart-donut"></span>
+            <div>No data</div>
+          </div>
+          @endif
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- MITRE ATTACKS BY TACTIC (stacked bar) --}}
+  <div class="grid-stack-item" gs-id="mitre-attacks-by-tactic" data-label="MITRE Attacks by Tactic" gs-x="4" gs-y="8" gs-w="4" gs-h="8">
+    <div class="grid-stack-item-content">
+      <div class="card gs-card">
+        <div class="card-header py-2">
+          <span class="fw-semibold small">MITRE attacks by tactic</span>
+        </div>
+        <div class="card-body p-2">
+          @if(count($attacksByTactic['tactics'] ?? []) > 0)
+          <div style="position:relative;width:100%;height:100%;min-height:160px;">
+            <canvas id="mitreAttacksByTacticChart"></canvas>
+          </div>
+          @else
+          <div class="no-data-placeholder">
+            <span class="mdi mdi-chart-bar"></span>
+            <div>No data</div>
+          </div>
+          @endif
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- RULE LEVEL BY TACTIC --}}
+  <div class="grid-stack-item" gs-id="mitre-level-by-tactic" data-label="Rule Level by Tactic" gs-x="8" gs-y="8" gs-w="4" gs-h="8">
+    <div class="grid-stack-item-content">
+      <div class="card gs-card">
+        <div class="card-header py-2">
+          <span class="fw-semibold small">Rule level by tactic</span>
+        </div>
+        <div class="card-body p-2 d-flex align-items-center justify-content-center">
+          @if(count($tactics) > 0 || count($ruleLevelCounts) > 0)
+          <div style="position:relative;width:100%;height:100%;min-height:160px;">
+            <canvas id="mitreLevelByTacticChart"></canvas>
+          </div>
+          @else
+          <div class="no-data-placeholder">
+            <span class="mdi mdi-chart-donut"></span>
+            <div>No data</div>
+          </div>
+          @endif
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- ROW 3: ALERTS TABLE --}}
+  <div class="grid-stack-item" gs-id="mitre-alerts" data-label="MITRE Alerts" gs-x="0" gs-y="16" gs-w="12" gs-h="10">
+    <div class="grid-stack-item-content">
+      <div class="card gs-card">
+        <div class="card-header py-2">
+          <span class="fw-semibold small">MITRE ATT&amp;CK alerts ({{ number_format($totalAlerts) }})</span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover table-striped mb-0" style="font-size:11px;">
+              <thead class="table-light">
+                <tr>
+                  <th style="width:17%">Timestamp</th>
+                  <th style="width:6%">Rule ID</th>
+                  <th style="width:5%" class="text-center">Level</th>
+                  <th style="width:29%">Description</th>
+                  <th style="width:13%">Tactic</th>
+                  <th style="width:16%">Technique</th>
+                  <th style="width:14%">Technique ID</th>
+                </tr>
+              </thead>
+              <tbody id="mitre-alerts-tbody">
+                @forelse($alerts as $alert)
+                @php
+                  $level = (int)($alert['level'] ?? 0);
+                  $levelColor = $level >= 12 ? '#dc3545' : ($level >= 9 ? '#fd7e14' : ($level >= 6 ? '#ffc107' : '#adb5bd'));
+                @endphp
+                <tr>
+                  <td class="text-muted" style="font-size:10px;">
+                    {{ !empty($alert['timestamp']) ? \Carbon\Carbon::parse($alert['timestamp'])->format('Y-m-d H:i:s') : '—' }}
+                  </td>
+                  <td class="font-monospace text-primary" style="font-size:10px;">{{ $alert['rule_id'] ?? '—' }}</td>
+                  <td class="text-center">
+                    <span class="level-badge" style="background:{{ $levelColor }};">{{ $level }}</span>
+                  </td>
+                  <td title="{{ $alert['description'] ?? '' }}">{{ \Str::limit($alert['description'] ?? '—', 65) }}</td>
+                  <td>
+                    @foreach(array_filter(explode(', ', $alert['tactic'] ?? '')) as $t)
+                      <span class="badge bg-primary me-1 mb-1" style="font-size:9px;">{{ $t }}</span>
+                    @endforeach
+                  </td>
+                  <td class="text-muted">{{ \Str::limit($alert['technique'] ?? '—', 30) }}</td>
+                  <td class="font-monospace" style="font-size:10px;">{{ $alert['mitre_id'] ?? '—' }}</td>
+                </tr>
+                @empty
+                <tr>
+                  <td colspan="7" class="text-center text-muted py-3 small">No MITRE ATT&amp;CK alerts found for this time range.</td>
+                </tr>
+                @endforelse
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div id="mitre-alerts-footer"></div>
+      </div>
+    </div>
+  </div>
+
+</div>{{-- /grid-stack --}}
+
+{{-- Floating pencil --}}
+<div id="gs-fab">
+  <button id="gs-fab-main" title="Edit layout"><i class="mdi mdi-pencil" id="gs-fab-icon"></i></button>
+</div>
+<div id="gs-edit-toolbar">
+  <button id="gs-save"   class="gs-tb-btn gs-tb-btn-save">Save layout</button>
+  <button id="gs-reset"  class="gs-tb-btn gs-tb-btn-reset">Reset</button>
+  <button id="gs-cancel" class="gs-tb-btn gs-tb-btn-cancel">Cancel</button>
+</div>
+
+@endif
+
+@endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack-all.js"></script>
+<script>
+const mitreEvolutionData    = @json($evolution);
+const mitreTacticsData      = @json($tactics);
+const mitreTechniquesData   = @json($techniques);
+const mitreAttacksByTactic  = @json($attacksByTactic);
+const mitreRuleLevelCounts  = @json($ruleLevelCounts);
+
+const PALETTE = ['#4B49AC','#7978E9','#dc3545','#20c997','#fd7e14','#ffc107','#6f42c1','#0d6efd','#17a2b8','#6c757d','#e91e63','#00bcd4'];
+
+let chartInstances = {};
+
+function destroyChart(key) {
+  if (chartInstances[key]) { chartInstances[key].destroy(); delete chartInstances[key]; }
+}
+
+function initializeCharts() {
+  if (typeof Chart === 'undefined') { setTimeout(initializeCharts, 100); return; }
+  Object.keys(chartInstances).forEach(k => chartInstances[k]?.destroy());
+  chartInstances = {};
+
+  // 1. Evolution line chart
+  if ((mitreEvolutionData.datasets || []).length > 0) {
+    const ctx = document.getElementById('mitreEvolutionChart')?.getContext('2d');
+    if (ctx) {
+      chartInstances.evolution = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: mitreEvolutionData.labels,
+          datasets: mitreEvolutionData.datasets,
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: true, position: 'right', labels: { font: { size: 10 }, boxWidth: 10, padding: 6 } },
+          },
+          scales: {
+            x: {
+              ticks: { font: { size: 9 }, maxTicksLimit: 8, maxRotation: 0,
+                callback: (val, i, ticks) => {
+                  const lbl = mitreEvolutionData.labels[i] || '';
+                  try { return new Date(lbl).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }); } catch { return lbl; }
+                }
+              },
+              grid: { color: 'rgba(0,0,0,.05)' },
+              title: { display: true, text: 'timestamp per 30 minutes', font: { size: 9 }, color: '#888' },
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { font: { size: 9 } },
+              grid: { color: 'rgba(0,0,0,.05)' },
+              title: { display: true, text: 'Count', font: { size: 9 }, color: '#888' },
+            },
+          },
+        },
+      });
+    }
+  }
+
+  // 2. Top tactics pie
+  if (mitreTacticsData.length > 0) {
+    const ctx = document.getElementById('mitreTopTacticsChart')?.getContext('2d');
+    if (ctx) {
+      chartInstances.topTactics = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: mitreTacticsData.map(d => d.tactic),
+          datasets: [{ data: mitreTacticsData.map(d => d.count), backgroundColor: PALETTE, borderWidth: 2, borderColor: '#fff' }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: true, position: 'right', labels: { font: { size: 10 }, boxWidth: 10, padding: 6 } } },
+        },
+      });
+    }
+  }
+
+  // 3. Rule level by attack — outer ring: techniques, inner ring: levels
+  if (mitreTechniquesData.length > 0 || mitreRuleLevelCounts.length > 0) {
+    const ctx = document.getElementById('mitreLevelByAttackChart')?.getContext('2d');
+    if (ctx) {
+      const techLabels  = mitreTechniquesData.map(d => d.technique.length > 22 ? d.technique.substring(0,22)+'…' : d.technique);
+      const techCounts  = mitreTechniquesData.map(d => d.count);
+      const levelLabels = mitreRuleLevelCounts.map(d => String(d.level));
+      const levelCounts = mitreRuleLevelCounts.map(d => d.count);
+      const levelColors = mitreRuleLevelCounts.map((d, i) => PALETTE[(i + 6) % PALETTE.length]);
+
+      chartInstances.levelByAttack = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: [...techLabels, ...levelLabels],
+          datasets: [
+            { label: 'Techniques', data: techCounts,  backgroundColor: PALETTE.slice(0, techCounts.length),  borderWidth: 2, borderColor: '#fff' },
+            { label: 'Levels',     data: levelCounts, backgroundColor: levelColors, borderWidth: 2, borderColor: '#fff' },
+          ],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          cutout: '40%',
+          plugins: { legend: { display: true, position: 'right', labels: { font: { size: 9 }, boxWidth: 8, padding: 4 } } },
+        },
+      });
+    }
+  }
+
+  // 4. MITRE attacks by tactic (stacked vertical bar)
+  if ((mitreAttacksByTactic.tactics || []).length > 0) {
+    const ctx = document.getElementById('mitreAttacksByTacticChart')?.getContext('2d');
+    if (ctx) {
+      const datasets = (mitreAttacksByTactic.datasets || []).map((ds, i) => ({
+        ...ds,
+        backgroundColor: PALETTE[i % PALETTE.length],
+        borderRadius: 2,
+      }));
+      chartInstances.attacksByTactic = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: mitreAttacksByTactic.tactics, datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: 'right', labels: { font: { size: 9 }, boxWidth: 8, padding: 4 } },
+          },
+          scales: {
+            x: {
+              stacked: true,
+              ticks: { font: { size: 9 }, maxRotation: 45 },
+              grid: { color: 'rgba(0,0,0,.05)' },
+              title: { display: true, text: 'rule.mitre.tactic: Descending', font: { size: 8 }, color: '#888' },
+            },
+            y: { stacked: true, beginAtZero: true, ticks: { font: { size: 9 } }, grid: { color: 'rgba(0,0,0,.05)' }, title: { display: true, text: 'Count', font: { size: 9 }, color: '#888' } },
+          },
+        },
+      });
+    }
+  }
+
+  // 5. Rule level by tactic — outer: tactics, inner: levels
+  if (mitreTacticsData.length > 0 || mitreRuleLevelCounts.length > 0) {
+    const ctx = document.getElementById('mitreLevelByTacticChart')?.getContext('2d');
+    if (ctx) {
+      const tacticLabels = mitreTacticsData.map(d => d.tactic);
+      const tacticCounts = mitreTacticsData.map(d => d.count);
+      const levelLabels  = mitreRuleLevelCounts.map(d => String(d.level));
+      const levelCounts  = mitreRuleLevelCounts.map(d => d.count);
+      const levelColors  = mitreRuleLevelCounts.map((d, i) => PALETTE[(i + 4) % PALETTE.length]);
+
+      chartInstances.levelByTactic = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: [...tacticLabels, ...levelLabels],
+          datasets: [
+            { label: 'Tactics', data: tacticCounts,  backgroundColor: PALETTE.slice(0, tacticCounts.length), borderWidth: 2, borderColor: '#fff' },
+            { label: 'Levels',  data: levelCounts,   backgroundColor: levelColors, borderWidth: 2, borderColor: '#fff' },
+          ],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          cutout: '40%',
+          plugins: { legend: { display: true, position: 'right', labels: { font: { size: 9 }, boxWidth: 8, padding: 4 } } },
+        },
+      });
+    }
+  }
+}
+
+// ── AJAX pagination helpers ────────────────────────────────────────────────────
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s != null ? String(s) : '';
+  return d.innerHTML;
+}
+
+function renderPagination(footerId, total, page, perPage, loadFn) {
+  const totalPages = total > 0 ? Math.ceil(total / perPage) : 1;
+  const from = total > 0 ? (page - 1) * perPage + 1 : 0;
+  const to   = Math.min(page * perPage, total);
+  const btn  = (p, pp, label, disabled, active) =>
+    `<button ${disabled ? 'disabled' : `onclick="${loadFn}(${p},${pp})"`} class="btn btn-sm py-0 px-2 ${active ? 'btn-primary' : 'btn-outline-secondary'}${disabled ? ' disabled' : ''}">${label}</button>`;
+  const ppBtns  = [10, 25, 50].map(pp => btn(1, pp, pp, false, perPage === pp)).join('');
+  const winBtns = [];
+  for (let p = Math.max(1, page - 2); p <= Math.min(totalPages, page + 2); p++) {
+    winBtns.push(btn(p, perPage, p, false, p === page));
+  }
+  document.getElementById(footerId).innerHTML = `
+    <div class="d-flex justify-content-between align-items-center py-2 small flex-wrap gap-2 px-3 w-100">
+      <div class="d-flex align-items-center gap-1"><span class="text-muted me-1">Rows:</span>${ppBtns}</div>
+      <div class="d-flex align-items-center gap-1">
+        <span class="text-muted me-2">${from}–${to} of ${total.toLocaleString()}</span>
+        ${btn(1, perPage, '«', page <= 1, false)}
+        ${btn(Math.max(1, page - 1), perPage, '‹', page <= 1, false)}
+        ${winBtns.join('')}
+        ${btn(Math.min(totalPages, page + 1), perPage, '›', page >= totalPages, false)}
+        ${btn(totalPages, perPage, '»', page >= totalPages, false)}
+      </div>
+    </div>`;
+}
+
+const mitreAlertsEndpoint = '{{ route("agent.mitre.alerts", $agent->id_agent ?? "") }}';
+
+async function loadMitreAlerts(page, perPage) {
+  const params = new URLSearchParams({ time_range: currentTimeRange, page, per_page: perPage });
+  try {
+    const res  = await fetch(`${mitreAlertsEndpoint}?${params}`, { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) return;
+    const json = await res.json();
+    document.getElementById('mitre-alerts-tbody').innerHTML = json.data.length
+      ? json.data.map(r => {
+          const lvl = r.level || 0;
+          const lc  = lvl >= 12 ? '#dc3545' : lvl >= 9 ? '#fd7e14' : lvl >= 6 ? '#ffc107' : '#adb5bd';
+          const ts  = r.timestamp ? new Date(r.timestamp).toLocaleString('en-GB') : '—';
+          const tactics = (r.tactic || '').split(', ').filter(Boolean)
+            .map(t => `<span class="badge bg-primary me-1" style="font-size:9px;">${escHtml(t)}</span>`).join('');
+          return `<tr>
+            <td class="text-muted" style="font-size:10px;">${ts}</td>
+            <td class="font-monospace text-primary" style="font-size:10px;">${escHtml(r.rule_id || '—')}</td>
+            <td class="text-center"><span class="level-badge" style="background:${lc};">${lvl}</span></td>
+            <td>${escHtml((r.description || '—').substring(0, 65))}</td>
+            <td>${tactics}</td>
+            <td class="text-muted">${escHtml((r.technique || '—').substring(0, 30))}</td>
+            <td class="font-monospace" style="font-size:10px;">${escHtml(r.mitre_id || '—')}</td>
+          </tr>`;
+        }).join('')
+      : '<tr><td colspan="7" class="text-center text-muted py-3 small">No MITRE ATT&CK alerts found for this time range.</td></tr>';
+    renderPagination('mitre-alerts-footer', json.total, json.page, json.perPage, 'loadMitreAlerts');
+  } catch (e) { console.error('loadMitreAlerts failed', e); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initializeCharts();
+  renderPagination('mitre-alerts-footer', {{ $totalAlerts }}, {{ $page }}, {{ $perPage }}, 'loadMitreAlerts');
+});
+
+// ── Time range (must be declared before loadMitreAlerts) ───────────────────────
+let currentTimeRange = '{{ $timeRange ?? "24h" }}';
+
+const timeRangeLabels = {
+  '15m':  'Last 15 minutes',
+  '30m':  'Last 30 minutes',
+  '1h':   'Last 1 hour',
+  '24h':  'Last 24 hours',
+  '7d':   'Last 7 days',
+  '30d':  'Last 30 days',
+  '90d':  'Last 90 days',
+  '1y':   'Last 1 year',
+  'today':'Today',
+  'week': 'This week'
+};
+
+function updateTimeRange(timeRange, event) {
+  if (event) event.preventDefault();
+  currentTimeRange = timeRange;
+  const lbl = document.getElementById('timeRangeLabel');
+  if (lbl) lbl.textContent = timeRangeLabels[timeRange] || 'Select time range';
+
+  const menu = document.getElementById('timeRangeDropdown')?.closest('.dropdown')?.querySelector('.dropdown-menu');
+  if (menu) {
+    menu.querySelectorAll('.dropdown-item').forEach(item => {
+      const oc = item.getAttribute('onclick') || '';
+      item.classList.toggle('active', oc.includes(`'${timeRange}'`));
+    });
+  }
+  refreshData();
+}
+
+function refreshData() {
+  const url = new URL(window.location.href);
+  url.searchParams.set('time_range', currentTimeRange);
+  url.searchParams.set('page', '1');
+  window.location.href = url.toString();
+}
+
+// ── GridStack ──────────────────────────────────────────────────────────────────
+(function () {
+  const DEFAULT_LAYOUT = [
+    { id: 'mitre-evolution',         x: 0, y: 0,  w: 9,  h: 8  },
+    { id: 'mitre-timerange',         x: 9, y: 0,  w: 3,  h: 3  },
+    { id: 'mitre-top-tactics',       x: 9, y: 3,  w: 3,  h: 5  },
+    { id: 'mitre-level-by-attack',   x: 0, y: 8,  w: 4,  h: 8  },
+    { id: 'mitre-attacks-by-tactic', x: 4, y: 8,  w: 4,  h: 8  },
+    { id: 'mitre-level-by-tactic',   x: 8, y: 8,  w: 4,  h: 8  },
+    { id: 'mitre-alerts',            x: 0, y: 16, w: 12, h: 10 },
+  ];
+
+  const grid = GridStack.init({
+    column: 12, cellHeight: 60, margin: 8, float: false, staticGrid: true,
+    resizable: { handles: 'se' },
+    columnOpts: { breakpointForWindow: true, breakpoints: [{ w: 768, c: 1 }] },
+  });
+
+  const hiddenCards     = new Set();
+  const hiddenPositions = {};
+
+  function setCardHidden(id, hide) {
+    const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+    if (!el) return;
+    if (hide) {
+      const node = el.gridstackNode;
+      if (node) hiddenPositions[id] = { x: node.x, y: node.y, w: node.w, h: node.h };
+      hiddenCards.add(id);
+      el.classList.add('gs-card-hidden');
+      const btn = el.querySelector('.gs-hide-btn');
+      if (btn) { btn.querySelector('i').className = 'mdi mdi-eye'; btn.title = 'Tampilkan kartu'; }
+    } else {
+      hiddenCards.delete(id);
+      el.classList.remove('gs-card-hidden');
+      const btn = el.querySelector('.gs-hide-btn');
+      if (btn) { btn.querySelector('i').className = 'mdi mdi-eye-off'; btn.title = 'Sembunyikan kartu'; }
+    }
+  }
+
+  function addHideButtons() {
+    document.querySelectorAll('.grid-stack-item').forEach(item => {
+      if (item.querySelector('.gs-hide-btn')) return;
+      const id = item.getAttribute('gs-id'), isHidden = hiddenCards.has(id);
+      const btn = document.createElement('button');
+      btn.className = 'gs-hide-btn';
+      btn.title     = isHidden ? 'Tampilkan kartu' : 'Sembunyikan kartu';
+      btn.innerHTML = `<i class="mdi mdi-${isHidden ? 'eye' : 'eye-off'}"></i>`;
+      btn.addEventListener('click', e => { e.stopPropagation(); setCardHidden(id, !hiddenCards.has(id)); });
+      item.appendChild(btn);
+    });
+  }
+
+  const savedLayout = @json($savedLayout ?? null);
+  if (savedLayout && Array.isArray(savedLayout)) {
+    grid.load(savedLayout.map(i => ({ id: i.id, x: i.x, y: i.y, w: i.w, h: i.h })), false);
+    savedLayout.filter(i => i.hidden).forEach(i => {
+      hiddenCards.add(i.id);
+      hiddenPositions[i.id] = { x: i.x, y: i.y, w: i.w, h: i.h };
+      const el = document.querySelector(`.grid-stack-item[gs-id="${i.id}"]`);
+      if (!el) return;
+      grid.removeWidget(el, false);
+      el.style.display = 'none';
+    });
+  }
+
+  grid.on('resizestop', () => Object.values(chartInstances).forEach(c => c?.resize?.()));
+
+  let editMode  = false;
+  const fabMain = document.getElementById('gs-fab-main');
+  const fabIcon = document.getElementById('gs-fab-icon');
+  const toolbar = document.getElementById('gs-edit-toolbar');
+
+  function enterEdit() {
+    editMode = true;
+    grid.setStatic(false);
+    hiddenCards.forEach(id => {
+      const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+      if (!el) return;
+      const pos = hiddenPositions[id] || { x: 0, y: 0, w: 4, h: 8 };
+      el.setAttribute('gs-x', pos.x); el.setAttribute('gs-y', pos.y);
+      el.setAttribute('gs-w', pos.w); el.setAttribute('gs-h', pos.h);
+      el.style.display = '';
+      grid.makeWidget(el);
+      el.classList.add('gs-card-hidden');
+    });
+    document.body.classList.add('gs-edit-mode');
+    fabMain.classList.add('active');
+    fabIcon.className = 'mdi mdi-pencil-off';
+    toolbar.classList.add('visible');
+    addHideButtons();
+  }
+
+  function exitEdit() {
+    editMode = false;
+    hiddenCards.forEach(id => {
+      const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+      if (!el) return;
+      const node = el.gridstackNode;
+      if (node) hiddenPositions[id] = { x: node.x, y: node.y, w: node.w, h: node.h };
+      el.classList.remove('gs-card-hidden');
+      grid.removeWidget(el, false);
+      el.style.display = 'none';
+    });
+    grid.setStatic(true);
+    document.body.classList.remove('gs-edit-mode');
+    fabMain.classList.remove('active');
+    fabIcon.className = 'mdi mdi-pencil';
+    toolbar.classList.remove('visible');
+  }
+
+  fabMain.addEventListener('click', () => editMode ? exitEdit() : enterEdit());
+
+  document.getElementById('gs-save').addEventListener('click', () => {
+    const layout = grid.save(false);
+    layout.forEach(i => { if (hiddenCards.has(i.id)) i.hidden = true; });
+    fetch('{{ route("dashboard.layout") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+      body: JSON.stringify({ layout, page: 'mitre-attack' })
+    }).then(r => r.json()).then(d => { if (d.success) exitEdit(); });
+  });
+
+  document.getElementById('gs-reset').addEventListener('click', () => {
+    [...hiddenCards].forEach(id => {
+      hiddenCards.delete(id); delete hiddenPositions[id];
+      const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+      if (el) el.classList.remove('gs-card-hidden');
+    });
+    grid.load(DEFAULT_LAYOUT);
+    Object.values(chartInstances).forEach(c => c?.resize?.());
+  });
+
+  document.getElementById('gs-cancel').addEventListener('click', () => { exitEdit(); location.reload(); });
+})();
+</script>
+@endpush

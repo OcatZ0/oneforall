@@ -14,7 +14,7 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small active" href="{{ route('agent.security-events', $agent->id_agent ?? '#') }}">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.security-events', $agent->id_agent ?? '#') }}">
           <span class="mdi mdi-format-list-bulleted"></span> Security events
         </a>
       </li>
@@ -35,13 +35,20 @@
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.mitre-attack', $agent->id_agent ?? '#') }}">
-          <span class="mdi mdi-target"></span> MITRE ATT&amp;CK
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.mitre-attack', $agent->id_agent) }}">
           <span class="mdi mdi-sword-cross"></span> MITRE ATT&amp;CK
         </a>
+      </li>
+      <li class="nav-item dropdown">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <span class="mdi mdi-check-decagram"></span> Compliance
+        </a>
+        <ul class="dropdown-menu dropdown-menu-dark">
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent ?? '#') }}?compliance_type=pci_dss">PCI DSS</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent ?? '#') }}?compliance_type=gdpr">GDPR</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent ?? '#') }}?compliance_type=hipaa">HIPAA</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent ?? '#') }}?compliance_type=nist_800_53">NIST 800-53</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent ?? '#') }}?compliance_type=tsc">TSC</a></li>
+        </ul>
       </li>
     </ul>
     <div class="ms-auto d-flex gap-2 flex-shrink-0 py-1">
@@ -259,26 +266,30 @@
         <div class="card-header py-2">
           <span class="fw-semibold small">Time Range</span>
         </div>
-        <div class="card-body d-flex align-items-center justify-content-center">
+        <div class="card-body d-flex flex-column align-items-center justify-content-center gap-2">
           <div class="dropdown">
             <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="timeRangeDropdown"
-              data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="mdi mdi-calendar-outline me-1"></span>
               <span id="timeRangeLabel">Last 24 hours</span>
             </button>
-            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="timeRangeDropdown" style="min-width:160px;">
-              <a class="dropdown-item" href="#" onclick="updateChart('15m', event); return false;">Last 15 minutes</a>
-              <a class="dropdown-item" href="#" onclick="updateChart('30m', event); return false;">Last 30 minutes</a>
-              <a class="dropdown-item" href="#" onclick="updateChart('1h', event); return false;">Last 1 hour</a>
-              <a class="dropdown-item active" href="#" onclick="updateChart('24h', event); return false;">Last 24 hours</a>
-              <a class="dropdown-item" href="#" onclick="updateChart('7d', event); return false;">Last 7 days</a>
-              <a class="dropdown-item" href="#" onclick="updateChart('30d', event); return false;">Last 30 days</a>
-              <a class="dropdown-item" href="#" onclick="updateChart('90d', event); return false;">Last 90 days</a>
-              <a class="dropdown-item" href="#" onclick="updateChart('1y', event); return false;">Last 1 year</a>
-              <div class="dropdown-divider"></div>
-              <a class="dropdown-item" href="#" onclick="updateChart('today', event); return false;">Today</a>
-              <a class="dropdown-item" href="#" onclick="updateChart('week', event); return false;">This week</a>
-            </div>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="timeRangeDropdown">
+              <li><a class="dropdown-item" href="#" onclick="updateChart('15m', event)">Last 15 minutes</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('30m', event)">Last 30 minutes</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('1h', event)">Last 1 hour</a></li>
+              <li><a class="dropdown-item active" href="#" onclick="updateChart('24h', event)">Last 24 hours</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('7d', event)">Last 7 days</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('30d', event)">Last 30 days</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('90d', event)">Last 90 days</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('1y', event)">Last 1 year</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('today', event)">Today</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('week', event)">This week</a></li>
+            </ul>
           </div>
+          <button class="btn btn-outline-warning btn-sm" onclick="updateChart('24h', event)" title="Reset to default (Last 24 hours)">
+            <span class="mdi mdi-restore me-1"></span> Reset
+          </button>
         </div>
       </div>
     </div>

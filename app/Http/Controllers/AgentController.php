@@ -383,6 +383,17 @@ class AgentController extends Controller
         }
     }
 
+    public function getMitreAlertsJson($id)
+    {
+        if (!$this->userHasAccessToAgent($id)) return response()->json(['error' => 'Forbidden'], 403);
+        $validRanges = ['15m','30m','1h','24h','7d','30d','90d','1y','today','week'];
+        $timeRange   = in_array(request('time_range'), $validRanges) ? request('time_range') : '24h';
+        $perPage     = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
+        $page        = max((int) request('page', 1), 1);
+        $result      = $this->_openSearch->getMitreAlerts($id, $timeRange, $perPage, ($page - 1) * $perPage);
+        return response()->json(['data' => $result['data'], 'total' => $result['total'], 'page' => $page, 'perPage' => $perPage]);
+    }
+
     public function mitreAttack($id)
     {
         try {
@@ -394,7 +405,8 @@ class AgentController extends Controller
                 return view('agent.mitre-attack', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
             }
 
-            $timeRange = request('time_range', '24h');
+            $validRanges = ['15m','30m','1h','24h','7d','30d','90d','1y','today','week'];
+            $timeRange = in_array(request('time_range'), $validRanges) ? request('time_range') : '24h';
             $perPage   = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
             $page      = max((int) request('page', 1), 1);
             $offset    = ($page - 1) * $perPage;
@@ -406,14 +418,51 @@ class AgentController extends Controller
                                           ->value('layout');
 
             return view('agent.mitre-attack', compact('agent', 'timeRange', 'page', 'perPage', 'savedLayout') + [
-                'tactics'    => $this->_openSearch->getMitreTactics($id, $timeRange),
-                'techniques' => $this->_openSearch->getMitreTechniques($id, $timeRange),
-                'alerts'     => $alertsResult['data'],
-                'totalAlerts' => $alertsResult['total'],
+                'tactics'          => $this->_openSearch->getMitreTactics($id, $timeRange),
+                'techniques'       => $this->_openSearch->getMitreTechniques($id, $timeRange),
+                'evolution'        => $this->_openSearch->getMitreEvolution($id, $timeRange),
+                'attacksByTactic'  => $this->_openSearch->getMitreAttacksByTactic($id, $timeRange),
+                'ruleLevelCounts'  => $this->_openSearch->getMitreRuleLevelCounts($id, $timeRange),
+                'alerts'           => $alertsResult['data'],
+                'totalAlerts'      => $alertsResult['total'],
             ]);
         } catch (\Exception $e) {
             Log::error('MITRE ATT&CK error: ' . $e->getMessage());
             return view('agent.mitre-attack', ['agent' => null, 'error' => 'Error loading MITRE ATT&CK data']);
+        }
+    }
+
+    public function compliance($id)
+    {
+        try {
+            if (!$this->userHasAccessToAgent($id)) {
+                return view('agent.compliance', ['agent' => null, 'error' => 'You do not have permission to view this agent']);
+            }
+            $agent = $this->resolveAgent($id);
+            if (!$agent) {
+                return view('agent.compliance', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
+            }
+
+            $validTypes  = ['pci_dss', 'gdpr', 'hipaa', 'nist_800_53', 'tsc'];
+            $validRanges = ['15m','30m','1h','24h','7d','30d','90d','1y','today','week'];
+            $complianceType = in_array(request('compliance_type'), $validTypes)  ? request('compliance_type')  : 'gdpr';
+            $timeRange      = in_array(request('time_range'),      $validRanges) ? request('time_range')      : '24h';
+
+            $allCompliance = $this->_openSearch->getAgentCompliance($id, $complianceType, $timeRange);
+
+            $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
+                                          ->where('page', 'compliance')
+                                          ->value('layout');
+
+            return view('agent.compliance', compact('agent', 'complianceType', 'timeRange', 'allCompliance', 'savedLayout') + [
+                'topRuleGroups'  => $this->_openSearch->getTopRuleGroups($id, $timeRange, 5, $complianceType),
+                'topRules'       => $this->_openSearch->getTopAlerts($id, $timeRange, 5, $complianceType),
+                'top5Compliance' => array_slice($allCompliance, 0, 5),
+                'ruleLevelDist'  => $this->_openSearch->getComplianceRuleLevelDistribution($id, $complianceType, $timeRange),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Compliance error: ' . $e->getMessage());
+            return view('agent.compliance', ['agent' => null, 'error' => 'Error loading compliance data']);
         }
     }
 

@@ -22,6 +22,20 @@
 
   @include('partials._scripts')
   @stack('scripts')
+  <script>
+  document.addEventListener('DOMContentLoaded', function () {
+    if (typeof bootstrap === 'undefined' || !bootstrap.Dropdown) return;
+    document.querySelectorAll('.nav .dropdown-toggle').forEach(function (el) {
+      var existing = bootstrap.Dropdown.getInstance(el);
+      if (existing) existing.dispose();
+      new bootstrap.Dropdown(el, {
+        popperConfig: function (defaultConfig) {
+          return Object.assign({}, defaultConfig, { strategy: 'fixed' });
+        }
+      });
+    });
+  });
+  </script>
 </body>
 
 </html>

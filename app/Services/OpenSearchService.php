@@ -687,15 +687,19 @@ class OpenSearchService
         return ['labels' => [], 'datasets' => []];
     }
 
-    public function getTopAlerts($agentId, $timeRange = '24h', $limit = 5)
+    public function getTopAlerts($agentId, $timeRange = '24h', $limit = 5, $complianceType = null)
     {
-        $config = $this->getTimeRangeConfig($timeRange);
+        $config  = $this->getTimeRangeConfig($timeRange);
+        $filters = [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]];
+        if ($complianceType) {
+            $filters[] = ['exists' => ['field' => "rule.{$complianceType}"]];
+        }
 
         try {
             $query = [
                 'size' => 0,
                 'aggs' => ['top_alerts' => ['terms' => ['field' => 'rule.description', 'size' => $limit]]],
-                'query' => ['bool' => ['must' => [['term' => ['agent.id' => $agentId]]], 'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]]]],
+                'query' => ['bool' => ['must' => [['term' => ['agent.id' => $agentId]]], 'filter' => $filters]],
             ];
 
             $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
@@ -710,15 +714,19 @@ class OpenSearchService
         return ['labels' => [], 'data' => []];
     }
 
-    public function getTopRuleGroups($agentId, $timeRange = '24h', $limit = 5)
+    public function getTopRuleGroups($agentId, $timeRange = '24h', $limit = 5, $complianceType = null)
     {
-        $config = $this->getTimeRangeConfig($timeRange);
+        $config  = $this->getTimeRangeConfig($timeRange);
+        $filters = [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]];
+        if ($complianceType) {
+            $filters[] = ['exists' => ['field' => "rule.{$complianceType}"]];
+        }
 
         try {
             $query = [
                 'size' => 0,
                 'aggs' => ['top_groups' => ['terms' => ['field' => 'rule.groups', 'size' => $limit]]],
-                'query' => ['bool' => ['must' => [['term' => ['agent.id' => $agentId]]], 'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]]]],
+                'query' => ['bool' => ['must' => [['term' => ['agent.id' => $agentId]]], 'filter' => $filters]],
             ];
 
             $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
@@ -1090,6 +1098,151 @@ class OpenSearchService
         return ['data' => [], 'total' => 0];
     }
 
+    public function getMitreEvolution($agentId, $timeRange = '24h')
+    {
+        $managerName = env('WAZUH_MANAGER_NAME', 'fadli');
+        $config      = $this->getTimeRangeConfig($timeRange);
+
+        $query = [
+            'size' => 0,
+            'aggs' => [
+                'evolution' => [
+                    'date_histogram' => ['field' => 'timestamp', 'fixed_interval' => $config['interval'], 'min_doc_count' => 1],
+                    'aggs'           => ['tactics' => ['terms' => ['field' => 'rule.mitre.tactic', 'size' => 8]]],
+                ],
+            ],
+            'query' => [
+                'bool' => [
+                    'filter' => [
+                        ['match_phrase' => ['manager.name' => $managerName]],
+                        ['match_phrase' => ['agent.id' => $agentId]],
+                        ['exists' => ['field' => 'rule.mitre.id']],
+                        ['range' => ['timestamp' => ['from' => "now-{$config['duration']}", 'to' => 'now']]],
+                    ],
+                ]
+            ]
+        ];
+
+        try {
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            if ($response->successful()) {
+                $buckets    = $response->json('aggregations.evolution.buckets') ?? [];
+                $labels     = [];
+                $tacticData = [];
+
+                foreach ($buckets as $bucket) {
+                    $labels[] = Carbon::createFromTimestampMs($bucket['key'], 'UTC')->toIso8601String();
+                    foreach ($bucket['tactics']['buckets'] ?? [] as $t) {
+                        $tacticData[$t['key']][] = $t['doc_count'];
+                    }
+                }
+                foreach ($tacticData as &$d) {
+                    while (count($d) < count($labels)) $d[] = 0;
+                }
+
+                $palette  = ['#4B49AC','#7978E9','#dc3545','#20c997','#fd7e14','#ffc107','#6f42c1','#0d6efd'];
+                $datasets = [];
+                $i        = 0;
+                foreach ($tacticData as $tactic => $values) {
+                    $color      = $palette[$i % count($palette)];
+                    $datasets[] = ['label' => $tactic, 'data' => $values, 'borderColor' => $color, 'backgroundColor' => $color . '22', 'fill' => false, 'tension' => 0.3, 'borderWidth' => 2, 'pointRadius' => 2];
+                    $i++;
+                }
+                return ['labels' => $labels, 'datasets' => $datasets];
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch MITRE evolution: ' . $e->getMessage());
+        }
+        return ['labels' => [], 'datasets' => []];
+    }
+
+    public function getMitreAttacksByTactic($agentId, $timeRange = '24h')
+    {
+        $managerName = env('WAZUH_MANAGER_NAME', 'fadli');
+        $config      = $this->getTimeRangeConfig($timeRange);
+
+        $query = [
+            'size' => 0,
+            'aggs' => [
+                'tactics' => [
+                    'terms' => ['field' => 'rule.mitre.tactic', 'size' => 10],
+                    'aggs'  => ['techniques' => ['terms' => ['field' => 'rule.mitre.technique', 'size' => 5]]],
+                ],
+            ],
+            'query' => [
+                'bool' => [
+                    'filter' => [
+                        ['match_phrase' => ['manager.name' => $managerName]],
+                        ['match_phrase' => ['agent.id' => $agentId]],
+                        ['exists' => ['field' => 'rule.mitre.id']],
+                        ['range' => ['timestamp' => ['from' => "now-{$config['duration']}", 'to' => 'now']]],
+                    ],
+                ]
+            ]
+        ];
+
+        try {
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            if ($response->successful()) {
+                $tacticBuckets = $response->json('aggregations.tactics.buckets') ?? [];
+                $tactics       = [];
+                $techniqueMap  = [];
+
+                foreach ($tacticBuckets as $tb) {
+                    $tactics[] = $tb['key'];
+                    foreach ($tb['techniques']['buckets'] ?? [] as $tech) {
+                        $techniqueMap[$tech['key']][$tb['key']] = $tech['doc_count'];
+                    }
+                }
+
+                $palette  = ['#4B49AC','#7978E9','#dc3545','#20c997','#fd7e14','#ffc107','#6f42c1','#0d6efd','#17a2b8','#6c757d'];
+                $datasets = [];
+                $i        = 0;
+                foreach ($techniqueMap as $technique => $tacticCounts) {
+                    $data = array_map(fn($t) => $tacticCounts[$t] ?? 0, $tactics);
+                    $datasets[] = ['label' => $technique, 'data' => $data, 'backgroundColor' => $palette[$i % count($palette)], 'borderRadius' => 2];
+                    $i++;
+                }
+                return ['tactics' => $tactics, 'datasets' => $datasets];
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch MITRE attacks by tactic: ' . $e->getMessage());
+        }
+        return ['tactics' => [], 'datasets' => []];
+    }
+
+    public function getMitreRuleLevelCounts($agentId, $timeRange = '24h')
+    {
+        $managerName = env('WAZUH_MANAGER_NAME', 'fadli');
+        $config      = $this->getTimeRangeConfig($timeRange);
+
+        $query = [
+            'size' => 0,
+            'aggs' => ['levels' => ['terms' => ['field' => 'rule.level', 'size' => 10, 'order' => ['_count' => 'desc']]]],
+            'query' => [
+                'bool' => [
+                    'filter' => [
+                        ['match_phrase' => ['manager.name' => $managerName]],
+                        ['match_phrase' => ['agent.id' => $agentId]],
+                        ['exists' => ['field' => 'rule.mitre.id']],
+                        ['range' => ['timestamp' => ['from' => "now-{$config['duration']}", 'to' => 'now']]],
+                    ],
+                ]
+            ]
+        ];
+
+        try {
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            if ($response->successful()) {
+                $buckets = $response->json('aggregations.levels.buckets') ?? [];
+                return array_map(fn($b) => ['level' => $b['key'], 'count' => $b['doc_count']], $buckets);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch MITRE rule level counts: ' . $e->getMessage());
+        }
+        return [];
+    }
+
     public function getMitreTactics($agentId, $timeRange = '24h')
     {
         $managerName = env('WAZUH_MANAGER_NAME', 'fadli');
@@ -1119,6 +1272,45 @@ class OpenSearchService
             }
         } catch (\Exception $e) {
             \Log::warning('Failed to fetch MITRE tactics: ' . $e->getMessage());
+        }
+
+        return [];
+    }
+
+    public function getComplianceRuleLevelDistribution($agentId, $complianceType = 'gdpr', $timeRange = '24h')
+    {
+        $config = $this->getTimeRangeConfig($timeRange);
+        $from   = match($timeRange) {
+            'today' => 'now/d',
+            'week'  => 'now/w',
+            default => "now-{$config['duration']}",
+        };
+
+        $query = [
+            'size' => 0,
+            'aggs' => ['levels' => ['terms' => ['field' => 'rule.level', 'size' => 10, 'order' => ['_count' => 'desc']]]],
+            'query' => [
+                'bool' => [
+                    'filter' => [
+                        ['match_phrase' => ['agent.id' => $agentId]],
+                        ['exists'       => ['field' => "rule.{$complianceType}"]],
+                        ['range'        => ['timestamp' => ['gte' => $from, 'lte' => 'now']]],
+                    ],
+                ]
+            ]
+        ];
+
+        try {
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)
+                ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
+                ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+
+            if ($response->successful()) {
+                $buckets = $response->json('aggregations.levels.buckets') ?? [];
+                return array_map(fn($b) => ['level' => $b['key'], 'count' => $b['doc_count']], $buckets);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch compliance rule level distribution: ' . $e->getMessage());
         }
 
         return [];

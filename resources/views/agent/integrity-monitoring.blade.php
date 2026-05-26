@@ -53,6 +53,18 @@
           <span class="mdi mdi-sword-cross"></span> MITRE ATT&amp;CK
         </a>
       </li>
+      <li class="nav-item dropdown">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <span class="mdi mdi-check-decagram"></span> Compliance
+        </a>
+        <ul class="dropdown-menu dropdown-menu-dark">
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent) }}?compliance_type=pci_dss">PCI DSS</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent) }}?compliance_type=gdpr">GDPR</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent) }}?compliance_type=hipaa">HIPAA</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent) }}?compliance_type=nist_800_53">NIST 800-53</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent) }}?compliance_type=tsc">TSC</a></li>
+        </ul>
+      </li>
     </ul>
     <div class="ms-auto d-flex gap-2 flex-shrink-0 py-1">
       <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Back to Agents List">
@@ -196,8 +208,8 @@
               <li><a class="dropdown-item {{ $timeRange === 'week'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('week',  event)">This week</a></li>
             </ul>
           </div>
-          <button class="btn btn-outline-secondary btn-sm" onclick="refreshData()" title="Refresh data">
-            <span class="mdi mdi-refresh me-1"></span> Refresh
+          <button class="btn btn-outline-warning btn-sm" onclick="updateTimeRange('24h', event)" title="Reset to default (Last 24 hours)">
+            <span class="mdi mdi-restore me-1"></span> Reset
           </button>
         </div>
       </div>
