@@ -60,7 +60,7 @@ class DashboardController extends Controller
             return view('home.index', [
                 'agentStats'     => ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0, 'change' => 0, 'changePercent' => 0],
                 'alertTrend'     => [],
-                'alertSeverity'  => [],
+                'alertSeverity'  => ['critical' => 0, 'high' => 0, 'medium' => 0, 'low' => 0],
                 'totalAlerts'    => 0,
                 'osDistribution' => [],
                 'topRules'       => [],

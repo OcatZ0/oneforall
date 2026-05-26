@@ -39,8 +39,8 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="#">
-          More <span class="mdi mdi-chevron-down"></span>
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.mitre-attack', $agent->id_agent) }}">
+          <span class="mdi mdi-sword-cross"></span> MITRE ATT&amp;CK
         </a>
       </li>
     </ul>
@@ -124,6 +124,42 @@
     overflow: visible !important;
   }
 
+  /* ── Hide card button ── */
+  .gs-hide-btn {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(231,76,60,0.1);
+    border: 1px solid rgba(231,76,60,0.35);
+    color: #e74c3c;
+    font-size: 13px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: background .15s, color .15s, border-color .15s;
+    line-height: 1;
+  }
+  .gs-hide-btn:hover { background: #e74c3c; color: #fff; }
+  body.gs-edit-mode .gs-hide-btn { display: flex; }
+
+  .gs-card-hidden .grid-stack-item-content {
+    opacity: 0.25;
+    pointer-events: none;
+    filter: grayscale(0.4);
+  }
+  .gs-card-hidden .gs-hide-btn {
+    pointer-events: all;
+    background: rgba(39,174,96,0.1);
+    border-color: rgba(39,174,96,0.35);
+    color: #27ae60;
+  }
+  .gs-card-hidden .gs-hide-btn:hover { background: #27ae60; color: #fff; }
+
   @media (max-width: 767px) {
     #gs-fab, #gs-edit-toolbar { display: none !important; }
   }
@@ -134,7 +170,7 @@
 <div class="grid-stack" id="agent-detail-grid">
 
   {{-- META STRIP --}}
-  <div class="grid-stack-item" gs-id="detail-meta" gs-x="0" gs-y="0" gs-w="10" gs-h="3">
+  <div class="grid-stack-item" gs-id="detail-meta" data-label="Agent Info" gs-x="0" gs-y="0" gs-w="10" gs-h="3">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body py-3 small">
@@ -217,7 +253,7 @@
   </div>
 
   {{-- TIME RANGE --}}
-  <div class="grid-stack-item" gs-id="detail-timerange" gs-x="10" gs-y="0" gs-w="2" gs-h="3">
+  <div class="grid-stack-item" gs-id="detail-timerange" data-label="Time Range" gs-x="10" gs-y="0" gs-w="2" gs-h="3">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
@@ -249,7 +285,7 @@
   </div>
 
   {{-- MITRE ATT&CK --}}
-  <div class="grid-stack-item" gs-id="detail-mitre" gs-x="0" gs-y="3" gs-w="3" gs-h="10">
+  <div class="grid-stack-item" gs-id="detail-mitre" data-label="MITRE ATT&CK" gs-x="0" gs-y="3" gs-w="3" gs-h="10">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header d-flex align-items-center justify-content-between py-2">
@@ -277,7 +313,7 @@
   </div>
 
   {{-- COMPLIANCE --}}
-  <div class="grid-stack-item" gs-id="detail-compliance" gs-x="3" gs-y="3" gs-w="3" gs-h="10">
+  <div class="grid-stack-item" gs-id="detail-compliance" data-label="Compliance" gs-x="3" gs-y="3" gs-w="3" gs-h="10">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header d-flex align-items-center justify-content-between py-2">
@@ -301,7 +337,7 @@
   </div>
 
   {{-- FIM: Recent Events --}}
-  <div class="grid-stack-item" gs-id="detail-fim" gs-x="6" gs-y="3" gs-w="6" gs-h="10">
+  <div class="grid-stack-item" gs-id="detail-fim" data-label="FIM Events" gs-x="6" gs-y="3" gs-w="6" gs-h="10">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header d-flex align-items-center justify-content-between py-2">
@@ -365,7 +401,7 @@
   </div>
 
   {{-- EVENTS COUNT EVOLUTION --}}
-  <div class="grid-stack-item" gs-id="detail-events" gs-x="0" gs-y="13" gs-w="6" gs-h="8">
+  <div class="grid-stack-item" gs-id="detail-events" data-label="Events Count Evolution" gs-x="0" gs-y="13" gs-w="6" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
@@ -383,7 +419,7 @@
   </div>
 
   {{-- SCA: Latest Scans --}}
-  <div class="grid-stack-item" gs-id="detail-sca" gs-x="6" gs-y="13" gs-w="6" gs-h="8">
+  <div class="grid-stack-item" gs-id="detail-sca" data-label="SCA Latest Scans" gs-x="6" gs-y="13" gs-w="6" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header d-flex align-items-center justify-content-between py-2">
@@ -689,8 +725,8 @@ document.addEventListener('DOMContentLoaded', function () {
 // ── GridStack ─────────────────────────────────────────────────────────────────
 (function () {
   const DEFAULT_LAYOUT = [
-    { id: 'detail-meta',       x: 0, y: 0,  w: 9,  h: 3  },
-    { id: 'detail-timerange',  x: 9, y: 0,  w: 3,  h: 3  },
+    { id: 'detail-meta',       x: 0, y: 0,  w: 10, h: 3  },
+    { id: 'detail-timerange',  x: 10, y: 0, w: 2,  h: 3  },
     { id: 'detail-mitre',      x: 0, y: 3,  w: 3,  h: 10 },
     { id: 'detail-compliance', x: 3, y: 3,  w: 3,  h: 10 },
     { id: 'detail-fim',        x: 6, y: 3,  w: 6,  h: 10 },
@@ -711,9 +747,54 @@ document.addEventListener('DOMContentLoaded', function () {
     },
   });
 
+  // ── Hidden cards state ──────────────────────────────────────────────────
+  const hiddenCards     = new Set();
+  const hiddenPositions = {};
+
+  function setCardHidden(id, hide) {
+    const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+    if (!el) return;
+    if (hide) {
+      const node = el.gridstackNode;
+      if (node) hiddenPositions[id] = { x: node.x, y: node.y, w: node.w, h: node.h };
+      hiddenCards.add(id);
+      el.classList.add('gs-card-hidden');
+      const btn = el.querySelector('.gs-hide-btn');
+      if (btn) { btn.querySelector('i').className = 'mdi mdi-eye'; btn.title = 'Tampilkan kartu'; }
+    } else {
+      hiddenCards.delete(id);
+      el.classList.remove('gs-card-hidden');
+      const btn = el.querySelector('.gs-hide-btn');
+      if (btn) { btn.querySelector('i').className = 'mdi mdi-eye-off'; btn.title = 'Sembunyikan kartu'; }
+    }
+  }
+
+  function addHideButtons() {
+    document.querySelectorAll('.grid-stack-item').forEach(item => {
+      if (item.querySelector('.gs-hide-btn')) return;
+      const id       = item.getAttribute('gs-id');
+      const isHidden = hiddenCards.has(id);
+      const btn      = document.createElement('button');
+      btn.className  = 'gs-hide-btn';
+      btn.title      = isHidden ? 'Tampilkan kartu' : 'Sembunyikan kartu';
+      btn.innerHTML  = `<i class="mdi mdi-${isHidden ? 'eye' : 'eye-off'}"></i>`;
+      btn.addEventListener('click', e => { e.stopPropagation(); setCardHidden(id, !hiddenCards.has(id)); });
+      item.appendChild(btn);
+    });
+  }
+
+  // ── Load saved layout ───────────────────────────────────────────────────
   const savedLayout = @json($savedLayout ?? null);
   if (savedLayout && Array.isArray(savedLayout)) {
-    grid.load(savedLayout);
+    grid.load(savedLayout.map(i => ({ id: i.id, x: i.x, y: i.y, w: i.w, h: i.h })), false);
+    savedLayout.filter(i => i.hidden).forEach(i => {
+      hiddenCards.add(i.id);
+      hiddenPositions[i.id] = { x: i.x, y: i.y, w: i.w, h: i.h };
+      const el = document.querySelector(`.grid-stack-item[gs-id="${i.id}"]`);
+      if (!el) return;
+      grid.removeWidget(el, false);
+      el.style.display = 'none';
+    });
   }
 
   grid.on('resizestop', () => {
@@ -730,14 +811,36 @@ document.addEventListener('DOMContentLoaded', function () {
   function enterEdit() {
     editMode = true;
     grid.setStatic(false);
+    hiddenCards.forEach(id => {
+      const el  = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+      if (!el) return;
+      const pos = hiddenPositions[id] || { x: 0, y: 0, w: 3, h: 8 };
+      el.setAttribute('gs-x', pos.x);
+      el.setAttribute('gs-y', pos.y);
+      el.setAttribute('gs-w', pos.w);
+      el.setAttribute('gs-h', pos.h);
+      el.style.display = '';
+      grid.makeWidget(el);
+      el.classList.add('gs-card-hidden');
+    });
     document.body.classList.add('gs-edit-mode');
     fabMain.classList.add('active');
     fabIcon.className = 'mdi mdi-pencil-off';
     toolbar.classList.add('visible');
+    addHideButtons();
   }
 
   function exitEdit() {
     editMode = false;
+    hiddenCards.forEach(id => {
+      const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+      if (!el) return;
+      const node = el.gridstackNode;
+      if (node) hiddenPositions[id] = { x: node.x, y: node.y, w: node.w, h: node.h };
+      el.classList.remove('gs-card-hidden');
+      grid.removeWidget(el, false);
+      el.style.display = 'none';
+    });
     grid.setStatic(true);
     document.body.classList.remove('gs-edit-mode');
     fabMain.classList.remove('active');
@@ -749,6 +852,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.getElementById('gs-save').addEventListener('click', () => {
     const layout = grid.save(false);
+    layout.forEach(i => { if (hiddenCards.has(i.id)) i.hidden = true; });
     fetch('{{ route("dashboard.layout") }}', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
@@ -759,7 +863,15 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   document.getElementById('gs-reset').addEventListener('click', () => {
+    [...hiddenCards].forEach(id => {
+      hiddenCards.delete(id);
+      delete hiddenPositions[id];
+      const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+      if (el) el.classList.remove('gs-card-hidden');
+    });
     grid.load(DEFAULT_LAYOUT);
+    if (eventsChartInstance)     eventsChartInstance.resize();
+    if (complianceChartInstance) complianceChartInstance.resize();
   });
 
   document.getElementById('gs-cancel').addEventListener('click', () => {

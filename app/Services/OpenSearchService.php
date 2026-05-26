@@ -999,6 +999,97 @@ class OpenSearchService
         return ['labels' => [], 'datasets' => []];
     }
 
+    public function getMitreTechniques($agentId, $timeRange = '24h')
+    {
+        $managerName = env('WAZUH_MANAGER_NAME', 'fadli');
+        $config      = $this->getTimeRangeConfig($timeRange);
+
+        $query = [
+            'size' => 0,
+            'aggs' => [
+                'techniques' => ['terms' => ['field' => 'rule.mitre.technique', 'size' => 10]],
+            ],
+            'query' => [
+                'bool' => [
+                    'filter' => [
+                        ['match_all' => (object)[]],
+                        ['match_phrase' => ['manager.name' => $managerName]],
+                        ['match_phrase' => ['agent.id' => $agentId]],
+                        ['exists' => ['field' => 'rule.mitre.id']],
+                        ['range' => ['timestamp' => ['from' => "now-{$config['duration']}", 'to' => 'now']]],
+                    ],
+                ]
+            ]
+        ];
+
+        try {
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            if ($response->successful()) {
+                $buckets = $response->json('aggregations.techniques.buckets') ?? [];
+                return array_map(fn($b) => ['technique' => $b['key'] ?? 'Unknown', 'count' => $b['doc_count'] ?? 0], $buckets);
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch MITRE techniques: ' . $e->getMessage());
+        }
+
+        return [];
+    }
+
+    public function getMitreAlerts($agentId, $timeRange = '24h', $limit = 10, $offset = 0)
+    {
+        $managerName = env('WAZUH_MANAGER_NAME', 'fadli');
+        $config      = $this->getTimeRangeConfig($timeRange);
+
+        try {
+            $query = [
+                'size'             => $limit,
+                'from'             => $offset,
+                'track_total_hits' => true,
+                'sort'             => [['timestamp' => 'desc']],
+                '_source'          => ['timestamp', 'rule.id', 'rule.description', 'rule.level', 'rule.mitre.id', 'rule.mitre.tactic', 'rule.mitre.technique'],
+                'query'            => [
+                    'bool' => [
+                        'filter' => [
+                            ['match_phrase' => ['manager.name' => $managerName]],
+                            ['match_phrase' => ['agent.id' => $agentId]],
+                            ['exists' => ['field' => 'rule.mitre.id']],
+                            ['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]
+                        ],
+                    ]
+                ],
+            ];
+
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            if ($response->successful()) {
+                $total = $response->json('hits.total.value') ?? 0;
+                $data  = array_map(function ($hit) {
+                    $s = $hit['_source'];
+                    return [
+                        'timestamp'   => $s['timestamp'] ?? '',
+                        'rule_id'     => $s['rule']['id'] ?? 'N/A',
+                        'description' => $s['rule']['description'] ?? '',
+                        'level'       => $s['rule']['level'] ?? 0,
+                        'mitre_id'    => is_array($s['rule']['mitre']['id'] ?? null)
+                            ? implode(', ', $s['rule']['mitre']['id'])
+                            : ($s['rule']['mitre']['id'] ?? ''),
+                        'tactic'      => is_array($s['rule']['mitre']['tactic'] ?? null)
+                            ? implode(', ', $s['rule']['mitre']['tactic'])
+                            : ($s['rule']['mitre']['tactic'] ?? ''),
+                        'technique'   => is_array($s['rule']['mitre']['technique'] ?? null)
+                            ? implode(', ', $s['rule']['mitre']['technique'])
+                            : ($s['rule']['mitre']['technique'] ?? ''),
+                    ];
+                }, $response->json('hits.hits') ?? []);
+
+                return ['data' => $data, 'total' => $total];
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to fetch MITRE alerts: ' . $e->getMessage());
+        }
+
+        return ['data' => [], 'total' => 0];
+    }
+
     public function getMitreTactics($agentId, $timeRange = '24h')
     {
         $managerName = env('WAZUH_MANAGER_NAME', 'fadli');

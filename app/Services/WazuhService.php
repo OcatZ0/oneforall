@@ -159,6 +159,45 @@ class WazuhService
         return ['data' => [], 'total' => 0];
     }
 
+    public function getVulnerabilities(string $token, string $agentId, int $limit = 10, int $offset = 0, ?string $severity = null): array
+    {
+        try {
+            $params = ['limit' => $limit, 'offset' => $offset];
+            if ($severity) $params['severity'] = $severity;
+
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)->timeout(5)
+                ->withToken($token)
+                ->get("{$this->_host}/vulnerability/{$agentId}", $params);
+
+            if ($response->successful()) {
+                $data = $response->json('data');
+                return ['data' => $data['affected_items'] ?? [], 'total' => $data['total_affected_items'] ?? 0];
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to fetch vulnerabilities: ' . $e->getMessage());
+        }
+        return ['data' => [], 'total' => 0];
+    }
+
+    public function getVulnerabilitiesLastScan(string $token, string $agentId): ?array
+    {
+        try {
+            $response = Http::withoutVerifying()
+                ->connectTimeout(3)->timeout(5)
+                ->withToken($token)
+                ->get("{$this->_host}/vulnerability/{$agentId}/last_scan");
+
+            if ($response->successful()) {
+                $items = $response->json('data.affected_items');
+                return !empty($items) ? $items[0] : null;
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to fetch vulnerability last scan: ' . $e->getMessage());
+        }
+        return null;
+    }
+
     public function getAgentsWithIPs(): array
     {
         try {

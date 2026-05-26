@@ -81,6 +81,43 @@
   .gs-card { height: 100%; display: flex; flex-direction: column; }
   .gs-card .card-body { flex: 1; overflow: auto; }
 
+  /* ── Hide card button ── */
+  .gs-hide-btn {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(231,76,60,0.1);
+    border: 1px solid rgba(231,76,60,0.35);
+    color: #e74c3c;
+    font-size: 13px;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: background .15s, color .15s, border-color .15s;
+    line-height: 1;
+  }
+  .gs-hide-btn:hover { background: #e74c3c; color: #fff; }
+  body.gs-edit-mode .gs-hide-btn { display: flex; }
+
+  /* ── Hidden card state (greyed out in edit mode) ── */
+  .gs-card-hidden .grid-stack-item-content {
+    opacity: 0.25;
+    pointer-events: none;
+    filter: grayscale(0.4);
+  }
+  .gs-card-hidden .gs-hide-btn {
+    pointer-events: all;
+    background: rgba(39,174,96,0.1);
+    border-color: rgba(39,174,96,0.35);
+    color: #27ae60;
+  }
+  .gs-card-hidden .gs-hide-btn:hover { background: #27ae60; color: #fff; }
+
   /* Hide edit controls on mobile — drag/resize not usable on touch */
   @media (max-width: 767px) {
     #gs-fab, #gs-edit-toolbar { display: none !important; }
@@ -94,7 +131,7 @@
 <div class="grid-stack" id="dashboard-grid">
 
   {{-- Active Agents --}}
-  <div class="grid-stack-item" gs-id="active-agents" gs-x="0" gs-y="0" gs-w="3" gs-h="4">
+  <div class="grid-stack-item" gs-id="active-agents" data-label="Active Agents" gs-x="0" gs-y="0" gs-w="3" gs-h="4">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -110,7 +147,7 @@
   </div>
 
   {{-- Disconnected --}}
-  <div class="grid-stack-item" gs-id="disconnected" gs-x="3" gs-y="0" gs-w="3" gs-h="4">
+  <div class="grid-stack-item" gs-id="disconnected" data-label="Disconnected" gs-x="3" gs-y="0" gs-w="3" gs-h="4">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -126,7 +163,7 @@
   </div>
 
   {{-- Pending --}}
-  <div class="grid-stack-item" gs-id="pending" gs-x="6" gs-y="0" gs-w="3" gs-h="4">
+  <div class="grid-stack-item" gs-id="pending" data-label="Pending" gs-x="6" gs-y="0" gs-w="3" gs-h="4">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -142,7 +179,7 @@
   </div>
 
   {{-- Never Connected --}}
-  <div class="grid-stack-item" gs-id="never-connected" gs-x="9" gs-y="0" gs-w="3" gs-h="4">
+  <div class="grid-stack-item" gs-id="never-connected" data-label="Never Connected" gs-x="9" gs-y="0" gs-w="3" gs-h="4">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -158,7 +195,7 @@
   </div>
 
   {{-- Total Agents --}}
-  <div class="grid-stack-item" gs-id="total-agents" gs-x="0" gs-y="4" gs-w="3" gs-h="5">
+  <div class="grid-stack-item" gs-id="total-agents" data-label="Total Agents" gs-x="0" gs-y="4" gs-w="3" gs-h="5">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -182,7 +219,7 @@
 
   @if($customerStats)
   {{-- Total Customers (admin only) --}}
-  <div class="grid-stack-item" gs-id="total-customers" gs-x="3" gs-y="4" gs-w="3" gs-h="5">
+  <div class="grid-stack-item" gs-id="total-customers" data-label="Total Customers" gs-x="3" gs-y="4" gs-w="3" gs-h="5">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -215,7 +252,7 @@
     $pendingPct        = round($agentStats['pending'] / $total * 100, 1);
     $neverConnectedPct = round($agentStats['never_connected'] / $total * 100, 1);
   @endphp
-  <div class="grid-stack-item" gs-id="agent-composition" gs-x="{{ $compX }}" gs-y="4" gs-w="{{ $compW }}" gs-h="5">
+  <div class="grid-stack-item" gs-id="agent-composition" data-label="Komposisi Status Agent" gs-x="{{ $compX }}" gs-y="4" gs-w="{{ $compW }}" gs-h="5">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -235,7 +272,7 @@
   </div>
 
   {{-- Alert Trend --}}
-  <div class="grid-stack-item" gs-id="alert-trend" gs-x="0" gs-y="8" gs-w="5" gs-h="7">
+  <div class="grid-stack-item" gs-id="alert-trend" data-label="Alert Trend" gs-x="0" gs-y="8" gs-w="5" gs-h="7">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -258,7 +295,7 @@
     $medium_pct   = $total_alerts > 0 ? round($alertSeverity['medium']   / $total_alerts * 100, 1) : 0;
     $low_pct      = $total_alerts > 0 ? round($alertSeverity['low']      / $total_alerts * 100, 1) : 0;
   @endphp
-  <div class="grid-stack-item" gs-id="severity-chart" gs-x="5" gs-y="8" gs-w="4" gs-h="7">
+  <div class="grid-stack-item" gs-id="severity-chart" data-label="Severity Chart" gs-x="5" gs-y="8" gs-w="4" gs-h="7">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -277,7 +314,7 @@
   </div>
 
   {{-- Total Alerts --}}
-  <div class="grid-stack-item" gs-id="total-alerts" gs-x="9" gs-y="8" gs-w="3" gs-h="7">
+  <div class="grid-stack-item" gs-id="total-alerts" data-label="Total Alerts" gs-x="9" gs-y="8" gs-w="3" gs-h="7">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -298,7 +335,7 @@
   </div>
 
   {{-- OS Distribution --}}
-  <div class="grid-stack-item" gs-id="os-distribution" gs-x="0" gs-y="15" gs-w="4" gs-h="7">
+  <div class="grid-stack-item" gs-id="os-distribution" data-label="OS Distribution" gs-x="0" gs-y="15" gs-w="4" gs-h="7">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -311,7 +348,7 @@
   </div>
 
   {{-- Top Rules --}}
-  <div class="grid-stack-item" gs-id="top-rules" gs-x="4" gs-y="15" gs-w="8" gs-h="7">
+  <div class="grid-stack-item" gs-id="top-rules" data-label="Top Rules" gs-x="4" gs-y="15" gs-w="8" gs-h="7">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -343,7 +380,7 @@
   </div>
 
   {{-- Top Agents --}}
-  <div class="grid-stack-item" gs-id="top-agents" gs-x="0" gs-y="22" gs-w="12" gs-h="7">
+  <div class="grid-stack-item" gs-id="top-agents" data-label="Top Agents" gs-x="0" gs-y="22" gs-w="12" gs-h="7">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -441,10 +478,54 @@
     },
   });
 
-  // Apply saved layout if exists
+  // ── Hidden cards state ─────────────────────────────────────────────────────
+  const hiddenCards     = new Set();
+  const hiddenPositions = {};
+
+  function setCardHidden(id, hide) {
+    const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+    if (!el) return;
+    if (hide) {
+      const node = el.gridstackNode;
+      if (node) hiddenPositions[id] = { x: node.x, y: node.y, w: node.w, h: node.h };
+      hiddenCards.add(id);
+      el.classList.add('gs-card-hidden');
+      const btn = el.querySelector('.gs-hide-btn');
+      if (btn) { btn.querySelector('i').className = 'mdi mdi-eye'; btn.title = 'Tampilkan kartu'; }
+    } else {
+      hiddenCards.delete(id);
+      el.classList.remove('gs-card-hidden');
+      const btn = el.querySelector('.gs-hide-btn');
+      if (btn) { btn.querySelector('i').className = 'mdi mdi-eye-off'; btn.title = 'Sembunyikan kartu'; }
+    }
+  }
+
+  function addHideButtons() {
+    document.querySelectorAll('.grid-stack-item').forEach(item => {
+      if (item.querySelector('.gs-hide-btn')) return;
+      const id       = item.getAttribute('gs-id');
+      const isHidden = hiddenCards.has(id);
+      const btn      = document.createElement('button');
+      btn.className  = 'gs-hide-btn';
+      btn.title      = isHidden ? 'Tampilkan kartu' : 'Sembunyikan kartu';
+      btn.innerHTML  = `<i class="mdi mdi-${isHidden ? 'eye' : 'eye-off'}"></i>`;
+      btn.addEventListener('click', e => { e.stopPropagation(); setCardHidden(id, !hiddenCards.has(id)); });
+      item.appendChild(btn);
+    });
+  }
+
+  // ── Load saved layout ──────────────────────────────────────────────────────
   const savedLayout = @json($savedLayout ?? null);
   if (savedLayout && Array.isArray(savedLayout)) {
-    grid.load(savedLayout);
+    grid.load(savedLayout.map(i => ({ id: i.id, x: i.x, y: i.y, w: i.w, h: i.h })), false);
+    savedLayout.filter(i => i.hidden).forEach(i => {
+      hiddenCards.add(i.id);
+      hiddenPositions[i.id] = { x: i.x, y: i.y, w: i.w, h: i.h };
+      const el = document.querySelector(`.grid-stack-item[gs-id="${i.id}"]`);
+      if (!el) return;
+      grid.removeWidget(el, false);
+      el.style.display = 'none';
+    });
   }
 
   // Chart references for resize
@@ -515,7 +596,7 @@
   });
 
   // ── Edit mode ──────────────────────────────────────────────────────────────
-  let editMode = false;
+  let editMode  = false;
   const fabMain = document.getElementById('gs-fab-main');
   const fabIcon = document.getElementById('gs-fab-icon');
   const toolbar = document.getElementById('gs-edit-toolbar');
@@ -523,14 +604,36 @@
   function enterEdit() {
     editMode = true;
     grid.setStatic(false);
+    hiddenCards.forEach(id => {
+      const el  = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+      if (!el) return;
+      const pos = hiddenPositions[id] || { x: 0, y: 0, w: 3, h: 4 };
+      el.setAttribute('gs-x', pos.x);
+      el.setAttribute('gs-y', pos.y);
+      el.setAttribute('gs-w', pos.w);
+      el.setAttribute('gs-h', pos.h);
+      el.style.display = '';
+      grid.makeWidget(el);
+      el.classList.add('gs-card-hidden');
+    });
     document.body.classList.add('gs-edit-mode');
     fabMain.classList.add('active');
     fabIcon.className = 'mdi mdi-pencil-off';
     toolbar.classList.add('visible');
+    addHideButtons();
   }
 
   function exitEdit() {
     editMode = false;
+    hiddenCards.forEach(id => {
+      const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+      if (!el) return;
+      const node = el.gridstackNode;
+      if (node) hiddenPositions[id] = { x: node.x, y: node.y, w: node.w, h: node.h };
+      el.classList.remove('gs-card-hidden');
+      grid.removeWidget(el, false);
+      el.style.display = 'none';
+    });
     grid.setStatic(true);
     document.body.classList.remove('gs-edit-mode');
     fabMain.classList.remove('active');
@@ -540,6 +643,7 @@
 
   document.getElementById('gs-save').addEventListener('click', () => {
     const layout = grid.save(false);
+    layout.forEach(i => { if (hiddenCards.has(i.id)) i.hidden = true; });
     fetch('{{ route("dashboard.layout") }}', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
@@ -550,6 +654,12 @@
   });
 
   document.getElementById('gs-reset').addEventListener('click', () => {
+    [...hiddenCards].forEach(id => {
+      hiddenCards.delete(id);
+      delete hiddenPositions[id];
+      const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+      if (el) el.classList.remove('gs-card-hidden');
+    });
     grid.load(DEFAULT_LAYOUT);
     Object.values(charts).forEach(c => c.resize());
   });

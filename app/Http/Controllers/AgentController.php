@@ -337,12 +337,84 @@ class AgentController extends Controller
 
     public function vulnerabilities($id)
     {
-        return $this->resolveAgentView($id, 'agent.vulnerabilities');
+        try {
+            if (!$this->userHasAccessToAgent($id)) {
+                return view('agent.vulnerabilities', ['agent' => null, 'error' => 'You do not have permission to view this agent']);
+            }
+            $agent = $this->resolveAgent($id);
+            if (!$agent) {
+                return view('agent.vulnerabilities', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
+            }
+
+            $token    = $this->_wazuhService->getToken();
+            $severity = in_array(request('severity'), ['Critical', 'High', 'Medium', 'Low']) ? request('severity') : null;
+            $perPage  = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
+            $page     = max((int) request('page', 1), 1);
+            $offset   = ($page - 1) * $perPage;
+
+            $vulnResult = $token
+                ? $this->_wazuhService->getVulnerabilities($token, $id, $perPage, $offset, $severity)
+                : ['data' => [], 'total' => 0];
+
+            $severityCounts = ['Critical' => 0, 'High' => 0, 'Medium' => 0, 'Low' => 0];
+            foreach (['Critical', 'High', 'Medium', 'Low'] as $sev) {
+                $severityCounts[$sev] = $token
+                    ? $this->_wazuhService->getVulnerabilities($token, $id, 1, 0, $sev)['total']
+                    : 0;
+            }
+
+            $summaryBatch = $token
+                ? $this->_wazuhService->getVulnerabilities($token, $id, 100, 0, null)['data']
+                : [];
+
+            $lastScan = $token ? $this->_wazuhService->getVulnerabilitiesLastScan($token, $id) : null;
+
+            $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
+                                          ->where('page', 'vulnerabilities')
+                                          ->value('layout');
+
+            return view('agent.vulnerabilities', compact('agent', 'page', 'perPage', 'severity', 'severityCounts', 'summaryBatch', 'lastScan', 'savedLayout') + [
+                'vulnerabilities' => $vulnResult['data'],
+                'totalVulns'      => $vulnResult['total'],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Vulnerabilities error: ' . $e->getMessage());
+            return view('agent.vulnerabilities', ['agent' => null, 'error' => 'Error loading vulnerabilities']);
+        }
     }
 
     public function mitreAttack($id)
     {
-        return $this->resolveAgentView($id, 'agent.mitre-attack');
+        try {
+            if (!$this->userHasAccessToAgent($id)) {
+                return view('agent.mitre-attack', ['agent' => null, 'error' => 'You do not have permission to view this agent']);
+            }
+            $agent = $this->resolveAgent($id);
+            if (!$agent) {
+                return view('agent.mitre-attack', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
+            }
+
+            $timeRange = request('time_range', '24h');
+            $perPage   = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
+            $page      = max((int) request('page', 1), 1);
+            $offset    = ($page - 1) * $perPage;
+
+            $alertsResult = $this->_openSearch->getMitreAlerts($id, $timeRange, $perPage, $offset);
+
+            $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
+                                          ->where('page', 'mitre-attack')
+                                          ->value('layout');
+
+            return view('agent.mitre-attack', compact('agent', 'timeRange', 'page', 'perPage', 'savedLayout') + [
+                'tactics'    => $this->_openSearch->getMitreTactics($id, $timeRange),
+                'techniques' => $this->_openSearch->getMitreTechniques($id, $timeRange),
+                'alerts'     => $alertsResult['data'],
+                'totalAlerts' => $alertsResult['total'],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('MITRE ATT&CK error: ' . $e->getMessage());
+            return view('agent.mitre-attack', ['agent' => null, 'error' => 'Error loading MITRE ATT&CK data']);
+        }
     }
 
     public function syncAgentsFromWazuh()

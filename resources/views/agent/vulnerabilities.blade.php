@@ -1,0 +1,709 @@
+@extends('layouts.wazuh')
+
+@section('title', 'Vulnerabilities - One For All')
+
+@section('content')
+
+@if(!$agent)
+<div class="container-fluid py-5">
+  <div class="alert alert-danger d-flex align-items-center gap-3" role="alert">
+    <i class="mdi mdi-alert-circle-outline display-4"></i>
+    <div>
+      <h5 class="alert-heading mb-1">Agent Not Found</h5>
+      <p class="mb-0">Unable to load agent details. The agent may no longer exist or access has been denied.</p>
+      <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2">
+        <i class="mdi mdi-arrow-left me-1"></i> Back to Agents
+      </a>
+    </div>
+  </div>
+</div>
+@else
+
+{{-- SECONDARY NAV --}}
+<div class="bg-dark border-bottom border-secondary">
+  <div class="d-flex align-items-center px-3">
+    <ul class="nav flex-nowrap overflow-auto">
+      <li class="nav-item">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.detail', $agent->id_agent) }}">
+          <span class="mdi mdi-home"></span> Details
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.security-events', $agent->id_agent) }}">
+          <span class="mdi mdi-format-list-bulleted"></span> Security events
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.integrity-monitoring', $agent->id_agent) }}">
+          <span class="mdi mdi-shield"></span> Integrity monitoring
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.sca', $agent->id_agent) }}">
+          <span class="mdi mdi-clock-outline"></span> SCA
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small active" href="{{ route('agent.vulnerabilities', $agent->id_agent) }}">
+          <span class="mdi mdi-bug"></span> Vulnerabilities
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.mitre-attack', $agent->id_agent) }}">
+          <span class="mdi mdi-sword-cross"></span> MITRE ATT&amp;CK
+        </a>
+      </li>
+    </ul>
+    <div class="ms-auto d-flex gap-2 flex-shrink-0 py-1">
+      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Back to Agents List">
+        <span class="mdi mdi-arrow-left"></span> Back
+      </a>
+    </div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack.min.css"/>
+<style>
+  .grid-stack { background: transparent; }
+  .grid-stack-item-content { overflow: auto; }
+
+  body.gs-edit-mode .grid-stack-item-content {
+    outline: 2px dashed rgba(75,73,172,0.4);
+    outline-offset: -2px;
+  }
+  body.gs-edit-mode .grid-stack {
+    background-image: linear-gradient(rgba(75,73,172,.04) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(75,73,172,.04) 1px, transparent 1px);
+    background-size: calc(100% / 12) 60px;
+  }
+
+  #gs-fab {
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  }
+  #gs-fab-main {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: #4B49AC; color: #fff; border: none;
+    box-shadow: 0 4px 14px rgba(75,73,172,.45);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; cursor: pointer; transition: background .2s, transform .15s;
+  }
+  #gs-fab-main:hover { background: #3b3a8c; transform: scale(1.06); }
+  #gs-fab-main.active { background: #e74c3c; }
+
+  #gs-edit-toolbar {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    z-index: 9998; display: none; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.97); padding: 8px 16px;
+    border-radius: 32px; box-shadow: 0 4px 20px rgba(0,0,0,.18); white-space: nowrap;
+  }
+  #gs-edit-toolbar.visible { display: flex; }
+
+  .gs-tb-btn { padding: 6px 18px; border-radius: 20px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity .15s; }
+  .gs-tb-btn:hover { opacity: .82; }
+  .gs-tb-btn-save   { background: #27ae60; color: #fff; }
+  .gs-tb-btn-reset  { background: #f39c12; color: #fff; }
+  .gs-tb-btn-cancel { background: #f0f0f0; color: #333; }
+
+  .gs-card { height: 100%; display: flex; flex-direction: column; }
+  .gs-card .card-body { flex: 1; overflow: auto; }
+
+  .vuln-stat-val { font-size: 2rem; font-weight: 700; line-height: 1; }
+
+  /* ── Hide card button ── */
+  .gs-hide-btn {
+    display: none;
+    position: absolute;
+    top: 10px; right: 10px;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(231,76,60,0.1);
+    border: 1px solid rgba(231,76,60,0.35);
+    color: #e74c3c; font-size: 13px; cursor: pointer;
+    align-items: center; justify-content: center;
+    z-index: 100; transition: background .15s, color .15s, border-color .15s; line-height: 1;
+  }
+  .gs-hide-btn:hover { background: #e74c3c; color: #fff; }
+  body.gs-edit-mode .gs-hide-btn { display: flex; }
+
+  .gs-card-hidden .grid-stack-item-content { opacity: 0.25; pointer-events: none; filter: grayscale(0.4); }
+  .gs-card-hidden .gs-hide-btn { pointer-events: all; background: rgba(39,174,96,0.1); border-color: rgba(39,174,96,0.35); color: #27ae60; }
+  .gs-card-hidden .gs-hide-btn:hover { background: #27ae60; color: #fff; }
+
+  @media (max-width: 767px) {
+    #gs-fab, #gs-edit-toolbar { display: none !important; }
+  }
+</style>
+
+<div class="grid-stack" id="vuln-grid">
+
+  {{-- SEVERITY CHART --}}
+  <div class="grid-stack-item" gs-id="vuln-severity" data-label="Severity" gs-x="0" gs-y="0" gs-w="4" gs-h="8">
+    <div class="grid-stack-item-content">
+      <div class="card gs-card">
+        <div class="card-header py-2 text-center">
+          <span class="fw-semibold small text-uppercase text-muted tracking-wide">Severity</span>
+        </div>
+        <div class="card-body d-flex flex-column align-items-center justify-content-center">
+          @php $totalSev = array_sum($severityCounts); @endphp
+          @if($totalSev > 0)
+          <div style="position:relative;width:100%;max-width:220px;height:180px;">
+            <canvas id="vulnSeverityChart"></canvas>
+          </div>
+          <div class="d-flex flex-wrap gap-3 mt-3 justify-content-center small">
+            <span><span class="mdi mdi-circle text-danger"></span> Critical: <strong>{{ $severityCounts['Critical'] }}</strong></span>
+            <span><span class="mdi mdi-circle" style="color:#fd7e14;"></span> High: <strong>{{ $severityCounts['High'] }}</strong></span>
+            <span><span class="mdi mdi-circle text-warning"></span> Medium: <strong>{{ $severityCounts['Medium'] }}</strong></span>
+            <span><span class="mdi mdi-circle text-secondary"></span> Low: <strong>{{ $severityCounts['Low'] }}</strong></span>
+          </div>
+          @else
+          <div class="text-muted small text-center">
+            <span class="mdi mdi-chart-donut d-block" style="font-size:3rem;"></span>
+            <div class="mt-2 fw-semibold">No results</div>
+            <div class="text-muted" style="font-size:11px;">No results were found.</div>
+          </div>
+          @endif
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- DETAILS --}}
+  <div class="grid-stack-item" gs-id="vuln-details" data-label="Details" gs-x="4" gs-y="0" gs-w="4" gs-h="8">
+    <div class="grid-stack-item-content">
+      <div class="card gs-card">
+        <div class="card-header py-2 text-center">
+          <span class="fw-semibold small text-uppercase text-muted">Details</span>
+        </div>
+        <div class="card-body d-flex flex-column justify-content-center">
+          <div class="row g-3 text-center mb-4">
+            <div class="col-3">
+              <div class="text-muted small mb-1">Critical</div>
+              <div class="vuln-stat-val text-danger">{{ $severityCounts['Critical'] }}</div>
+            </div>
+            <div class="col-3">
+              <div class="text-muted small mb-1">High</div>
+              <div class="vuln-stat-val" style="color:#fd7e14;">{{ $severityCounts['High'] }}</div>
+            </div>
+            <div class="col-3">
+              <div class="text-muted small mb-1">Medium</div>
+              <div class="vuln-stat-val text-warning">{{ $severityCounts['Medium'] }}</div>
+            </div>
+            <div class="col-3">
+              <div class="text-muted small mb-1">Low</div>
+              <div class="vuln-stat-val text-secondary">{{ $severityCounts['Low'] }}</div>
+            </div>
+          </div>
+          <hr class="my-2">
+          <div class="row g-2 text-center small">
+            <div class="col-6">
+              <div class="text-muted mb-1">Last full scan</div>
+              <div class="fw-semibold" style="font-size:11px;">
+                @if($lastScan && !empty($lastScan['end']))
+                  {{ \Carbon\Carbon::parse($lastScan['end'])->format('Y-m-d H:i') }}
+                @else
+                  <span class="text-muted">—</span>
+                @endif
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="text-muted mb-1">Last partial scan</div>
+              <div class="fw-semibold" style="font-size:11px;">
+                @if($lastScan && !empty($lastScan['start']))
+                  {{ \Carbon\Carbon::parse($lastScan['start'])->format('Y-m-d H:i') }}
+                @else
+                  <span class="text-muted">—</span>
+                @endif
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- SUMMARY --}}
+  <div class="grid-stack-item" gs-id="vuln-summary" data-label="Summary" gs-x="8" gs-y="0" gs-w="4" gs-h="8">
+    <div class="grid-stack-item-content">
+      <div class="card gs-card">
+        <div class="card-header py-2 d-flex align-items-center justify-content-between">
+          <span class="fw-semibold small text-uppercase text-muted">Summary</span>
+          <select id="vuln-summary-field" class="form-select form-select-sm" style="width:auto;font-size:11px;">
+            <option value="name">Name</option>
+            <option value="cve">CVE</option>
+            <option value="version">Version</option>
+            <option value="cvss2">CVSS2 Score</option>
+            <option value="cvss3">CVSS3 Score</option>
+          </select>
+        </div>
+        <div class="card-body d-flex flex-column align-items-center justify-content-center p-2">
+          <div id="vuln-summary-chart-wrap" style="position:relative;width:100%;height:190px;display:none;">
+            <canvas id="vulnSummaryChart"></canvas>
+          </div>
+          <div id="vuln-summary-empty" class="text-muted small text-center">
+            <span class="mdi mdi-chart-bar d-block" style="font-size:3rem;"></span>
+            <div class="mt-2 fw-semibold">No results</div>
+            <div style="font-size:11px;" id="vuln-summary-empty-text">No Name results were found.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{-- VULNERABILITIES TABLE --}}
+  <div class="grid-stack-item" gs-id="vuln-table" data-label="Vulnerability List" gs-x="0" gs-y="8" gs-w="12" gs-h="12">
+    <div class="grid-stack-item-content">
+      <div class="card gs-card">
+        <div class="card-header py-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <span class="fw-semibold small">Vulnerabilities ({{ number_format($totalVulns) }})</span>
+          {{-- Severity filter --}}
+          @php $filterBase = array_merge(request()->query(), ['page' => 1]); @endphp
+          <div id="vuln-severity-filter" class="btn-group btn-group-sm" role="group">
+            <a href="?{{ http_build_query(array_merge($filterBase, ['severity' => ''])) }}"
+               class="btn {{ !$severity ? 'btn-primary' : 'btn-outline-secondary' }}">All</a>
+            <a href="?{{ http_build_query(array_merge($filterBase, ['severity' => 'Critical'])) }}"
+               class="btn {{ $severity === 'Critical' ? 'btn-danger' : 'btn-outline-secondary' }}">Critical</a>
+            <a href="?{{ http_build_query(array_merge($filterBase, ['severity' => 'High'])) }}"
+               class="btn {{ $severity === 'High' ? 'btn-warning' : 'btn-outline-secondary' }}">High</a>
+            <a href="?{{ http_build_query(array_merge($filterBase, ['severity' => 'Medium'])) }}"
+               class="btn {{ $severity === 'Medium' ? 'btn-info text-dark' : 'btn-outline-secondary' }}">Medium</a>
+            <a href="?{{ http_build_query(array_merge($filterBase, ['severity' => 'Low'])) }}"
+               class="btn {{ $severity === 'Low' ? 'btn-secondary' : 'btn-outline-secondary' }}">Low</a>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover table-striped mb-0" style="font-size:11px;">
+              <thead class="table-light">
+                <tr>
+                  <th style="width:18%">Name</th>
+                  <th style="width:12%">Version</th>
+                  <th style="width:10%">Architecture</th>
+                  <th style="width:9%">Severity</th>
+                  <th style="width:13%">CVE</th>
+                  <th style="width:8%" class="text-center">CVSS2</th>
+                  <th style="width:8%" class="text-center">CVSS3</th>
+                  <th style="width:22%">Detection time</th>
+                </tr>
+              </thead>
+              <tbody>
+                @forelse($vulnerabilities as $vuln)
+                @php
+                  $sev = $vuln['severity'] ?? 'None';
+                  $sevColor = match($sev) {
+                    'Critical' => 'danger',
+                    'High'     => 'warning',
+                    'Medium'   => 'info',
+                    'Low'      => 'secondary',
+                    default    => 'secondary',
+                  };
+                  $cvss2 = isset($vuln['cvss2_score']) ? number_format((float)$vuln['cvss2_score'], 1) : null;
+                  $cvss3 = isset($vuln['cvss3_score']) ? number_format((float)$vuln['cvss3_score'], 1) : null;
+                  $detectionTime = !empty($vuln['detection_time'])
+                    ? \Carbon\Carbon::parse($vuln['detection_time'])->format('Y-m-d H:i:s')
+                    : (!empty($vuln['published']) ? $vuln['published'] : null);
+                @endphp
+                <tr>
+                  <td class="fw-semibold" title="{{ $vuln['name'] ?? '' }}">
+                    {{ \Str::limit($vuln['name'] ?? 'N/A', 28) }}
+                  </td>
+                  <td class="text-muted font-monospace" style="font-size:10px;">
+                    {{ \Str::limit($vuln['version'] ?? '—', 18) }}
+                  </td>
+                  <td class="text-muted">{{ $vuln['architecture'] ?? '—' }}</td>
+                  <td>
+                    <span class="badge bg-{{ $sevColor }} {{ in_array($sev, ['High','Medium']) ? 'text-dark' : '' }}">{{ $sev }}</span>
+                  </td>
+                  <td class="font-monospace text-primary" style="font-size:10px;" title="{{ $vuln['title'] ?? '' }}">
+                    {{ $vuln['cve'] ?? '—' }}
+                  </td>
+                  <td class="text-center">
+                    @if($cvss2 !== null)
+                      <span class="fw-semibold {{ (float)$cvss2 >= 9 ? 'text-danger' : ((float)$cvss2 >= 7 ? 'text-warning' : ((float)$cvss2 >= 4 ? 'text-info' : 'text-secondary')) }}">{{ $cvss2 }}</span>
+                    @else
+                      <span class="text-muted">—</span>
+                    @endif
+                  </td>
+                  <td class="text-center">
+                    @if($cvss3 !== null)
+                      <span class="fw-semibold {{ (float)$cvss3 >= 9 ? 'text-danger' : ((float)$cvss3 >= 7 ? 'text-warning' : ((float)$cvss3 >= 4 ? 'text-info' : 'text-secondary')) }}">{{ $cvss3 }}</span>
+                    @else
+                      <span class="text-muted">—</span>
+                    @endif
+                  </td>
+                  <td class="text-muted" style="font-size:10px;">{{ $detectionTime ?? '—' }}</td>
+                </tr>
+                @empty
+                <tr>
+                  <td colspan="8" class="text-center text-muted py-3 small">
+                    No vulnerabilities found{{ $severity ? ' for severity: ' . $severity : '' }}
+                  </td>
+                </tr>
+                @endforelse
+              </tbody>
+            </table>
+          </div>
+        </div>
+        @php
+          $totalPages = $totalVulns > 0 ? (int) ceil($totalVulns / $perPage) : 1;
+          $from       = $totalVulns > 0 ? ($page - 1) * $perPage + 1 : 0;
+          $to         = min($page * $perPage, $totalVulns);
+          $baseQuery  = request()->query();
+          $pageUrl    = fn($p)  => '?' . http_build_query(array_merge($baseQuery, ['page' => $p,  'per_page' => $perPage]));
+          $ppUrl      = fn($pp) => '?' . http_build_query(array_merge($baseQuery, ['page' => 1,   'per_page' => $pp]));
+          $window     = collect(range(max(1, $page - 2), min($totalPages, $page + 2)));
+        @endphp
+        <div class="card-footer d-flex justify-content-between align-items-center py-2 small flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-1">
+            <span class="text-muted me-1">Rows:</span>
+            @foreach([10, 25, 50] as $pp)
+              <a href="{{ $ppUrl($pp) }}"
+                 class="btn btn-sm py-0 px-2 {{ $perPage === $pp ? 'btn-primary' : 'btn-outline-secondary' }}">{{ $pp }}</a>
+            @endforeach
+          </div>
+          <div class="d-flex align-items-center gap-1">
+            <span class="text-muted me-2">{{ $from }}–{{ $to }} of {{ number_format($totalVulns) }}</span>
+            <a href="{{ $pageUrl(1) }}"
+               class="btn btn-sm btn-outline-secondary py-0 px-2 {{ $page <= 1 ? 'disabled' : '' }}"
+               title="First">«</a>
+            <a href="{{ $pageUrl(max(1, $page - 1)) }}"
+               class="btn btn-sm btn-outline-secondary py-0 px-2 {{ $page <= 1 ? 'disabled' : '' }}"
+               title="Prev">‹</a>
+            @foreach($window as $p)
+              <a href="{{ $pageUrl($p) }}"
+                 class="btn btn-sm py-0 px-2 {{ $p === $page ? 'btn-primary' : 'btn-outline-secondary' }}">{{ $p }}</a>
+            @endforeach
+            <a href="{{ $pageUrl(min($totalPages, $page + 1)) }}"
+               class="btn btn-sm btn-outline-secondary py-0 px-2 {{ $page >= $totalPages ? 'disabled' : '' }}"
+               title="Next">›</a>
+            <a href="{{ $pageUrl($totalPages) }}"
+               class="btn btn-sm btn-outline-secondary py-0 px-2 {{ $page >= $totalPages ? 'disabled' : '' }}"
+               title="Last">»</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>{{-- /grid-stack --}}
+
+{{-- Floating pencil --}}
+<div id="gs-fab">
+  <button id="gs-fab-main" title="Edit layout">
+    <i class="mdi mdi-pencil" id="gs-fab-icon"></i>
+  </button>
+</div>
+
+{{-- Edit toolbar --}}
+<div id="gs-edit-toolbar">
+  <button id="gs-save"   class="gs-tb-btn gs-tb-btn-save">Save layout</button>
+  <button id="gs-reset"  class="gs-tb-btn gs-tb-btn-reset">Reset</button>
+  <button id="gs-cancel" class="gs-tb-btn gs-tb-btn-cancel">Cancel</button>
+</div>
+
+@endif
+
+@endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack-all.js"></script>
+<script>
+const vulnSeverityCounts = @json($severityCounts);
+const vulnSummaryBatch   = @json($summaryBatch);
+
+let vulnSeverityChartInstance = null;
+let vulnSummaryChartInstance  = null;
+
+function buildSummaryData(field) {
+  const truncate = (s, n) => s && s.length > n ? s.substring(0, n) + '…' : (s || '—');
+  let labels = [], values = [], label = 'Count';
+
+  if (field === 'name' || field === 'version') {
+    const grouped = {};
+    vulnSummaryBatch.forEach(v => {
+      const key = v[field] || '—';
+      grouped[key] = (grouped[key] || 0) + 1;
+    });
+    const sorted = Object.entries(grouped).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    labels = sorted.map(([k]) => truncate(k, 20));
+    values = sorted.map(([, c]) => c);
+    label  = 'CVEs';
+  } else if (field === 'cve') {
+    const sorted = [...vulnSummaryBatch]
+      .filter(v => v.cve)
+      .sort((a, b) => (b.cvss3_score || b.cvss2_score || 0) - (a.cvss3_score || a.cvss2_score || 0))
+      .slice(0, 8);
+    labels = sorted.map(v => truncate(v.cve, 20));
+    values = sorted.map(v => parseFloat(v.cvss3_score || v.cvss2_score || 0));
+    label  = 'CVSS Score';
+  } else if (field === 'cvss2') {
+    const sorted = [...vulnSummaryBatch]
+      .filter(v => v.cvss2_score != null)
+      .sort((a, b) => b.cvss2_score - a.cvss2_score)
+      .slice(0, 8);
+    labels = sorted.map(v => truncate(v.cve || v.name || '—', 20));
+    values = sorted.map(v => parseFloat(v.cvss2_score));
+    label  = 'CVSS2 Score';
+  } else if (field === 'cvss3') {
+    const sorted = [...vulnSummaryBatch]
+      .filter(v => v.cvss3_score != null)
+      .sort((a, b) => b.cvss3_score - a.cvss3_score)
+      .slice(0, 8);
+    labels = sorted.map(v => truncate(v.cve || v.name || '—', 20));
+    values = sorted.map(v => parseFloat(v.cvss3_score));
+    label  = 'CVSS3 Score';
+  }
+
+  return { labels, values, label };
+}
+
+function updateSummaryChart(field) {
+  const wrap  = document.getElementById('vuln-summary-chart-wrap');
+  const empty = document.getElementById('vuln-summary-empty');
+  const emptyText = document.getElementById('vuln-summary-empty-text');
+  const labelMap = { name: 'Name', cve: 'CVE', version: 'Version', cvss2: 'CVSS2 Score', cvss3: 'CVSS3 Score' };
+
+  const { labels, values, label } = buildSummaryData(field);
+
+  if (labels.length === 0) {
+    wrap.style.display  = 'none';
+    empty.style.display = '';
+    emptyText.textContent = `No ${labelMap[field] || field} results were found.`;
+    if (vulnSummaryChartInstance) { vulnSummaryChartInstance.destroy(); vulnSummaryChartInstance = null; }
+    return;
+  }
+
+  wrap.style.display  = '';
+  empty.style.display = 'none';
+
+  if (vulnSummaryChartInstance) {
+    vulnSummaryChartInstance.data.labels = labels;
+    vulnSummaryChartInstance.data.datasets[0].data  = values;
+    vulnSummaryChartInstance.data.datasets[0].label = label;
+    vulnSummaryChartInstance.update();
+    return;
+  }
+
+  const ctx = document.getElementById('vulnSummaryChart')?.getContext('2d');
+  if (!ctx) return;
+
+  vulnSummaryChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label, data: values, backgroundColor: 'rgba(75,73,172,0.7)', borderRadius: 3 }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: { size: 9 } }, grid: { color: 'rgba(0,0,0,.06)' } },
+        y: { ticks: { font: { size: 9 } } },
+      },
+    },
+  });
+}
+
+function initializeCharts() {
+  if (typeof Chart === 'undefined') { setTimeout(initializeCharts, 100); return; }
+
+  if (vulnSeverityChartInstance) { vulnSeverityChartInstance.destroy(); vulnSeverityChartInstance = null; }
+
+  const totalSev = Object.values(vulnSeverityCounts).reduce((a, b) => a + b, 0);
+  if (totalSev > 0) {
+    const ctx = document.getElementById('vulnSeverityChart')?.getContext('2d');
+    if (ctx) {
+      vulnSeverityChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Critical', 'High', 'Medium', 'Low'],
+          datasets: [{
+            data: [
+              vulnSeverityCounts['Critical'] || 0,
+              vulnSeverityCounts['High']     || 0,
+              vulnSeverityCounts['Medium']   || 0,
+              vulnSeverityCounts['Low']      || 0,
+            ],
+            backgroundColor: ['#dc3545', '#fd7e14', '#ffc107', '#adb5bd'],
+            borderWidth: 2,
+            borderColor: '#fff',
+          }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          cutout: '60%',
+          plugins: {
+            legend: { display: true, position: 'bottom', labels: { font: { size: 10 }, boxWidth: 10, padding: 8 } },
+          },
+        },
+      });
+    }
+  }
+
+  const field = document.getElementById('vuln-summary-field')?.value || 'name';
+  updateSummaryChart(field);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initializeCharts();
+  document.getElementById('vuln-summary-field')?.addEventListener('change', e => {
+    updateSummaryChart(e.target.value);
+  });
+});
+
+// ── GridStack ──────────────────────────────────────────────────────────────────
+(function () {
+  const DEFAULT_LAYOUT = [
+    { id: 'vuln-severity', x: 0, y: 0,  w: 4,  h: 8  },
+    { id: 'vuln-details',  x: 4, y: 0,  w: 4,  h: 8  },
+    { id: 'vuln-summary',  x: 8, y: 0,  w: 4,  h: 8  },
+    { id: 'vuln-table',    x: 0, y: 8,  w: 12, h: 12 },
+  ];
+
+  const grid = GridStack.init({
+    column: 12,
+    cellHeight: 60,
+    margin: 8,
+    float: false,
+    staticGrid: true,
+    resizable: { handles: 'se' },
+    columnOpts: {
+      breakpointForWindow: true,
+      breakpoints: [{ w: 768, c: 1 }],
+    },
+  });
+
+  // ── Hidden cards state ──────────────────────────────────────────────────
+  const hiddenCards     = new Set();
+  const hiddenPositions = {};
+
+  function setCardHidden(id, hide) {
+    const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+    if (!el) return;
+    if (hide) {
+      const node = el.gridstackNode;
+      if (node) hiddenPositions[id] = { x: node.x, y: node.y, w: node.w, h: node.h };
+      hiddenCards.add(id);
+      el.classList.add('gs-card-hidden');
+      const btn = el.querySelector('.gs-hide-btn');
+      if (btn) { btn.querySelector('i').className = 'mdi mdi-eye'; btn.title = 'Tampilkan kartu'; }
+    } else {
+      hiddenCards.delete(id);
+      el.classList.remove('gs-card-hidden');
+      const btn = el.querySelector('.gs-hide-btn');
+      if (btn) { btn.querySelector('i').className = 'mdi mdi-eye-off'; btn.title = 'Sembunyikan kartu'; }
+    }
+  }
+
+  function addHideButtons() {
+    document.querySelectorAll('.grid-stack-item').forEach(item => {
+      if (item.querySelector('.gs-hide-btn')) return;
+      const id       = item.getAttribute('gs-id');
+      const isHidden = hiddenCards.has(id);
+      const btn      = document.createElement('button');
+      btn.className  = 'gs-hide-btn';
+      btn.title      = isHidden ? 'Tampilkan kartu' : 'Sembunyikan kartu';
+      btn.innerHTML  = `<i class="mdi mdi-${isHidden ? 'eye' : 'eye-off'}"></i>`;
+      btn.addEventListener('click', e => { e.stopPropagation(); setCardHidden(id, !hiddenCards.has(id)); });
+      item.appendChild(btn);
+    });
+  }
+
+  // ── Load saved layout ───────────────────────────────────────────────────
+  const savedLayout = @json($savedLayout ?? null);
+  if (savedLayout && Array.isArray(savedLayout)) {
+    grid.load(savedLayout.map(i => ({ id: i.id, x: i.x, y: i.y, w: i.w, h: i.h })), false);
+    savedLayout.filter(i => i.hidden).forEach(i => {
+      hiddenCards.add(i.id);
+      hiddenPositions[i.id] = { x: i.x, y: i.y, w: i.w, h: i.h };
+      const el = document.querySelector(`.grid-stack-item[gs-id="${i.id}"]`);
+      if (!el) return;
+      grid.removeWidget(el, false);
+      el.style.display = 'none';
+    });
+  }
+
+  grid.on('resizestop', () => {
+    if (vulnSeverityChartInstance) vulnSeverityChartInstance.resize();
+    if (vulnSummaryChartInstance)  vulnSummaryChartInstance.resize();
+  });
+
+  let editMode  = false;
+  const fabMain = document.getElementById('gs-fab-main');
+  const fabIcon = document.getElementById('gs-fab-icon');
+  const toolbar = document.getElementById('gs-edit-toolbar');
+
+  function enterEdit() {
+    editMode = true;
+    grid.setStatic(false);
+    hiddenCards.forEach(id => {
+      const el  = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+      if (!el) return;
+      const pos = hiddenPositions[id] || { x: 0, y: 0, w: 4, h: 8 };
+      el.setAttribute('gs-x', pos.x);
+      el.setAttribute('gs-y', pos.y);
+      el.setAttribute('gs-w', pos.w);
+      el.setAttribute('gs-h', pos.h);
+      el.style.display = '';
+      grid.makeWidget(el);
+      el.classList.add('gs-card-hidden');
+    });
+    document.body.classList.add('gs-edit-mode');
+    fabMain.classList.add('active');
+    fabIcon.className = 'mdi mdi-pencil-off';
+    toolbar.classList.add('visible');
+    addHideButtons();
+  }
+
+  function exitEdit() {
+    editMode = false;
+    hiddenCards.forEach(id => {
+      const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+      if (!el) return;
+      const node = el.gridstackNode;
+      if (node) hiddenPositions[id] = { x: node.x, y: node.y, w: node.w, h: node.h };
+      el.classList.remove('gs-card-hidden');
+      grid.removeWidget(el, false);
+      el.style.display = 'none';
+    });
+    grid.setStatic(true);
+    document.body.classList.remove('gs-edit-mode');
+    fabMain.classList.remove('active');
+    fabIcon.className = 'mdi mdi-pencil';
+    toolbar.classList.remove('visible');
+  }
+
+  fabMain.addEventListener('click', () => editMode ? exitEdit() : enterEdit());
+
+  document.getElementById('gs-save').addEventListener('click', () => {
+    const layout = grid.save(false);
+    layout.forEach(i => { if (hiddenCards.has(i.id)) i.hidden = true; });
+    fetch('{{ route("dashboard.layout") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+      body: JSON.stringify({ layout, page: 'vulnerabilities' })
+    })
+    .then(r => r.json())
+    .then(d => { if (d.success) exitEdit(); });
+  });
+
+  document.getElementById('gs-reset').addEventListener('click', () => {
+    [...hiddenCards].forEach(id => {
+      hiddenCards.delete(id);
+      delete hiddenPositions[id];
+      const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+      if (el) el.classList.remove('gs-card-hidden');
+    });
+    grid.load(DEFAULT_LAYOUT);
+    if (vulnSeverityChartInstance) vulnSeverityChartInstance.resize();
+    if (vulnSummaryChartInstance)  vulnSummaryChartInstance.resize();
+  });
+
+  document.getElementById('gs-cancel').addEventListener('click', () => {
+    exitEdit();
+    location.reload();
+  });
+})();
+</script>
+@endpush

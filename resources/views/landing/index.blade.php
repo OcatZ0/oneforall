@@ -43,8 +43,8 @@
 <section id="hero" style="min-height:100vh; display:flex; align-items:center; padding-top:72px;">
 
   {{-- Orbs --}}
-  <div class="orb" style="width:500px;height:500px;background:radial-gradient(circle,rgba(0,87,255,0.18),transparent 70%);top:-100px;left:-150px;"></div>
-  <div class="orb" style="width:400px;height:400px;background:radial-gradient(circle,rgba(0,212,255,0.12),transparent 70%);top:20%;right:-100px;"></div>
+  <div class="orb" style="width:500px;height:500px;background:radial-gradient(circle,rgba(0,78,146,0.1),transparent 70%);top:-100px;left:-150px;"></div>
+  <div class="orb" style="width:400px;height:400px;background:radial-gradient(circle,rgba(30,144,255,0.08),transparent 70%);top:20%;right:-100px;"></div>
 
   <div class="container position-relative z-1 pt-3">
     <div class="row align-items-center g-5">
@@ -56,9 +56,9 @@
           System Active · Wazuh
         </div>
 
-        <h1 class="anim-2" style="font-family:var(--font-display);font-weight:800;font-size:clamp(2.2rem,5vw,3.6rem);line-height:1.1;letter-spacing:-1px;margin-bottom:24px;">
+        <h1 class="anim-2" style="font-family:var(--font-display);font-weight:700;font-size:clamp(2.2rem,5vw,3.6rem);line-height:1.1;letter-spacing:-1px;margin-bottom:24px;color:var(--clr-text);">
           Security Monitoring<br>
-          <span style="background:linear-gradient(90deg,var(--clr-accent2),var(--clr-accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+          <span style="background:linear-gradient(90deg,var(--clr-accent2),var(--clr-accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700;">
             Berbasis Wazuh
           </span>
         </h1>
@@ -79,14 +79,14 @@
 
         {{-- Mini stats --}}
         <div class="d-flex flex-wrap gap-4 mt-5 anim-4">
-          <div style="width:1px;background:var(--clr-border);"></div>
+          <div style="width:1px;background:var(--clr-border-strong);"></div>
           <div>
-            <div style="font-family:var(--font-display);font-weight:800;font-size:1.8rem;color:var(--clr-success);">99.9%</div>
+            <div style="font-family:var(--font-display);font-weight:700;font-size:1.8rem;color:var(--clr-success);">99.9%</div>
             <div style="font-size:0.8rem;color:var(--clr-muted);">Uptime SLA</div>
           </div>
-          <div style="width:1px;background:var(--clr-border);"></div>
+          <div style="width:1px;background:var(--clr-border-strong);"></div>
           <div>
-            <div style="font-family:var(--font-display);font-weight:800;font-size:1.8rem;color:var(--clr-text);">24/7</div>
+            <div style="font-family:var(--font-display);font-weight:700;font-size:1.8rem;color:var(--clr-accent2);">24/7</div>
             <div style="font-size:0.8rem;color:var(--clr-muted);">Monitoring</div>
           </div>
         </div>
@@ -96,27 +96,27 @@
       <div class="col-lg-6 anim-img">
         <div style="position:relative;">
           {{-- Glow behind image --}}
-          <div style="position:absolute;inset:-20px;background:radial-gradient(ellipse at 50% 50%,rgba(0,87,255,0.2),transparent 70%);border-radius:50%;filter:blur(30px);"></div>
+          <div style="position:absolute;inset:-20px;background:radial-gradient(ellipse at 50% 50%,rgba(0,78,146,0.12),transparent 70%);border-radius:50%;filter:blur(30px);"></div>
 
           <div class="img-frame" style="position:relative;z-index:1;">
             <img src="{{ asset('images/wallpaper1.jpg') }}" alt="Dashboard Preview">
           </div>
 
           {{-- Floating badge: Threat --}}
-          <div style="position:absolute;bottom:-18px;left:-24px;background:var(--clr-card);border:1px solid var(--clr-border);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,0.4);z-index:2;">
-            <div style="width:38px;height:38px;background:rgba(255,58,92,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+          <div style="position:absolute;bottom:-18px;left:-24px;background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-md);padding:14px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,41,93,0.15);z-index:2;">
+            <div style="width:38px;height:38px;background:rgba(192,57,43,0.1);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;">
               <i class="bi bi-shield-exclamation" style="color:var(--clr-danger);font-size:1.1rem;"></i>
             </div>
             <div>
-              <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--clr-muted);margin-bottom:2px;">THREAT DETECTED</div>
-              <div style="font-weight:700;font-size:0.9rem;">Brute Force Attack</div>
+              <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--clr-muted);margin-bottom:2px;font-weight:600;letter-spacing:1px;">THREAT DETECTED</div>
+              <div style="font-weight:700;font-size:0.9rem;color:var(--clr-text);">Brute Force Attack</div>
             </div>
           </div>
 
           {{-- Floating badge: Status --}}
-          <div style="position:absolute;top:-14px;right:-18px;background:var(--clr-card);border:1px solid var(--clr-border);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,0.4);z-index:2;">
+          <div style="position:absolute;top:-14px;right:-18px;background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-md);padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,41,93,0.12);z-index:2;">
             <div class="dot"></div>
-            <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--clr-success);">All Systems Operational</span>
+            <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--clr-success);font-weight:600;">All Systems Operational</span>
           </div>
         </div>
       </div>
@@ -130,7 +130,7 @@
      FEATURES
 ══════════════════════════════════════════════ --}}
 <section id="features" class="section-alt">
-  <div class="orb" style="width:350px;height:350px;background:radial-gradient(circle,rgba(0,212,255,0.08),transparent 70%);top:50%;right:-80px;transform:translateY(-50%);"></div>
+  <div class="orb" style="width:350px;height:350px;background:radial-gradient(circle,rgba(30,144,255,0.07),transparent 70%);top:50%;right:-80px;transform:translateY(-50%);"></div>
 
   <div class="container position-relative z-1">
 
@@ -146,10 +146,10 @@
 
       <div class="col-md-4 reveal">
         <div class="glass-card p-4 h-100">
-          <div class="feat-icon" style="background:rgba(0,87,255,0.12);">
+          <div class="feat-icon" style="background:rgba(0,78,146,0.1);">
             <i class="bi bi-speedometer2" style="color:var(--clr-accent2);"></i>
           </div>
-          <span class="chip mb-3 d-inline-block" style="background:rgba(0,87,255,0.1);color:var(--clr-accent2);">Dashboard</span>
+          <span class="chip mb-3 d-inline-block" style="background:rgba(0,78,146,0.08);color:var(--clr-accent2);">Dashboard</span>
           <h4 style="font-family:var(--font-display);font-weight:700;font-size:1.15rem;margin-bottom:10px;">Wazuh Dashboard</h4>
           <p style="color:var(--clr-muted);font-size:0.875rem;line-height:1.65;margin:0;">
             Rekap data security website secara realtime dengan visualisasi yang intuitif dan mudah dipahami oleh semua level pengguna.
@@ -192,7 +192,7 @@
      ABOUT
 ══════════════════════════════════════════════ --}}
 <section id="about">
-  <div class="orb" style="width:400px;height:400px;background:radial-gradient(circle,rgba(0,87,255,0.12),transparent 70%);bottom:-50px;left:-100px;"></div>
+  <div class="orb" style="width:400px;height:400px;background:radial-gradient(circle,rgba(0,78,146,0.08),transparent 70%);bottom:-50px;left:-100px;"></div>
 
   <div class="container position-relative z-1">
     <div class="row align-items-center g-5">
@@ -215,7 +215,7 @@
         <div class="row g-3">
           <div class="col-6">
             <div class="stat-block">
-              <h3 style="color:var(--clr-accent);">24/7</h3>
+              <h3 style="color:var(--clr-accent2);">24/7</h3>
               <p>Monitoring Aktif</p>
             </div>
           </div>
@@ -251,8 +251,8 @@
 
       <div class="col-md-3 col-sm-6 reveal">
         <div class="benefit-card">
-          <div class="benefit-icon" style="background:rgba(255,186,0,0.1);">
-            <i class="bi bi-lightning-charge-fill" style="color:#ffba00;"></i>
+          <div class="benefit-icon" style="background:rgba(200,145,0,0.1);">
+            <i class="bi bi-lightning-charge-fill" style="color:#c89100;"></i>
           </div>
           <h5>Realtime</h5>
           <p>Data keamanan tampil secara realtime tanpa delay.</p>
@@ -261,7 +261,7 @@
 
       <div class="col-md-3 col-sm-6 reveal" style="transition-delay:0.1s;">
         <div class="benefit-card">
-          <div class="benefit-icon" style="background:rgba(0,87,255,0.12);">
+          <div class="benefit-icon" style="background:rgba(0,78,146,0.1);">
             <i class="bi bi-sliders" style="color:var(--clr-accent2);"></i>
           </div>
           <h5>Customizable</h5>
@@ -299,8 +299,8 @@
 ══════════════════════════════════════════════ --}}
 <section style="padding:80px 0;">
   <div class="container">
-    <div class="glass-card reveal" style="padding:60px 48px;text-align:center;background:linear-gradient(135deg,rgba(0,87,255,0.12),rgba(0,212,255,0.06));border-color:rgba(0,212,255,0.15);position:relative;overflow:hidden;">
-      <div class="orb" style="width:300px;height:300px;background:radial-gradient(circle,rgba(0,87,255,0.2),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);"></div>
+    <div class="glass-card reveal" style="padding:60px 48px;text-align:center;background:linear-gradient(135deg,rgba(0,78,146,0.06),rgba(30,144,255,0.04));border-color:var(--clr-border-strong);position:relative;overflow:hidden;">
+      <div class="orb" style="width:300px;height:300px;background:radial-gradient(circle,rgba(0,78,146,0.08),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);"></div>
       <div class="position-relative z-1">
         <div class="section-label" style="justify-content:center;">Mulai Hari Ini</div>
         <h2 class="section-title mb-3">Siap Mengamankan Website Anda?</h2>
@@ -308,7 +308,7 @@
           Bergabunglah dengan ratusan perusahaan yang sudah mempercayakan keamanan website mereka kepada One For All.
         </p>
         <div class="d-flex flex-wrap gap-3 justify-content-center">
-          <a href="#frontoffice" class="btn-primary-custom">
+          <a href="/auth/login" class="btn-primary-custom">
             Coba Dashboard <i class="bi bi-arrow-right"></i>
           </a>
           <a href="#about" class="btn-outline-custom">

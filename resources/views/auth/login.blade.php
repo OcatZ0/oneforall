@@ -220,7 +220,7 @@
             id="email"
             name="email"
             class="form-control @error('email') is-invalid @enderror"
-            placeholder="Admin"
+            placeholder="Email atau Username"
             value="{{ old('email') }}"
             autocomplete="username"
             autofocus
