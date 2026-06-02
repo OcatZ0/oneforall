@@ -49,7 +49,7 @@ class DashboardController extends Controller
             $topRules       = $this->_openSearch->getTopTriggeredRules(5, $accessibleAgentIds, $isAdmin);
             $topAgents      = $this->_openSearch->getTopAgentsByAlerts(5, $accessibleAgentIds, $isAdmin);
             $customerStats  = $isAdmin ? $this->getCustomerStats() : null;
-            $savedLayout    = DashboardLayout::where('id_pengguna', $userId)->where('page', 'home')->value('layout');
+            $savedLayout    = DashboardLayout::where('id_pengguna', $userId)->where('halaman', 'home')->value('tata_letak');
 
             return view('home.index', compact(
                 'agentStats', 'alertTrend', 'alertSeverity', 'totalAlerts',
@@ -79,8 +79,8 @@ class DashboardController extends Controller
         ]);
 
         DashboardLayout::updateOrCreate(
-            ['id_pengguna' => auth()->user()->id_pengguna, 'page' => $validated['page']],
-            ['layout'      => $validated['layout']]
+            ['id_pengguna' => auth()->user()->id_pengguna, 'halaman' => $validated['page']],
+            ['tata_letak'  => $validated['layout']]
         );
 
         return response()->json(['success' => true]);

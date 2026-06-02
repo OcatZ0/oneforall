@@ -47,8 +47,8 @@ class UserController extends Controller
             'customer' => User::where('peran', 'customer')->count(),
         ];
         $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                      ->where('page', 'user')
-                                      ->value('layout');
+                                      ->where('halaman', 'user')
+                                      ->value('tata_letak');
 
         return view('user.index', compact('users', 'userStats', 'savedLayout'));
     }

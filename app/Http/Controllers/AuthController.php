@@ -70,7 +70,7 @@ class AuthController extends Controller
             $token = Str::random(64);
 
             DB::table('password_reset_tokens')->updateOrInsert(
-                ['email' => $request->email],
+                ['id_pengguna' => $user->id_pengguna],
                 ['token' => Hash::make($token), 'created_at' => now()]
             );
 
@@ -99,27 +99,27 @@ class AuthController extends Controller
             'password_confirmation' => 'required',
         ]);
 
-        $record = DB::table('password_reset_tokens')->where('email', $request->email)->first();
-
-        if (!$record || !Hash::check($request->token, $record->token)) {
-            return back()->withErrors(['email' => 'Token reset tidak valid.']);
-        }
-
-        if (now()->diffInMinutes($record->created_at) > 60) {
-            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
-            return back()->withErrors(['email' => 'Token reset sudah kedaluwarsa. Silakan minta ulang.']);
-        }
-
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
             return back()->withErrors(['email' => 'Email tidak ditemukan.']);
         }
 
+        $record = DB::table('password_reset_tokens')->where('id_pengguna', $user->id_pengguna)->first();
+
+        if (!$record || !Hash::check($request->token, $record->token)) {
+            return back()->withErrors(['email' => 'Token reset tidak valid.']);
+        }
+
+        if (now()->diffInMinutes($record->created_at) > 60) {
+            DB::table('password_reset_tokens')->where('id_pengguna', $user->id_pengguna)->delete();
+            return back()->withErrors(['email' => 'Token reset sudah kedaluwarsa. Silakan minta ulang.']);
+        }
+
         $user->kata_sandi = Hash::make($request->password);
         $user->save();
 
-        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+        DB::table('password_reset_tokens')->where('id_pengguna', $user->id_pengguna)->delete();
 
         return redirect()->route('login')->with('status', 'Kata sandi berhasil diubah. Silakan masuk.');
     }

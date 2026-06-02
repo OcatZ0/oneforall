@@ -59,8 +59,8 @@ class AgentController extends Controller
             $evolutionData      = json_encode($evolution['data']['active'] ?? $evolution['data'] ?? []);
 
             $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                          ->where('page', 'agent')
-                                          ->value('layout');
+                                          ->where('halaman','agent')
+                                          ->value('tata_letak');
 
             return view('agent.index', compact('agents', 'stats', 'evolutionLabels', 'evolutionData', 'savedLayout'));
         } catch (\Exception $e) {
@@ -128,8 +128,8 @@ class AgentController extends Controller
             $agent = $this->enrichAgentData($this->mapWazuhAgent($wa, true));
 
             $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                          ->where('page', 'agent-detail')
-                                          ->value('layout');
+                                          ->where('halaman','agent-detail')
+                                          ->value('tata_letak');
 
             return view('agent.detail', array_merge(compact('agent', 'savedLayout'), $this->buildDetailData($agent->id_agent)));
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
@@ -162,8 +162,8 @@ class AgentController extends Controller
             $groupsOffset  = ($groupsPage - 1) * $groupsPerPage;
 
             $savedLayout  = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                           ->where('page', 'security-events')
-                                           ->value('layout');
+                                           ->where('halaman','security-events')
+                                           ->value('tata_letak');
 
             $alertsResult = $this->_openSearch->getRecentAlerts($id, $timeRange, $perPage, $offset);
             $groupsResult = $this->_openSearch->getGroupsSummary($id, $timeRange, $groupsPerPage, $groupsOffset);
@@ -261,8 +261,8 @@ class AgentController extends Controller
             $offset    = ($page - 1) * $perPage;
 
             $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                          ->where('page', 'integrity-monitoring')
-                                          ->value('layout');
+                                          ->where('halaman','integrity-monitoring')
+                                          ->value('tata_letak');
 
             $eventsResult = $this->_openSearch->getFimEventsPaginated($id, $timeRange, $perPage, $offset);
 
@@ -315,8 +315,8 @@ class AgentController extends Controller
                 : 0;
 
             $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                          ->where('page', 'sca')
-                                          ->value('layout');
+                                          ->where('halaman','sca')
+                                          ->value('tata_letak');
 
             return view('agent.sca', array_merge(
                 compact('agent', 'policies', 'selectedPolicy', 'policyId', 'resultFilter', 'page', 'perPage', 'savedLayout'),
@@ -370,8 +370,8 @@ class AgentController extends Controller
             $lastScan = $token ? $this->_wazuhService->getVulnerabilitiesLastScan($token, $id) : null;
 
             $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                          ->where('page', 'vulnerabilities')
-                                          ->value('layout');
+                                          ->where('halaman','vulnerabilities')
+                                          ->value('tata_letak');
 
             return view('agent.vulnerabilities', compact('agent', 'page', 'perPage', 'severity', 'severityCounts', 'summaryBatch', 'lastScan', 'savedLayout') + [
                 'vulnerabilities' => $vulnResult['data'],
@@ -414,8 +414,8 @@ class AgentController extends Controller
             $alertsResult = $this->_openSearch->getMitreAlerts($id, $timeRange, $perPage, $offset);
 
             $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                          ->where('page', 'mitre-attack')
-                                          ->value('layout');
+                                          ->where('halaman','mitre-attack')
+                                          ->value('tata_letak');
 
             return view('agent.mitre-attack', compact('agent', 'timeRange', 'page', 'perPage', 'savedLayout') + [
                 'tactics'          => $this->_openSearch->getMitreTactics($id, $timeRange),
@@ -451,8 +451,8 @@ class AgentController extends Controller
             $allCompliance = $this->_openSearch->getAgentCompliance($id, $complianceType, $timeRange);
 
             $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                          ->where('page', 'compliance')
-                                          ->value('layout');
+                                          ->where('halaman','compliance')
+                                          ->value('tata_letak');
 
             return view('agent.compliance', compact('agent', 'complianceType', 'timeRange', 'allCompliance', 'savedLayout') + [
                 'topRuleGroups'  => $this->_openSearch->getTopRuleGroups($id, $timeRange, 5, $complianceType),
