@@ -71,7 +71,7 @@ class AuthController extends Controller
 
             DB::table('password_reset_tokens')->updateOrInsert(
                 ['id_pengguna' => $user->id_pengguna],
-                ['token' => Hash::make($token), 'created_at' => now()]
+                ['token' => Hash::make($token), 'tanggal_dibuat' => now()]
             );
 
             $resetUrl = url(route('password.reset', ['token' => $token, 'email' => $request->email], false));
@@ -111,7 +111,7 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Token reset tidak valid.']);
         }
 
-        if (now()->diffInMinutes($record->created_at) > 60) {
+        if (now()->diffInMinutes($record->tanggal_dibuat) > 60) {
             DB::table('password_reset_tokens')->where('id_pengguna', $user->id_pengguna)->delete();
             return back()->withErrors(['email' => 'Token reset sudah kedaluwarsa. Silakan minta ulang.']);
         }
