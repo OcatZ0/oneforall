@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id('id_reset');
             $table->unsignedBigInteger('id_pengguna')->unique();
             $table->string('token');
-            $table->timestamp('tanggal_dibuat')->nullable();
+            $table->dateTime('tanggal_dibuat')->nullable();
 
             $table->foreign('id_pengguna')
                   ->references('id_pengguna')
