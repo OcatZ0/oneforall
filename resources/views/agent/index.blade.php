@@ -235,6 +235,40 @@
 
 </div>{{-- /grid-stack --}}
 
+{{-- Sync Result Modal --}}
+<div class="modal fade" id="syncResultModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
+    <div class="modal-content border-0 shadow">
+
+      <div class="modal-header border-0 pb-0 pt-4 px-4">
+        <div class="d-flex align-items-center gap-3">
+          <div id="syncModalIconWrap" class="d-flex align-items-center justify-content-center rounded-circle"
+               style="width:44px;height:44px;flex-shrink:0;">
+            <i id="syncModalIcon" class="mdi fs-3"></i>
+          </div>
+          <div>
+            <h5 class="modal-title mb-0 fw-semibold" id="syncModalTitle"></h5>
+            <p class="text-muted small mb-0" id="syncModalSubtitle"></p>
+          </div>
+        </div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body px-4 py-3" id="syncModalBody"></div>
+
+      <div class="modal-footer border-0 px-4 pt-0 pb-4 gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-sm" id="syncModalReload"
+                style="background:#4B49AC;color:#fff;" onclick="location.reload()">
+          <i class="mdi mdi-refresh me-1"></i>Reload Page
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 {{-- Floating pencil --}}
 <div id="gs-fab">
   <button id="gs-fab-main" title="Edit layout">
@@ -379,6 +413,70 @@ function updateChart(timeRange, event) {
     });
 }
 
+function showSyncModal(success, data, message) {
+  const iconWrap  = document.getElementById('syncModalIconWrap');
+  const icon      = document.getElementById('syncModalIcon');
+  const title     = document.getElementById('syncModalTitle');
+  const subtitle  = document.getElementById('syncModalSubtitle');
+  const body      = document.getElementById('syncModalBody');
+  const reloadBtn = document.getElementById('syncModalReload');
+
+  if (success) {
+    iconWrap.style.background = 'rgba(39,174,96,.12)';
+    icon.className = 'mdi mdi-check-circle fs-3 text-success';
+    title.textContent    = 'Sync Completed';
+    subtitle.textContent = 'Agent data successfully updated from Wazuh';
+    reloadBtn.style.display = '';
+
+    const hasErrors = data.errors > 0;
+    body.innerHTML = `
+      <div class="row g-2 mb-3">
+        <div class="col-6">
+          <div class="rounded p-3 text-center" style="background:#f0fdf4;">
+            <div class="fw-bold fs-5 text-success">${data.synced_new}</div>
+            <div class="text-muted small">New agents</div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="rounded p-3 text-center" style="background:#eff6ff;">
+            <div class="fw-bold fs-5" style="color:#4B49AC">${data.updated_existing}</div>
+            <div class="text-muted small">Updated</div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="rounded p-3 text-center" style="background:#fef2f2;">
+            <div class="fw-bold fs-5 text-danger">${data.deleted_obsolete}</div>
+            <div class="text-muted small">Deleted</div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="rounded p-3 text-center" style="background:#f8f9fa;">
+            <div class="fw-bold fs-5 text-secondary">${data.total_processed}</div>
+            <div class="text-muted small">Total processed</div>
+          </div>
+        </div>
+      </div>
+      ${hasErrors ? `
+      <div class="alert alert-warning py-2 mb-0 d-flex align-items-center gap-2" role="alert">
+        <i class="mdi mdi-alert-outline"></i>
+        <span class="small">${data.errors} agent(s) encountered errors during sync.</span>
+      </div>` : ''}`;
+  } else {
+    iconWrap.style.background = 'rgba(220,53,69,.1)';
+    icon.className = 'mdi mdi-alert-circle fs-3 text-danger';
+    title.textContent    = 'Sync Failed';
+    subtitle.textContent = 'An error occurred during the sync process';
+    reloadBtn.style.display = 'none';
+    body.innerHTML = `
+      <div class="alert alert-danger py-2 mb-0 d-flex align-items-center gap-2" role="alert">
+        <i class="mdi mdi-alert-circle-outline"></i>
+        <span class="small">${message || 'Unknown error'}</span>
+      </div>`;
+  }
+
+  new bootstrap.Modal(document.getElementById('syncResultModal')).show();
+}
+
 function syncAgentsFromWazuh() {
   const syncBtn     = document.getElementById('syncBtn');
   const syncBtnText = document.getElementById('syncBtnText');
@@ -386,7 +484,7 @@ function syncAgentsFromWazuh() {
   syncBtn.classList.remove('btn-success');
   syncBtn.classList.add('btn-secondary');
   const originalText = syncBtnText.textContent;
-  syncBtnText.textContent = 'Syncing...';
+  syncBtnText.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Syncing...';
 
   fetch('{{ route("agent.sync") }}', {
     method: 'POST',
@@ -396,27 +494,26 @@ function syncAgentsFromWazuh() {
       'Accept': 'application/json'
     }
   })
-  .then(response => response.json())
+  .then(r => r.json())
   .then(data => {
-    if (data.success) {
-      const s = data.data;
-      alert(`✓ Sync completed!\n\nCreated: ${s.synced_new}\nUpdated: ${s.updated_existing}\nTotal processed: ${s.total_processed}\nErrors: ${s.errors}`);
-      setTimeout(() => location.reload(), 1000);
-    } else {
-      alert(`✗ Sync failed!\n\n${data.message}`);
-      syncBtn.disabled = false;
-      syncBtn.classList.add('btn-success');
-      syncBtn.classList.remove('btn-secondary');
-      syncBtnText.textContent = originalText;
-    }
-  })
-  .catch(error => {
-    console.error('Sync error:', error);
-    alert(`✗ Sync error!\n\n${error.message}`);
     syncBtn.disabled = false;
     syncBtn.classList.add('btn-success');
     syncBtn.classList.remove('btn-secondary');
     syncBtnText.textContent = originalText;
+
+    if (data.success) {
+      showSyncModal(true, data.data, null);
+    } else {
+      showSyncModal(false, null, data.message);
+    }
+  })
+  .catch(error => {
+    console.error('Sync error:', error);
+    syncBtn.disabled = false;
+    syncBtn.classList.add('btn-success');
+    syncBtn.classList.remove('btn-secondary');
+    syncBtnText.textContent = originalText;
+    showSyncModal(false, null, error.message);
   });
 }
 
