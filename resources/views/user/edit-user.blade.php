@@ -16,7 +16,7 @@
           </a>
         </div>
 
-        <form action="{{ route('user.update', $user->id_pengguna) }}" method="POST">
+        <form action="{{ route('user.update', $user->id) }}" method="POST">
           @csrf
           @method('PUT')
 
@@ -48,20 +48,20 @@
 
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label class="form-label" for="peran">Role <span class="text-danger">*</span></label>
-                  <select id="peran" name="peran" class="form-control form-select @error('peran') is-invalid @enderror" required>
-                    <option value="admin" {{ old('peran', $user->peran) === 'admin' ? 'selected' : '' }}>Admin</option>
-                    <option value="customer" {{ old('peran', $user->peran) === 'customer' ? 'selected' : '' }}>Customer</option>
+                  <label class="form-label" for="role">Role <span class="text-danger">*</span></label>
+                  <select id="role" name="role" class="form-control form-select @error('role') is-invalid @enderror" required>
+                    <option value="admin" {{ old('role', $user->role) === 'admin' ? 'selected' : '' }}>Admin</option>
+                    <option value="customer" {{ old('role', $user->role) === 'customer' ? 'selected' : '' }}>Customer</option>
                   </select>
-                  @error('peran')
+                  @error('role')
                     <div class="invalid-feedback">{{ $message }}</div>
                   @enderror
                 </div>
 
                 <div class="col-md-6 mb-3">
-                  <label class="form-label" for="tanggal_dibuat">Tanggal Dibuat</label>
-                  <input type="text" id="tanggal_dibuat" class="form-control"
-                    value="{{ \Carbon\Carbon::parse($user->tanggal_dibuat)->translatedFormat('d F Y H:i') }}" disabled>
+                  <label class="form-label" for="created_at">Tanggal Dibuat</label>
+                  <input type="text" id="created_at" class="form-control"
+                    value="{{ \Carbon\Carbon::parse($user->created_at)->translatedFormat('d F Y H:i') }}" disabled>
                 </div>
               </div>
             </div>

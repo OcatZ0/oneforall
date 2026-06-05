@@ -2,32 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Agent extends Model
+class PasswordResetToken extends Model
 {
-    use HasFactory;
-
     /**
      * The table associated with the model.
      */
-    protected $table = 'agents';
-
-    /**
-     * The primary key for the model.
-     */
-    protected $primaryKey = 'agent_id';
-
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     */
-    public $incrementing = false;
-
-    /**
-     * The data type of the primary key.
-     */
-    protected $keyType = 'string';
+    protected $table = 'password_reset_tokens';
 
     /**
      * Indicates if the model should be timestamped.
@@ -40,11 +22,9 @@ class Agent extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'agent_id',
-        'name',
-        'description',
-        'created_at',
         'user_id',
+        'token',
+        'created_at',
     ];
 
     /**
@@ -60,7 +40,7 @@ class Agent extends Model
     }
 
     /**
-     * Relationship: Get the user that owns this agent.
+     * Relationship: Get the user that owns this reset token.
      */
     public function user()
     {

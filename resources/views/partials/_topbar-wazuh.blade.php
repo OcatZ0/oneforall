@@ -28,8 +28,8 @@
                 @if($agent && $currentRoute !== 'agent')
                     @if($currentPageLabel)
                     <li class="breadcrumb-item fs-5">
-                        <a href="{{ route('agent.detail', $agent->id_agent) }}" class="text-light text-decoration-none">
-                            {{ $agent->nama ?? $agent->id_agent ?? 'Unknown' }}
+                        <a href="{{ route('agent.detail', $agent->agent_id) }}" class="text-light text-decoration-none">
+                            {{ $agent->name ?? $agent->agent_id ?? 'Unknown' }}
                         </a>
                     </li>
                     <li class="breadcrumb-item active text-light fs-5" aria-current="page">
@@ -37,7 +37,7 @@
                     </li>
                     @else
                     <li class="breadcrumb-item active text-light fs-5" aria-current="page">
-                        {{ $agent->nama ?? $agent->id_agent ?? 'Unknown' }}
+                        {{ $agent->name ?? $agent->agent_id ?? 'Unknown' }}
                     </li>
                     @endif
                 @endif

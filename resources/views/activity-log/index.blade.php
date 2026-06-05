@@ -33,7 +33,7 @@
             <select name="user_id" class="form-control form-select">
               <option value="">Semua Pengguna</option>
               @foreach($users as $user)
-                <option value="{{ $user->id_pengguna }}" {{ $userId == $user->id_pengguna ? 'selected' : '' }}>
+                <option value="{{ $user->id }}" {{ $userId == $user->id ? 'selected' : '' }}>
                   {{ $user->username }}
                 </option>
               @endforeach
@@ -106,14 +106,14 @@
             @forelse($logs as $log)
             @php
               $color = 'secondary';
-              if (str_contains(strtolower($log->aktivitas), 'login'))    $color = 'success';
-              elseif (str_contains(strtolower($log->aktivitas), 'logout'))   $color = 'warning';
-              elseif (str_contains(strtolower($log->aktivitas), 'password')) $color = 'danger';
+              if (str_contains(strtolower($log->activity), 'login'))    $color = 'success';
+              elseif (str_contains(strtolower($log->activity), 'logout'))   $color = 'warning';
+              elseif (str_contains(strtolower($log->activity), 'password')) $color = 'danger';
 
               $peranBadge = 'bg-secondary';
-              if (isset($log->user->peran)) {
-                  if ($log->user->peran === 'admin')    $peranBadge = 'bg-danger';
-                  elseif ($log->user->peran === 'customer') $peranBadge = 'bg-primary';
+              if (isset($log->user->role)) {
+                  if ($log->user->role === 'admin')    $peranBadge = 'bg-danger';
+                  elseif ($log->user->role === 'customer') $peranBadge = 'bg-primary';
               }
             @endphp
             <tr>
@@ -123,20 +123,20 @@
               <td>
                 @if($log->user)
                   <span class="fw-semibold me-1">{{ $log->user->username }}</span>
-                  <span class="badge {{ $peranBadge }}">{{ ucfirst($log->user->peran ?? '-') }}</span>
+                  <span class="badge {{ $peranBadge }}">{{ ucfirst($log->user->role ?? '-') }}</span>
                 @else
                   <span class="text-muted fst-italic">Pengguna dihapus</span>
                 @endif
               </td>
               <td>
                 <span class="badge bg-{{ $color }} bg-opacity-15 text-{{ $color }} border border-{{ $color }} border-opacity-25 fw-normal">
-                  {{ $log->aktivitas }}
+                  {{ $log->activity }}
                 </span>
               </td>
               <td class="text-nowrap">
-                @if($log->tanggal)
-                  <span title="{{ $log->tanggal->format('d M Y H:i:s') }}">
-                    {{ $log->tanggal->diffForHumans() }}
+                @if($log->created_at)
+                  <span title="{{ $log->created_at->format('d M Y H:i:s') }}">
+                    {{ $log->created_at->diffForHumans() }}
                   </span>
                 @else
                   <span class="text-muted">-</span>

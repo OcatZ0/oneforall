@@ -89,12 +89,12 @@
                   <td class="fw-bold">{{ $user->username }}</td>
                   <td>{{ $user->email }}</td>
                   <td>
-                    @if($user->peran === 'admin')
+                    @if($user->role === 'admin')
                       <span class="badge bg-danger">Admin</span>
-                    @elseif($user->peran === 'customer')
+                    @elseif($user->role === 'customer')
                       <span class="badge bg-primary">Customer</span>
                     @else
-                      <span class="badge bg-secondary">{{ ucfirst($user->peran) }}</span>
+                      <span class="badge bg-secondary">{{ ucfirst($user->role) }}</span>
                     @endif
                   </td>
                   <td><span class="fw-bold">{{ $user->agents()->count() }}</span></td>
@@ -106,7 +106,7 @@
                     @endphp
                     @if($agentCount > 0)
                       @foreach($agents as $agent)
-                        <span class="badge bg-secondary me-1">{{ $agent->nama }}</span>
+                        <span class="badge bg-secondary me-1">{{ $agent->name }}</span>
                       @endforeach
                       @if($moreCount > 0)
                         <span class="badge bg-secondary">+{{ $moreCount }}</span>
@@ -115,9 +115,9 @@
                       <span class="text-muted fst-italic">Tidak ada</span>
                     @endif
                   </td>
-                  <td>{{ \Carbon\Carbon::parse($user->tanggal_dibuat)->translatedFormat('d M Y') }}</td>
+                  <td>{{ \Carbon\Carbon::parse($user->created_at)->translatedFormat('d M Y') }}</td>
                   <td class="text-nowrap">
-                    <a href="/user/{{ $user->id_pengguna }}/edit" class="btn btn-sm btn-outline-primary me-1">
+                    <a href="/user/{{ $user->id }}/edit" class="btn btn-sm btn-outline-primary me-1">
                       <i class="mdi mdi-pencil"></i>
                     </a>
                     <a href="#" class="btn btn-sm btn-outline-danger">

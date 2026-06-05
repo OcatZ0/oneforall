@@ -6,11 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class DashboardLayout extends Model
 {
-    protected $table      = 'tata_letak_dasbor';
-    protected $primaryKey = 'id_tata_letak';
+    protected $table      = 'dashboard_layouts';
     public    $timestamps = false;
 
-    protected $fillable = ['id_pengguna', 'halaman', 'tata_letak'];
+    protected $fillable = ['user_id', 'page', 'layout'];
 
-    protected $casts = ['tata_letak' => 'array'];
+    protected $casts = ['layout' => 'array'];
 }

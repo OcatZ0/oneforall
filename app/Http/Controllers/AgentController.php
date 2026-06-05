@@ -26,7 +26,7 @@ class AgentController extends Controller
     {
         try {
             $user    = auth()->user();
-            $isAdmin = ($user->peran ?? null) === 'admin';
+            $isAdmin = ($user->role ?? null) === 'admin';
             $token   = $this->_wazuhService->getToken();
             $stats   = $this->buildFilteredStats($token, $isAdmin);
             $perPage = request('per_page', 10);
@@ -39,8 +39,8 @@ class AgentController extends Controller
             $agentsList = collect($wazuhData['agents'])
                 ->map(fn($a) => $this->enrichAgentData($this->mapWazuhAgent($a)))
                 ->filter(function ($agent) use ($accessibleIds, $isAdmin) {
-                    if ($agent->id_agent === '000') return false;
-                    return $isAdmin || in_array($agent->id_agent, $accessibleIds);
+                    if ($agent->agent_id === '000') return false;
+                    return $isAdmin || in_array($agent->agent_id, $accessibleIds);
                 });
 
             $agents = new \Illuminate\Pagination\LengthAwarePaginator(
@@ -58,9 +58,9 @@ class AgentController extends Controller
             $evolutionLabels    = json_encode($evolution['labels'] ?? []);
             $evolutionData      = json_encode($evolution['data']['active'] ?? $evolution['data'] ?? []);
 
-            $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                          ->where('halaman','agent')
-                                          ->value('tata_letak');
+            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
+                                          ->where('page','agent')
+                                          ->value('layout');
 
             return view('agent.index', compact('agents', 'stats', 'evolutionLabels', 'evolutionData', 'savedLayout'));
         } catch (\Exception $e) {
@@ -127,11 +127,11 @@ class AgentController extends Controller
 
             $agent = $this->enrichAgentData($this->mapWazuhAgent($wa, true));
 
-            $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                          ->where('halaman','agent-detail')
-                                          ->value('tata_letak');
+            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
+                                          ->where('page','agent-detail')
+                                          ->value('layout');
 
-            return view('agent.detail', array_merge(compact('agent', 'savedLayout'), $this->buildDetailData($agent->id_agent)));
+            return view('agent.detail', array_merge(compact('agent', 'savedLayout'), $this->buildDetailData($agent->agent_id)));
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('Agent detail timeout: ' . $e->getMessage());
             return view('agent.detail', ['agent' => null, 'error' => 'Connection timeout while fetching agent details']);
@@ -161,9 +161,9 @@ class AgentController extends Controller
             $groupsPage    = max((int) request('groups_page', 1), 1);
             $groupsOffset  = ($groupsPage - 1) * $groupsPerPage;
 
-            $savedLayout  = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                           ->where('halaman','security-events')
-                                           ->value('tata_letak');
+            $savedLayout  = DashboardLayout::where('user_id', auth()->user()->id)
+                                           ->where('page','security-events')
+                                           ->value('layout');
 
             $alertsResult = $this->_openSearch->getRecentAlerts($id, $timeRange, $perPage, $offset);
             $groupsResult = $this->_openSearch->getGroupsSummary($id, $timeRange, $groupsPerPage, $groupsOffset);
@@ -298,9 +298,9 @@ class AgentController extends Controller
             $page      = max((int) request('page', 1), 1);
             $offset    = ($page - 1) * $perPage;
 
-            $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                          ->where('halaman','integrity-monitoring')
-                                          ->value('tata_letak');
+            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
+                                          ->where('page','integrity-monitoring')
+                                          ->value('layout');
 
             $eventsResult = $this->_openSearch->getFimEventsPaginated($id, $timeRange, $perPage, $offset);
 
@@ -352,9 +352,9 @@ class AgentController extends Controller
                 ? (int) round(array_sum(array_column($policies, 'score')) / count($policies))
                 : 0;
 
-            $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                          ->where('halaman','sca')
-                                          ->value('tata_letak');
+            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
+                                          ->where('page','sca')
+                                          ->value('layout');
 
             return view('agent.sca', array_merge(
                 compact('agent', 'policies', 'selectedPolicy', 'policyId', 'resultFilter', 'page', 'perPage', 'savedLayout'),
@@ -407,9 +407,9 @@ class AgentController extends Controller
 
             $lastScan = $token ? $this->_wazuhService->getVulnerabilitiesLastScan($token, $id) : null;
 
-            $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                          ->where('halaman','vulnerabilities')
-                                          ->value('tata_letak');
+            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
+                                          ->where('page','vulnerabilities')
+                                          ->value('layout');
 
             return view('agent.vulnerabilities', compact('agent', 'page', 'perPage', 'severity', 'severityCounts', 'summaryBatch', 'lastScan', 'savedLayout') + [
                 'vulnerabilities' => $vulnResult['data'],
@@ -451,9 +451,9 @@ class AgentController extends Controller
 
             $alertsResult = $this->_openSearch->getMitreAlerts($id, $timeRange, $perPage, $offset);
 
-            $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                          ->where('halaman','mitre-attack')
-                                          ->value('tata_letak');
+            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
+                                          ->where('page','mitre-attack')
+                                          ->value('layout');
 
             return view('agent.mitre-attack', compact('agent', 'timeRange', 'page', 'perPage', 'savedLayout') + [
                 'tactics'          => $this->_openSearch->getMitreTactics($id, $timeRange),
@@ -488,9 +488,9 @@ class AgentController extends Controller
 
             $allCompliance = $this->_openSearch->getAgentCompliance($id, $complianceType, $timeRange);
 
-            $savedLayout = DashboardLayout::where('id_pengguna', auth()->user()->id_pengguna)
-                                          ->where('halaman','compliance')
-                                          ->value('tata_letak');
+            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
+                                          ->where('page','compliance')
+                                          ->value('layout');
 
             return view('agent.compliance', compact('agent', 'complianceType', 'timeRange', 'allCompliance', 'savedLayout') + [
                 'topRuleGroups'  => $this->_openSearch->getTopRuleGroups($id, $timeRange, 5, $complianceType),
@@ -510,7 +510,7 @@ class AgentController extends Controller
             if (!auth()->check()) {
                 return response()->json(['success' => false, 'message' => 'Unauthorized: Please login first'], 401);
             }
-            if (auth()->user()->peran !== 'admin') {
+            if (auth()->user()->role !== 'admin') {
                 return response()->json(['success' => false, 'message' => 'Unauthorized: Only admins can sync agents'], 403);
             }
 
@@ -532,7 +532,7 @@ class AgentController extends Controller
     {
         try {
             $user    = auth()->user();
-            $isAdmin = ($user->peran ?? null) === 'admin';
+            $isAdmin = ($user->role ?? null) === 'admin';
             $perPage = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
             $page    = max((int) request('page', 1), 1);
             $offset  = ($page - 1) * $perPage;
@@ -544,8 +544,8 @@ class AgentController extends Controller
             $agentsList = collect($wazuhData['agents'])
                 ->map(fn($a) => $this->enrichAgentData($this->mapWazuhAgent($a)))
                 ->filter(function ($agent) use ($accessibleIds, $isAdmin) {
-                    if ($agent->id_agent === '000') return false;
-                    return $isAdmin || in_array($agent->id_agent, $accessibleIds);
+                    if ($agent->agent_id === '000') return false;
+                    return $isAdmin || in_array($agent->agent_id, $accessibleIds);
                 })
                 ->values();
 
@@ -556,8 +556,8 @@ class AgentController extends Controller
 
             return response()->json([
                 'agents'     => $agentsList->map(fn($a) => [
-                    'id_agent'     => $a->id_agent,
-                    'nama'         => $a->nama,
+                    'agent_id'     => $a->agent_id,
+                    'name'         => $a->name,
                     'ip'           => $a->ip,
                     'os'           => $a->os,
                     'version'      => $a->version,
@@ -622,17 +622,17 @@ class AgentController extends Controller
         $user    = auth()->user();
         $agentId = (string) $agentId;
 
-        if ($user->peran === 'admin') return true;
+        if ($user->role === 'admin') return true;
 
-        $dbAgent = Agent::where('id_agent', $agentId)->first();
+        $dbAgent = Agent::where('agent_id', $agentId)->first();
         if (!$dbAgent) {
-            Log::warning('Agent not found in database', ['agent_id' => $agentId, 'user_id' => $user->id_pengguna]);
+            Log::warning('Agent not found in database', ['agent_id' => $agentId, 'user_id' => $user->id]);
             return false;
         }
 
-        $hasAccess = $dbAgent->id_pengguna === $user->id_pengguna;
+        $hasAccess = $dbAgent->user_id === $user->id;
         if (!$hasAccess) {
-            Log::warning('Customer does not have access to agent', ['agent_id' => $agentId, 'user_id' => $user->id_pengguna]);
+            Log::warning('Customer does not have access to agent', ['agent_id' => $agentId, 'user_id' => $user->id]);
         }
 
         return $hasAccess;
@@ -641,15 +641,15 @@ class AgentController extends Controller
     private function getAccessibleAgentIds(): array
     {
         $user = auth()->user();
-        if ($user->peran === 'admin') return Agent::pluck('id_agent')->toArray();
-        return Agent::where('id_pengguna', $user->id_pengguna)->pluck('id_agent')->toArray();
+        if ($user->role === 'admin') return Agent::pluck('agent_id')->toArray();
+        return Agent::where('user_id', $user->id)->pluck('agent_id')->toArray();
     }
 
     private function enrichAgentData(object $agent): object
     {
-        $agentId = $agent->id_agent ?? null;
+        $agentId = $agent->agent_id ?? null;
         if ($agentId) {
-            $dbAgent = Agent::where('id_agent', $agentId)->with('user')->first();
+            $dbAgent = Agent::where('agent_id', $agentId)->with('user')->first();
             if ($dbAgent) $agent->user = $dbAgent->user;
         }
         return $agent;
@@ -658,8 +658,8 @@ class AgentController extends Controller
     private function mapWazuhAgent(array $wa, bool $full = false): object
     {
         $agent = (object) [
-            'id_agent'     => $wa['id'] ?? null,
-            'nama'         => $wa['name'] ?? 'Unknown',
+            'agent_id'     => $wa['id'] ?? null,
+            'name'         => $wa['name'] ?? 'Unknown',
             'ip'           => $wa['ip'] ?? 'N/A',
             'os'           => is_array($wa['os']) ? ($wa['os']['name'] ?? 'Unknown') : ($wa['os'] ?? 'Unknown'),
             'version'      => $wa['version'] ?? 'N/A',
@@ -701,15 +701,15 @@ class AgentController extends Controller
                 if (!$agentId || $agentId === '000') continue;
 
                 try {
-                    $agentData   = ['id_agent' => $agentId, 'nama' => $wa['name'] ?? 'Unknown'];
-                    $existing    = Agent::where('id_agent', $agentId)->first();
+                    $agentData   = ['agent_id' => $agentId, 'name' => $wa['name'] ?? 'Unknown'];
+                    $existing    = Agent::where('agent_id', $agentId)->first();
                     $syncedIds[] = $agentId;
 
                     if ($existing) {
-                        if ($existing->nama !== $agentData['nama']) $existing->update($agentData);
+                        if ($existing->name !== $agentData['name']) $existing->update($agentData);
                         $updated++;
                     } else {
-                        Agent::create(array_merge($agentData, ['deskripsi' => '', 'tanggal_dibuat' => Carbon::now()]));
+                        Agent::create(array_merge($agentData, ['description' => '', 'created_at' => Carbon::now()]));
                         $synced++;
                     }
                     $processed++;
@@ -722,7 +722,7 @@ class AgentController extends Controller
             $offset += $limit;
         } while ($processed < $total && count($agents) > 0);
 
-        $deleted = Agent::whereNotIn('id_agent', $syncedIds)->delete();
+        $deleted = Agent::whereNotIn('agent_id', $syncedIds)->delete();
 
         Log::info('Agent sync completed', compact('synced', 'updated', 'deleted', 'errors', 'processed', 'total'));
 

@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('username', 50)->unique();
-            $table->string('email', 255)->unique();
-            $table->string('password', 255);
-            $table->enum('role', ['admin', 'customer'])->default('customer');
+        Schema::create('agents', function (Blueprint $table) {
+            $table->string('agent_id', 255)->primary();
+            $table->string('name', 100);
+            $table->string('description', 255);
             $table->dateTime('created_at')->useCurrent();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
         });
     }
 
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('agents');
     }
 };

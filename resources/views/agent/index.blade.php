@@ -119,7 +119,7 @@
               <button class="btn btn-sm btn-primary" onclick="location.reload()">
                 <i class="mdi mdi-refresh me-1"></i> Refresh
               </button>
-              @if(auth()->user()->peran === 'admin')
+              @if(auth()->user()->role === 'admin')
               <button class="btn btn-sm btn-success" id="syncBtn" onclick="syncAgentsFromWazuh()">
                 <i class="mdi mdi-refresh me-1"></i><span id="syncBtnText">Update Data Agent</span>
               </button>
@@ -167,10 +167,10 @@
               </thead>
               <tbody id="agent-tbody">
                 @forelse($agents as $agent)
-                <tr onclick="window.location='{{ route('agent.detail', $agent->id_agent) }}'" style="cursor: pointer;">
+                <tr onclick="window.location='{{ route('agent.detail', $agent->agent_id) }}'" style="cursor: pointer;">
                   <td>{{ ($agents->currentPage() - 1) * $agents->perPage() + $loop->iteration }}</td>
-                  <td class="fw-bold">{{ $agent->id_agent }}</td>
-                  <td>{{ $agent->nama }}</td>
+                  <td class="fw-bold">{{ $agent->agent_id }}</td>
+                  <td>{{ $agent->name }}</td>
                   <td>{{ $agent->ip }}</td>
                   <td>
                     <i class="mdi {{ \App\Http\Controllers\AgentController::getOSIcon($agent->os) }} me-1"></i>
@@ -786,10 +786,10 @@ async function loadAgents(page, perPage) {
           const userBadge = a.user
             ? `<span class="badge bg-primary">${escHtml(a.user.username)}</span>`
             : `<span class="text-muted fst-italic">Unassigned</span>`;
-          return `<tr onclick="window.location='/agent/${escHtml(a.id_agent)}/detail'" style="cursor:pointer;">
+          return `<tr onclick="window.location='/agent/${escHtml(a.agent_id)}/detail'" style="cursor:pointer;">
             <td>${rowNum}</td>
-            <td class="fw-bold">${escHtml(a.id_agent)}</td>
-            <td>${escHtml(a.nama)}</td>
+            <td class="fw-bold">${escHtml(a.agent_id)}</td>
+            <td>${escHtml(a.name)}</td>
             <td>${escHtml(a.ip)}</td>
             <td><i class="mdi ${osIcon} me-1"></i><small>${escHtml(a.os)}</small></td>
             <td><small class="text-muted">${escHtml(a.version)}</small></td>

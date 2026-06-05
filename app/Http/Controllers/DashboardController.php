@@ -26,8 +26,8 @@ class DashboardController extends Controller
     {
         try {
             $user     = auth()->user();
-            $userRole = $user->peran ?? null;
-            $userId   = $user->id_pengguna ?? auth()->id();
+            $userRole = $user->role ?? null;
+            $userId   = $user->id ?? auth()->id();
             $isAdmin  = $userRole === 'admin';
 
             $token      = $this->_wazuhService->getToken();
@@ -35,8 +35,8 @@ class DashboardController extends Controller
 
             $accessibleAgentIds = null;
             if (!$isAdmin) {
-                $accessibleAgentIds = Agent::where('id_pengguna', $userId)
-                    ->pluck('id_agent')
+                $accessibleAgentIds = Agent::where('user_id', $userId)
+                    ->pluck('agent_id')
                     ->map(fn($id) => (string) $id)
                     ->values()
                     ->toArray();
@@ -49,7 +49,7 @@ class DashboardController extends Controller
             $topRules       = $this->_openSearch->getTopTriggeredRules(5, $accessibleAgentIds, $isAdmin);
             $topAgents      = $this->_openSearch->getTopAgentsByAlerts(5, $accessibleAgentIds, $isAdmin);
             $customerStats  = $isAdmin ? $this->getCustomerStats() : null;
-            $savedLayout    = DashboardLayout::where('id_pengguna', $userId)->where('halaman', 'home')->value('tata_letak');
+            $savedLayout    = DashboardLayout::where('user_id', $userId)->where('page', 'home')->value('layout');
 
             return view('home.index', compact(
                 'agentStats', 'alertTrend', 'alertSeverity', 'totalAlerts',
@@ -79,8 +79,8 @@ class DashboardController extends Controller
         ]);
 
         DashboardLayout::updateOrCreate(
-            ['id_pengguna' => auth()->user()->id_pengguna, 'halaman' => $validated['page']],
-            ['tata_letak'  => $validated['layout']]
+            ['user_id' => auth()->user()->id, 'page' => $validated['page']],
+            ['layout'  => $validated['layout']]
         );
 
         return response()->json(['success' => true]);
@@ -96,8 +96,8 @@ class DashboardController extends Controller
             if ($isAdmin) {
                 $agentStats = $this->_wazuhService->getAgentSummaryStatus($token);
             } else {
-                $accessibleIds = Agent::where('id_pengguna', $userId)
-                    ->pluck('id_agent')
+                $accessibleIds = Agent::where('user_id', $userId)
+                    ->pluck('agent_id')
                     ->map(fn($id) => (string) $id)
                     ->values()
                     ->toArray();
@@ -119,8 +119,8 @@ class DashboardController extends Controller
 
             $previousMonthEnd   = Carbon::now()->subMonth()->endOfMonth();
             $totalPreviousMonth = $isAdmin
-                ? Agent::where('tanggal_dibuat', '<=', $previousMonthEnd)->count()
-                : Agent::where('id_pengguna', $userId)->where('tanggal_dibuat', '<=', $previousMonthEnd)->count();
+                ? Agent::where('created_at', '<=', $previousMonthEnd)->count()
+                : Agent::where('user_id', $userId)->where('created_at', '<=', $previousMonthEnd)->count();
 
             $change        = $agentStats['total'] - $totalPreviousMonth;
             $changePercent = $totalPreviousMonth > 0 ? round(($change / $totalPreviousMonth) * 100, 1) : 0;
@@ -140,9 +140,9 @@ class DashboardController extends Controller
     private function getCustomerStats(): array
     {
         try {
-            $totalCustomers     = User::where('peran', 'customer')->count();
+            $totalCustomers     = User::where('role', 'customer')->count();
             $previousMonthEnd   = Carbon::now()->subMonth()->endOfMonth();
-            $totalPreviousMonth = User::where('peran', 'customer')->where('tanggal_dibuat', '<=', $previousMonthEnd)->count();
+            $totalPreviousMonth = User::where('role', 'customer')->where('created_at', '<=', $previousMonthEnd)->count();
             $change             = $totalCustomers - $totalPreviousMonth;
             $changePercent      = $totalPreviousMonth > 0 ? round(($change / $totalPreviousMonth) * 100, 1) : 0;
 

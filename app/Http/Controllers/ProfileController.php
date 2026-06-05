@@ -15,21 +15,21 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         // Admin sees all agents, customers see only their own
-        if ($user->peran === 'admin') {
+        if ($user->role === 'admin') {
             $agents = Agent::all();
         } else {
-            $agents = Agent::where('id_pengguna', $user->id_pengguna)->get();
+            $agents = Agent::where('user_id', $user->id)->get();
         }
 
         // Fetch activity logs with pagination and search
         $search = request('search');
-        $logsQuery = LogActivity::where('id_pengguna', $user->id_pengguna);
+        $logsQuery = LogActivity::where('user_id', $user->id);
 
         if ($search) {
-            $logsQuery->where('aktivitas', 'like', '%' . $search . '%');
+            $logsQuery->where('activity', 'like', '%' . $search . '%');
         }
 
-        $logs = $logsQuery->orderBy('tanggal', 'desc')->paginate(10);
+        $logs = $logsQuery->orderBy('created_at', 'desc')->paginate(10);
 
         return view('profile.index', compact('user', 'agents', 'logs', 'search'));
     }
@@ -43,16 +43,16 @@ class ProfileController extends Controller
 
         $user = Auth::user();
 
-        if (!Hash::check($request->current_password, $user->kata_sandi)) {
+        if (!Hash::check($request->current_password, $user->password)) {
             return back()->withErrors(['current_password' => 'Password saat ini tidak sesuai.']);
         }
 
-        $user->kata_sandi = Hash::make($request->new_password);
+        $user->password = Hash::make($request->new_password);
         $user->save();
 
         LogActivity::create([
-            'id_pengguna' => $user->id_pengguna,
-            'aktivitas'   => 'Pengguna mengubah password',
+            'user_id'  => $user->id,
+            'activity' => 'Pengguna mengubah password',
         ]);
 
         session()->flash('password_success', 'Password berhasil diubah.');

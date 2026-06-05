@@ -24,7 +24,7 @@
         </li>
         @endif
 
-        @if(Auth::check() && Auth::user()->peran === 'admin')
+        @if(Auth::check() && Auth::user()->role === 'admin')
         <li class="nav-item sidebar-category">
           <p>Manajemen Pengguna</p>
           <span></span>

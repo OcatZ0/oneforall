@@ -18,23 +18,23 @@ class AgentAccessControlTest extends TestCase
         // Create test users
         $this->adminUser = User::factory()->create([
             'username' => 'admin_test',
-            'peran' => 'admin',
+            'role' =>'admin',
             'email' => 'admin@test.com',
-            'kata_sandi' => bcrypt('password')
+            'password' => bcrypt('password')
         ]);
         
         $this->customerUser1 = User::factory()->create([
             'username' => 'customer1_test',
-            'peran' => 'customer',
+            'role' =>'customer',
             'email' => 'customer1@test.com',
-            'kata_sandi' => bcrypt('password')
+            'password' => bcrypt('password')
         ]);
         
         $this->customerUser2 = User::factory()->create([
             'username' => 'customer2_test',
-            'peran' => 'customer',
+            'role' =>'customer',
             'email' => 'customer2@test.com',
-            'kata_sandi' => bcrypt('password')
+            'password' => bcrypt('password')
         ]);
     }
 
@@ -45,17 +45,17 @@ class AgentAccessControlTest extends TestCase
     {
         // Create agents assigned to different users
         $agent1 = Agent::create([
-            'id_agent' => 'agent_001',
-            'nama' => 'Agent 1',
-            'deskripsi' => 'Test Agent 1',
-            'id_pengguna' => $this->customerUser1->id_pengguna
+            'agent_id' =>'agent_001',
+            'name' =>'Agent 1',
+            'description' =>'Test Agent 1',
+            'user_id' => $this->customerUser1->id
         ]);
         
         $agent2 = Agent::create([
-            'id_agent' => 'agent_002',
-            'nama' => 'Agent 2',
-            'deskripsi' => 'Test Agent 2',
-            'id_pengguna' => $this->customerUser2->id_pengguna
+            'agent_id' =>'agent_002',
+            'name' =>'Agent 2',
+            'description' =>'Test Agent 2',
+            'user_id' => $this->customerUser2->id
         ]);
         
         // Admin should have access to both
@@ -72,29 +72,29 @@ class AgentAccessControlTest extends TestCase
     {
         // Create agents assigned to customer1
         $agent1 = Agent::create([
-            'id_agent' => 'agent_001',
-            'nama' => 'Agent 1',
-            'deskripsi' => 'Assigned to Customer 1',
-            'id_pengguna' => $this->customerUser1->id_pengguna
+            'agent_id' =>'agent_001',
+            'name' =>'Agent 1',
+            'description' =>'Assigned to Customer 1',
+            'user_id' => $this->customerUser1->id
         ]);
         
         // Create agent assigned to customer2
         $agent2 = Agent::create([
-            'id_agent' => 'agent_002',
-            'nama' => 'Agent 2',
-            'deskripsi' => 'Assigned to Customer 2',
-            'id_pengguna' => $this->customerUser2->id_pengguna
+            'agent_id' =>'agent_002',
+            'name' =>'Agent 2',
+            'description' =>'Assigned to Customer 2',
+            'user_id' => $this->customerUser2->id
         ]);
         
         // Customer1 should only see their agent
-        $customer1Agents = Agent::where('id_pengguna', $this->customerUser1->id_pengguna)->get();
+        $customer1Agents = Agent::where('user_id', $this->customerUser1->id)->get();
         $this->assertCount(1, $customer1Agents);
-        $this->assertEquals('agent_001', $customer1Agents->first()->id_agent);
-        
+        $this->assertEquals('agent_001', $customer1Agents->first()->agent_id);
+
         // Customer2 should only see their agent
-        $customer2Agents = Agent::where('id_pengguna', $this->customerUser2->id_pengguna)->get();
+        $customer2Agents = Agent::where('user_id', $this->customerUser2->id)->get();
         $this->assertCount(1, $customer2Agents);
-        $this->assertEquals('agent_002', $customer2Agents->first()->id_agent);
+        $this->assertEquals('agent_002', $customer2Agents->first()->agent_id);
     }
 
     /**
@@ -104,10 +104,10 @@ class AgentAccessControlTest extends TestCase
     {
         // Create agent assigned to customer2
         $agent = Agent::create([
-            'id_agent' => 'agent_001',
-            'nama' => 'Agent 1',
-            'deskripsi' => 'Assigned to Customer 2',
-            'id_pengguna' => $this->customerUser2->id_pengguna
+            'agent_id' =>'agent_001',
+            'name' =>'Agent 1',
+            'description' =>'Assigned to Customer 2',
+            'user_id' => $this->customerUser2->id
         ]);
         
         // Customer1 tries to access it (should fail)
@@ -126,10 +126,10 @@ class AgentAccessControlTest extends TestCase
     {
         // Create agent assigned to customer1
         $agent = Agent::create([
-            'id_agent' => 'agent_001',
-            'nama' => 'Agent 1',
-            'deskripsi' => 'Assigned to Customer 1',
-            'id_pengguna' => $this->customerUser1->id_pengguna
+            'agent_id' =>'agent_001',
+            'name' =>'Agent 1',
+            'description' =>'Assigned to Customer 1',
+            'user_id' => $this->customerUser1->id
         ]);
         
         // Admin should be able to access it
@@ -148,10 +148,10 @@ class AgentAccessControlTest extends TestCase
     {
         // Create unassigned agent
         $agent = Agent::create([
-            'id_agent' => 'agent_001',
-            'nama' => 'Agent 1',
-            'deskripsy' => 'Unassigned',
-            'id_pengguna' => null
+            'agent_id' =>'agent_001',
+            'name' =>'Agent 1',
+            'description' => 'Unassigned',
+            'user_id' => null
         ]);
         
         // Customer tries to access

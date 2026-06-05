@@ -22,7 +22,7 @@
               <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center mx-auto mb-2" style="width:160px;height:160px">
                 <i class="mdi mdi-account text-white" style="font-size:5rem"></i>
               </div>
-              <span class="badge bg-{{ $user->peran === 'admin' ? 'danger' : 'primary' }}">{{ ucfirst($user->peran) }}</span>
+              <span class="badge bg-{{ $user->role === 'admin' ? 'danger' : 'primary' }}">{{ ucfirst($user->role) }}</span>
             </div>
           </div>
           <div class="col-md-9">
@@ -38,11 +38,11 @@
                 </tr>
                 <tr>
                   <td class="text-muted fw-bold">Role</td>
-                  <td><span class="badge bg-{{ $user->peran === 'admin' ? 'danger' : 'primary' }}">{{ ucfirst($user->peran) }}</span></td>
+                  <td><span class="badge bg-{{ $user->role === 'admin' ? 'danger' : 'primary' }}">{{ ucfirst($user->role) }}</span></td>
                 </tr>
                 <tr>
                   <td class="text-muted fw-bold">Tanggal Dibuat</td>
-                  <td>{{ \Carbon\Carbon::parse($user->tanggal_dibuat)->translatedFormat('d F Y') }}</td>
+                  <td>{{ \Carbon\Carbon::parse($user->created_at)->translatedFormat('d F Y') }}</td>
                 </tr>
               </tbody>
             </table>
@@ -125,10 +125,10 @@
                 @foreach($agents as $agent)
                 <tr>
                   <td>{{ $loop->iteration }}</td>
-                  <td class="fw-bold">{{ $agent->id_agent }}</td>
-                  <td>{{ $agent->nama }}</td>
-                  <td>{{ $agent->deskripsi }}</td>
-                  <td>{{ \Carbon\Carbon::parse($agent->tanggal_dibuat)->translatedFormat('d M Y') }}</td>
+                  <td class="fw-bold">{{ $agent->agent_id }}</td>
+                  <td>{{ $agent->name }}</td>
+                  <td>{{ $agent->description }}</td>
+                  <td>{{ \Carbon\Carbon::parse($agent->created_at)->translatedFormat('d M Y') }}</td>
                 </tr>
                 @endforeach
               </tbody>
@@ -179,10 +179,10 @@
                 @foreach($logs as $log)
                 <tr>
                   <td>{{ ($logs->currentPage() - 1) * $logs->perPage() + $loop->iteration }}</td>
-                  <td>{{ $log->aktivitas }}</td>
+                  <td>{{ $log->activity }}</td>
                   <td>
-                    <span class="text-muted" title="{{ \Carbon\Carbon::parse($log->tanggal)->format('d M Y H:i:s') }}">
-                      {{ \Carbon\Carbon::parse($log->tanggal)->translatedFormat('d M Y H:i') }}
+                    <span class="text-muted" title="{{ \Carbon\Carbon::parse($log->created_at)->format('d M Y H:i:s') }}">
+                      {{ \Carbon\Carbon::parse($log->created_at)->translatedFormat('d M Y H:i') }}
                     </span>
                   </td>
                 </tr>

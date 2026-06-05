@@ -17,23 +17,23 @@ class ActivityLogController extends Controller
             $dateTo   = request('date_to');
             $perPage  = in_array((int) request('per_page', 25), [25, 50, 100]) ? (int) request('per_page', 25) : 25;
 
-            $query = LogActivity::with('user')->orderBy('tanggal', 'desc');
+            $query = LogActivity::with('user')->orderBy('created_at', 'desc');
 
             if ($search) {
-                $query->where('aktivitas', 'like', '%' . $search . '%');
+                $query->where('activity', 'like', '%' . $search . '%');
             }
             if ($userId) {
-                $query->where('id_pengguna', $userId);
+                $query->where('user_id', $userId);
             }
             if ($dateFrom) {
-                $query->whereDate('tanggal', '>=', $dateFrom);
+                $query->whereDate('created_at', '>=', $dateFrom);
             }
             if ($dateTo) {
-                $query->whereDate('tanggal', '<=', $dateTo);
+                $query->whereDate('created_at', '<=', $dateTo);
             }
 
             $logs  = $query->paginate($perPage)->appends(request()->query());
-            $users = User::orderBy('username')->get(['id_pengguna', 'username']);
+            $users = User::orderBy('username')->get(['id', 'username']);
 
             return view('activity-log.index', compact('logs', 'users', 'search', 'userId', 'dateFrom', 'dateTo', 'perPage'));
         } catch (\Exception $e) {

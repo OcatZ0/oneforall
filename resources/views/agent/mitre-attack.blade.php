@@ -44,32 +44,32 @@
   <div class="d-flex align-items-center px-3">
     <ul class="nav flex-nowrap overflow-auto">
       <li class="nav-item">
-        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.detail', $agent->id_agent) }}">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.detail', $agent->agent_id) }}">
           <span class="mdi mdi-home"></span> Details
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.security-events', $agent->id_agent) }}">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.security-events', $agent->agent_id) }}">
           <span class="mdi mdi-format-list-bulleted"></span> Security events
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.integrity-monitoring', $agent->id_agent) }}">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.integrity-monitoring', $agent->agent_id) }}">
           <span class="mdi mdi-shield"></span> Integrity monitoring
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.sca', $agent->id_agent) }}">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.sca', $agent->agent_id) }}">
           <span class="mdi mdi-clock-outline"></span> SCA
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.vulnerabilities', $agent->id_agent) }}">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.vulnerabilities', $agent->agent_id) }}">
           <span class="mdi mdi-bug"></span> Vulnerabilities
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small active" href="{{ route('agent.mitre-attack', $agent->id_agent) }}">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small active" href="{{ route('agent.mitre-attack', $agent->agent_id) }}">
           <span class="mdi mdi-sword-cross"></span> MITRE ATT&amp;CK
         </a>
       </li>
@@ -78,11 +78,11 @@
           <span class="mdi mdi-check-decagram"></span> Compliance
         </a>
         <ul class="dropdown-menu dropdown-menu-dark">
-          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent) }}?compliance_type=pci_dss">PCI DSS</a></li>
-          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent) }}?compliance_type=gdpr">GDPR</a></li>
-          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent) }}?compliance_type=hipaa">HIPAA</a></li>
-          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent) }}?compliance_type=nist_800_53">NIST 800-53</a></li>
-          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->id_agent) }}?compliance_type=tsc">TSC</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->agent_id) }}?compliance_type=pci_dss">PCI DSS</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->agent_id) }}?compliance_type=gdpr">GDPR</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->agent_id) }}?compliance_type=hipaa">HIPAA</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->agent_id) }}?compliance_type=nist_800_53">NIST 800-53</a></li>
+          <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->agent_id) }}?compliance_type=tsc">TSC</a></li>
         </ul>
       </li>
     </ul>
@@ -535,7 +535,7 @@ function renderPagination(footerId, total, page, perPage, loadFn) {
     </div>`;
 }
 
-const mitreAlertsEndpoint = '{{ route("agent.mitre.alerts", $agent->id_agent ?? "") }}';
+const mitreAlertsEndpoint = '{{ route("agent.mitre.alerts", $agent->agent_id ?? "") }}';
 
 async function loadMitreAlerts(page, perPage) {
   const params = new URLSearchParams({ time_range: currentTimeRange, page, per_page: perPage });

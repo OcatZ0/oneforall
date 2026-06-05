@@ -12,12 +12,7 @@ class LogActivity extends Model
     /**
      * The table associated with the model.
      */
-    protected $table = 'log_aktivitas';
-
-    /**
-     * The primary key for the model.
-     */
-    protected $primaryKey = 'id_log';
+    protected $table = 'activity_logs';
 
     /**
      * Indicates if the model should be timestamped.
@@ -30,9 +25,9 @@ class LogActivity extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'id_pengguna',
-        'aktivitas',
-        'tanggal',
+        'user_id',
+        'activity',
+        'created_at',
     ];
 
     /**
@@ -43,7 +38,7 @@ class LogActivity extends Model
     protected function casts(): array
     {
         return [
-            'tanggal' => 'datetime',
+            'created_at' => 'datetime',
         ];
     }
 
@@ -52,6 +47,6 @@ class LogActivity extends Model
      */
     public function user()
     {
-        return $this->belongsTo(User::class, 'id_pengguna', 'id_pengguna');
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 }

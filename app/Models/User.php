@@ -15,12 +15,7 @@ class User extends Authenticatable
     /**
      * The table associated with the model.
      */
-    protected $table = 'pengguna';
-
-    /**
-     * The primary key for the model.
-     */
-    protected $primaryKey = 'id_pengguna';
+    protected $table = 'users';
 
     /**
      * Indicates if the model should be timestamped.
@@ -35,8 +30,8 @@ class User extends Authenticatable
     protected $fillable = [
         'username',
         'email',
-        'kata_sandi',
-        'peran',
+        'password',
+        'role',
     ];
 
     /**
@@ -45,7 +40,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $hidden = [
-        'kata_sandi',
+        'password',
     ];
 
     /**
@@ -56,16 +51,8 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'tanggal_dibuat' => 'datetime',
+            'created_at' => 'datetime',
         ];
-    }
-
-    /**
-     * Get the password attribute for authentication.
-     */
-    public function getAuthPassword()
-    {
-        return $this->kata_sandi;
     }
 
     /**
@@ -73,7 +60,7 @@ class User extends Authenticatable
      */
     public function agents()
     {
-        return $this->hasMany(Agent::class, 'id_pengguna', 'id_pengguna');
+        return $this->hasMany(Agent::class, 'user_id', 'id');
     }
 
     /**
@@ -81,7 +68,6 @@ class User extends Authenticatable
      */
     public function activities()
     {
-        return $this->hasMany(LogActivity::class, 'id_pengguna', 'id_pengguna');
+        return $this->hasMany(LogActivity::class, 'user_id', 'id');
     }
 }
-

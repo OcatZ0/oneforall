@@ -8,12 +8,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('password_reset_tokens', function (Blueprint $table) {
+        Schema::create('dashboard_layouts', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id')->unique();
-            $table->string('token');
-            $table->dateTime('created_at')->nullable();
+            $table->unsignedBigInteger('user_id');
+            $table->string('page', 50)->default('home');
+            $table->json('layout');
 
+            $table->unique(['user_id', 'page']);
             $table->foreign('user_id')
                   ->references('id')
                   ->on('users')
@@ -23,6 +24,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('dashboard_layouts');
     }
 };
