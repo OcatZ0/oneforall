@@ -50,7 +50,7 @@
                 <span>{{ Auth::user()->username }}</span>
               </a>
               <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list" aria-labelledby="profileDropdown">
-                <p class="mb-0 font-weight-normal float-left dropdown-header">Profil</p>
+                <p class="mb-0 fw-normal float-start dropdown-header">Profil</p>
                 <a class="dropdown-item preview-item" href="/profile">
                   <div class="preview-thumbnail">
                     <div class="preview-icon bg-success">
@@ -58,8 +58,8 @@
                     </div>
                   </div>
                   <div class="preview-item-content">
-                    <h6 class="preview-subject font-weight-normal">Profil</h6>
-                    <p class="font-weight-light small-text mb-0 text-muted">Detail akun</p>
+                    <h6 class="preview-subject fw-normal">Profil</h6>
+                    <p class="fw-light small-text mb-0 text-muted">Detail akun</p>
                   </div>
                 </a>
                 <a class="dropdown-item preview-item" href="/auth/forgot-password">
@@ -69,8 +69,8 @@
                     </div>
                   </div>
                   <div class="preview-item-content">
-                    <h6 class="preview-subject font-weight-normal">Ubah Kata Sandi</h6>
-                    <p class="font-weight-light small-text mb-0 text-muted">Pengaturan keamanan</p>
+                    <h6 class="preview-subject fw-normal">Ubah Kata Sandi</h6>
+                    <p class="fw-light small-text mb-0 text-muted">Pengaturan keamanan</p>
                   </div>
                 </a>
                 <a href="/auth/logout" class="dropdown-item preview-item"
@@ -81,8 +81,8 @@
                     </div>
                   </div>
                   <div class="preview-item-content">
-                    <h6 class="preview-subject font-weight-normal">Logout</h6>
-                    <p class="font-weight-light small-text mb-0 text-muted">Keluar</p>
+                    <h6 class="preview-subject fw-normal">Logout</h6>
+                    <p class="fw-light small-text mb-0 text-muted">Keluar</p>
                   </div>
                 </a>
 

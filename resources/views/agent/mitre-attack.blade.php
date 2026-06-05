@@ -113,8 +113,9 @@
           </div>
           @else
           <div class="no-data-placeholder">
-            <span class="mdi mdi-chart-line"></span>
-            <div>No data for this time range</div>
+            <span class="mdi mdi-sword-cross" style="opacity:0.3;"></span>
+            <span class="fw-semibold">Tidak ada taktik</span>
+            <div>Tidak ada taktik MITRE ATT&amp;CK yang terdeteksi</div>
           </div>
           @endif
         </div>
@@ -172,8 +173,9 @@
           </div>
           @else
           <div class="no-data-placeholder">
-            <span class="mdi mdi-chart-pie"></span>
-            <div>No tactic data</div>
+            <span class="mdi mdi-sword-cross" style="opacity:0.3;"></span>
+            <span class="fw-semibold">Tidak ada taktik</span>
+            <div>Tidak ada taktik MITRE ATT&amp;CK yang terdeteksi</div>
           </div>
           @endif
         </div>
@@ -197,8 +199,9 @@
           </div>
           @else
           <div class="no-data-placeholder">
-            <span class="mdi mdi-chart-donut"></span>
-            <div>No data</div>
+            <span class="mdi mdi-sword-cross" style="opacity:0.3;"></span>
+            <span class="fw-semibold">Tidak ada taktik</span>
+            <div>Tidak ada taktik MITRE ATT&amp;CK yang terdeteksi</div>
           </div>
           @endif
         </div>
@@ -220,8 +223,9 @@
           </div>
           @else
           <div class="no-data-placeholder">
-            <span class="mdi mdi-chart-bar"></span>
-            <div>No data</div>
+            <span class="mdi mdi-sword-cross" style="opacity:0.3;"></span>
+            <span class="fw-semibold">Tidak ada taktik</span>
+            <div>Tidak ada taktik MITRE ATT&amp;CK yang terdeteksi</div>
           </div>
           @endif
         </div>
@@ -243,8 +247,9 @@
           </div>
           @else
           <div class="no-data-placeholder">
-            <span class="mdi mdi-chart-donut"></span>
-            <div>No data</div>
+            <span class="mdi mdi-sword-cross" style="opacity:0.3;"></span>
+            <span class="fw-semibold">Tidak ada taktik</span>
+            <div>Tidak ada taktik MITRE ATT&amp;CK yang terdeteksi</div>
           </div>
           @endif
         </div>
@@ -298,7 +303,11 @@
                 </tr>
                 @empty
                 <tr>
-                  <td colspan="7" class="text-center text-muted py-3 small">No MITRE ATT&amp;CK alerts found for this time range.</td>
+                  <td colspan="7" class="text-center py-5 text-muted">
+                    <span class="mdi mdi-sword-cross d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+                    <span class="d-block fw-semibold mb-1">Tidak ada taktik</span>
+                    <span class="d-block small">Tidak ada taktik MITRE ATT&amp;CK yang terdeteksi</span>
+                  </td>
                 </tr>
                 @endforelse
               </tbody>
@@ -551,7 +560,11 @@ async function loadMitreAlerts(page, perPage) {
             <td class="font-monospace" style="font-size:10px;">${escHtml(r.mitre_id || '—')}</td>
           </tr>`;
         }).join('')
-      : '<tr><td colspan="7" class="text-center text-muted py-3 small">No MITRE ATT&CK alerts found for this time range.</td></tr>';
+      : `<tr><td colspan="7" class="text-center py-5 text-muted">
+        <span class="mdi mdi-sword-cross d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+        <span class="d-block fw-semibold mb-1">Tidak ada taktik</span>
+        <span class="d-block small">Tidak ada taktik MITRE ATT&CK yang terdeteksi</span>
+      </td></tr>`;
     renderPagination('mitre-alerts-footer', json.total, json.page, json.perPage, 'loadMitreAlerts');
   } catch (e) { console.error('loadMitreAlerts failed', e); }
 }
@@ -719,7 +732,7 @@ function refreshData() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
       body: JSON.stringify({ layout, page: 'mitre-attack' })
-    }).then(r => r.json()).then(d => { if (d.success) exitEdit(); });
+    }).then(r => r.json()).then(d => { if (d.success) { exitEdit(); gsShowSavedToast(); } });
   });
 
   document.getElementById('gs-reset').addEventListener('click', () => {

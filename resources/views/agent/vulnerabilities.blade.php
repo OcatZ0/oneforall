@@ -104,10 +104,10 @@
             <span><span class="mdi mdi-circle text-secondary"></span> Low: <strong>{{ $severityCounts['Low'] }}</strong></span>
           </div>
           @else
-          <div class="text-muted small text-center">
-            <span class="mdi mdi-chart-donut d-block" style="font-size:3rem;"></span>
-            <div class="mt-2 fw-semibold">No results</div>
-            <div class="text-muted" style="font-size:11px;">No results were found.</div>
+          <div class="d-flex flex-column align-items-center justify-content-center text-muted text-center">
+            <span class="mdi mdi-bug-check-outline" style="font-size:3rem; opacity:0.3; margin-bottom:12px;"></span>
+            <span class="fw-semibold mb-1">Tidak ada kerentanan</span>
+            <span style="font-size:11px;">Agent ini bersih dari kerentanan yang terdeteksi</span>
           </div>
           @endif
         </div>
@@ -187,10 +187,10 @@
           <div id="vuln-summary-chart-wrap" style="position:relative;width:100%;height:190px;display:none;">
             <canvas id="vulnSummaryChart"></canvas>
           </div>
-          <div id="vuln-summary-empty" class="text-muted small text-center">
-            <span class="mdi mdi-chart-bar d-block" style="font-size:3rem;"></span>
-            <div class="mt-2 fw-semibold">No results</div>
-            <div style="font-size:11px;" id="vuln-summary-empty-text">No Name results were found.</div>
+          <div id="vuln-summary-empty" class="d-flex flex-column align-items-center justify-content-center text-muted text-center">
+            <span class="mdi mdi-bug-check-outline d-block" style="font-size:3rem; opacity:0.3; margin-bottom:8px;"></span>
+            <span class="fw-semibold mb-1">Tidak ada kerentanan</span>
+            <span style="font-size:11px;" id="vuln-summary-empty-text">Tidak ada data Name yang ditemukan.</span>
           </div>
         </div>
       </div>
@@ -282,8 +282,10 @@
                 </tr>
                 @empty
                 <tr>
-                  <td colspan="8" class="text-center text-muted py-3 small">
-                    No vulnerabilities found{{ $severity ? ' for severity: ' . $severity : '' }}
+                  <td colspan="8" class="text-center py-5 text-muted">
+                    <span class="mdi mdi-bug-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+                    <span class="d-block fw-semibold mb-1">Tidak ada kerentanan</span>
+                    <span class="d-block small">{{ $severity ? 'Tidak ada kerentanan untuk severity: ' . $severity : 'Agent ini bersih dari kerentanan yang terdeteksi' }}</span>
                   </td>
                 </tr>
                 @endforelse
@@ -416,7 +418,7 @@ function updateSummaryChart(field) {
   if (labels.length === 0) {
     wrap.style.display  = 'none';
     empty.style.display = '';
-    emptyText.textContent = `No ${labelMap[field] || field} results were found.`;
+    emptyText.textContent = `Tidak ada data ${labelMap[field] || field} yang ditemukan.`;
     if (vulnSummaryChartInstance) { vulnSummaryChartInstance.destroy(); vulnSummaryChartInstance = null; }
     return;
   }
@@ -633,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
       body: JSON.stringify({ layout, page: 'vulnerabilities' })
     })
     .then(r => r.json())
-    .then(d => { if (d.success) exitEdit(); });
+    .then(d => { if (d.success) { exitEdit(); gsShowSavedToast(); } });
   });
 
   document.getElementById('gs-reset').addEventListener('click', () => {

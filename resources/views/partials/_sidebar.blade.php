@@ -35,6 +35,12 @@
             <span class="menu-title">Pengguna</span>
           </a>
         </li>
+        <li class="nav-item {{ Route::is('activity-log') ? 'active' : '' }}">
+          <a class="nav-link" href="{{ route('activity-log') }}">
+            <i class="mdi mdi-history menu-icon"></i>
+            <span class="menu-title">Log Aktivitas</span>
+          </a>
+        </li>
         @endif
       </ul>
     </nav>

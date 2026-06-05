@@ -11,9 +11,9 @@
       <div class="card-body">
         <div class="d-flex align-items-center justify-content-between mb-4">
           <h4 class="card-title mb-0">Profile</h4>
-          <a href="/auth/forgot-password" class="btn btn-sm btn-outline-warning">
-            <i class="mdi mdi-lock-reset mr-1"></i> Ganti Password
-          </a>
+          <button class="btn btn-sm btn-outline-warning" type="button" data-bs-toggle="collapse" data-bs-target="#changePasswordForm" aria-expanded="false">
+            <i class="mdi mdi-lock-reset me-1"></i> Ganti Password
+          </button>
         </div>
 
         <div class="row mb-4">
@@ -22,26 +22,26 @@
               <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center mx-auto mb-2" style="width:160px;height:160px">
                 <i class="mdi mdi-account text-white" style="font-size:5rem"></i>
               </div>
-              <span class="badge badge-{{ $user->peran === 'admin' ? 'danger' : 'primary' }}">{{ ucfirst($user->peran) }}</span>
+              <span class="badge bg-{{ $user->peran === 'admin' ? 'danger' : 'primary' }}">{{ ucfirst($user->peran) }}</span>
             </div>
           </div>
           <div class="col-md-9">
             <table class="table table-borderless mb-0">
               <tbody>
                 <tr>
-                  <td class="text-muted font-weight-bold" style="width:160px">Username</td>
+                  <td class="text-muted fw-bold" style="width:160px">Username</td>
                   <td>{{ $user->username }}</td>
                 </tr>
                 <tr>
-                  <td class="text-muted font-weight-bold">Email</td>
+                  <td class="text-muted fw-bold">Email</td>
                   <td>{{ $user->email }}</td>
                 </tr>
                 <tr>
-                  <td class="text-muted font-weight-bold">Role</td>
-                  <td><span class="badge badge-{{ $user->peran === 'admin' ? 'danger' : 'primary' }}">{{ ucfirst($user->peran) }}</span></td>
+                  <td class="text-muted fw-bold">Role</td>
+                  <td><span class="badge bg-{{ $user->peran === 'admin' ? 'danger' : 'primary' }}">{{ ucfirst($user->peran) }}</span></td>
                 </tr>
                 <tr>
-                  <td class="text-muted font-weight-bold">Tanggal Dibuat</td>
+                  <td class="text-muted fw-bold">Tanggal Dibuat</td>
                   <td>{{ \Carbon\Carbon::parse($user->tanggal_dibuat)->translatedFormat('d F Y') }}</td>
                 </tr>
               </tbody>
@@ -51,9 +51,63 @@
 
         <hr>
 
+        {{-- Collapsible Password Change Form --}}
+        <div class="collapse mb-4 {{ session('password_success') || $errors->hasAny(['current_password', 'new_password']) ? 'show' : '' }}" id="changePasswordForm">
+          <div class="card card-body border">
+            <h5 class="card-title mb-3">Ganti Password</h5>
+
+            @if(session('password_success'))
+              <div class="alert alert-success">
+                <i class="mdi mdi-check-circle-outline me-1"></i> {{ session('password_success') }}
+              </div>
+            @endif
+
+            <form method="POST" action="{{ route('profile.change-password') }}">
+              @csrf
+
+              <div class="mb-3">
+                <label for="current_password" class="form-label">Password Saat Ini</label>
+                <input type="password" id="current_password" name="current_password"
+                       class="form-control @error('current_password') is-invalid @enderror"
+                       autocomplete="current-password">
+                @error('current_password')
+                  <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+              </div>
+
+              <div class="mb-3">
+                <label for="new_password" class="form-label">Password Baru</label>
+                <input type="password" id="new_password" name="new_password"
+                       class="form-control @error('new_password') is-invalid @enderror"
+                       autocomplete="new-password">
+                @error('new_password')
+                  <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+              </div>
+
+              <div class="mb-3">
+                <label for="new_password_confirmation" class="form-label">Konfirmasi Password Baru</label>
+                <input type="password" id="new_password_confirmation" name="new_password_confirmation"
+                       class="form-control @error('new_password') is-invalid @enderror"
+                       autocomplete="new-password">
+              </div>
+
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm">
+                  <i class="mdi mdi-content-save me-1"></i> Simpan Password
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm"
+                        data-bs-toggle="collapse" data-bs-target="#changePasswordForm">
+                  Batal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
         <div class="mt-3">
           <div class="d-flex align-items-center justify-content-between mb-3">
-            <h5 class="card-title mb-0">Agents Dimiliki <span class="badge badge-primary ml-2 ms-2">{{ count($agents) }}</span></h5>
+            <h5 class="card-title mb-0">Agents Dimiliki <span class="badge bg-primary ms-2">{{ count($agents) }}</span></h5>
           </div>
           @if(count($agents) > 0)
           <div class="table-responsive">
@@ -71,7 +125,7 @@
                 @foreach($agents as $agent)
                 <tr>
                   <td>{{ $loop->iteration }}</td>
-                  <td class="font-weight-bold">{{ $agent->id_agent }}</td>
+                  <td class="fw-bold">{{ $agent->id_agent }}</td>
                   <td>{{ $agent->nama }}</td>
                   <td>{{ $agent->deskripsi }}</td>
                   <td>{{ \Carbon\Carbon::parse($agent->tanggal_dibuat)->translatedFormat('d M Y') }}</td>
@@ -81,8 +135,10 @@
             </table>
           </div>
           @else
-          <div class="alert alert-info">
-            <i class="mdi mdi-information-outline mr-2"></i> Anda belum memiliki agent
+          <div class="d-flex flex-column align-items-center justify-content-center text-muted py-5 text-center">
+            <span class="mdi mdi-server-off" style="font-size:3rem; opacity:0.3; margin-bottom:12px;"></span>
+            <span class="fw-semibold mb-1">Belum ada agent</span>
+            <span class="small">Hubungi admin untuk mendapatkan akses agent</span>
           </div>
           @endif
         </div>
@@ -99,11 +155,11 @@
             <div class="input-group">
               <input type="text" name="search" class="form-control" placeholder="Cari aktivitas..." value="{{ $search }}">
               <button class="btn btn-primary" type="submit">
-                <i class="mdi mdi-magnify mr-1"></i> Cari
+                <i class="mdi mdi-magnify me-1"></i> Cari
               </button>
               @if($search)
                 <a href="{{ route('profile') }}" class="btn btn-secondary">
-                  <i class="mdi mdi-close mr-1"></i> Reset
+                  <i class="mdi mdi-close me-1"></i> Reset
                 </a>
               @endif
             </div>
@@ -147,12 +203,15 @@
             {{ $logs->appends(request()->query())->links() }}
           </div>
           @else
-          <div class="alert alert-info">
-            <i class="mdi mdi-information-outline mr-2"></i> 
+          <div class="d-flex flex-column align-items-center justify-content-center text-muted py-5 text-center">
             @if($search)
-              Tidak ada aktivitas yang ditemukan untuk pencarian "{{ $search }}"
+            <span class="mdi mdi-magnify" style="font-size:3rem; opacity:0.3; margin-bottom:12px;"></span>
+            <span class="fw-semibold mb-1">Tidak ada aktivitas</span>
+            <span class="small">Tidak ada aktivitas yang ditemukan untuk pencarian "{{ $search }}"</span>
             @else
-              Belum ada activity log
+            <span class="mdi mdi-history" style="font-size:3rem; opacity:0.3; margin-bottom:12px;"></span>
+            <span class="fw-semibold mb-1">Belum ada aktivitas</span>
+            <span class="small">Log aktivitas akan muncul setelah ada tindakan</span>
             @endif
           </div>
           @endif

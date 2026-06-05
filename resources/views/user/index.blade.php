@@ -18,15 +18,15 @@
           <p class="card-title mb-3">Ringkasan Pengguna</p>
           <div class="d-flex justify-content-around text-center">
             <div>
-              <h3 class="font-weight-bold mb-0">{{ $userStats['total'] }}</h3>
+              <h3 class="fw-bold mb-0">{{ $userStats['total'] }}</h3>
               <small class="text-muted">Total</small>
             </div>
             <div>
-              <h3 class="font-weight-bold mb-0 text-danger">{{ $userStats['admin'] }}</h3>
+              <h3 class="fw-bold mb-0 text-danger">{{ $userStats['admin'] }}</h3>
               <small class="text-muted">Admin</small>
             </div>
             <div>
-              <h3 class="font-weight-bold mb-0 text-primary">{{ $userStats['customer'] }}</h3>
+              <h3 class="fw-bold mb-0 text-primary">{{ $userStats['customer'] }}</h3>
               <small class="text-muted">Customer</small>
             </div>
           </div>
@@ -43,19 +43,17 @@
           <div class="d-flex align-items-center justify-content-between mb-3">
             <h4 class="card-title mb-0">Pengguna</h4>
             <a href="{{ route('user.create') }}" class="btn btn-sm btn-primary">
-              <i class="mdi mdi-plus mr-1"></i> Tambah Pengguna
+              <i class="mdi mdi-plus me-1"></i> Tambah Pengguna
             </a>
           </div>
 
           <form method="GET" action="{{ route('user') }}" id="filterForm" class="mb-3">
             <div class="d-flex align-items-center gap-2 flex-wrap">
               <div class="input-group" style="max-width:350px">
-                <div class="input-group-prepend">
-                  <span class="input-group-text bg-white border-right-0">
-                    <i class="mdi mdi-magnify text-muted"></i>
-                  </span>
-                </div>
-                <input type="text" id="searchInput" name="search" class="form-control border-left-0"
+                <span class="input-group-text bg-white border-end-0">
+                  <i class="mdi mdi-magnify text-muted"></i>
+                </span>
+                <input type="text" id="searchInput" name="search" class="form-control border-start-0"
                   placeholder="Cari username atau email..."
                   value="{{ request('search') }}">
               </div>
@@ -65,7 +63,7 @@
                 <option value="customer" {{ request('role') === 'customer' ? 'selected' : '' }}>Customer</option>
               </select>
               <a href="{{ route('user') }}" class="btn btn-sm btn-outline-secondary">
-                <i class="mdi mdi-refresh mr-1"></i>Reset
+                <i class="mdi mdi-refresh me-1"></i>Reset
               </a>
             </div>
           </form>
@@ -88,18 +86,18 @@
                 @forelse($users as $user)
                 <tr>
                   <td>{{ ($users->currentPage() - 1) * $users->perPage() + $loop->iteration }}</td>
-                  <td class="font-weight-bold">{{ $user->username }}</td>
+                  <td class="fw-bold">{{ $user->username }}</td>
                   <td>{{ $user->email }}</td>
                   <td>
                     @if($user->peran === 'admin')
-                      <span class="badge badge-danger">Admin</span>
+                      <span class="badge bg-danger">Admin</span>
                     @elseif($user->peran === 'customer')
-                      <span class="badge badge-primary">Customer</span>
+                      <span class="badge bg-primary">Customer</span>
                     @else
-                      <span class="badge badge-secondary">{{ ucfirst($user->peran) }}</span>
+                      <span class="badge bg-secondary">{{ ucfirst($user->peran) }}</span>
                     @endif
                   </td>
-                  <td><span class="font-weight-bold">{{ $user->agents()->count() }}</span></td>
+                  <td><span class="fw-bold">{{ $user->agents()->count() }}</span></td>
                   <td>
                     @php
                       $agents     = $user->agents()->limit(2)->get();
@@ -108,18 +106,18 @@
                     @endphp
                     @if($agentCount > 0)
                       @foreach($agents as $agent)
-                        <span class="badge badge-secondary mr-1 me-1">{{ $agent->nama }}</span>
+                        <span class="badge bg-secondary me-1">{{ $agent->nama }}</span>
                       @endforeach
                       @if($moreCount > 0)
-                        <span class="badge badge-secondary">+{{ $moreCount }}</span>
+                        <span class="badge bg-secondary">+{{ $moreCount }}</span>
                       @endif
                     @else
-                      <span class="text-muted font-italic">Tidak ada</span>
+                      <span class="text-muted fst-italic">Tidak ada</span>
                     @endif
                   </td>
                   <td>{{ \Carbon\Carbon::parse($user->tanggal_dibuat)->translatedFormat('d M Y') }}</td>
                   <td class="text-nowrap">
-                    <a href="/user/{{ $user->id_pengguna }}/edit" class="btn btn-sm btn-outline-primary mr-1 me-1">
+                    <a href="/user/{{ $user->id_pengguna }}/edit" class="btn btn-sm btn-outline-primary me-1">
                       <i class="mdi mdi-pencil"></i>
                     </a>
                     <a href="#" class="btn btn-sm btn-outline-danger">
@@ -129,8 +127,10 @@
                 </tr>
                 @empty
                 <tr>
-                  <td colspan="8" class="text-center text-muted py-4">
-                    <i class="mdi mdi-information-outline mr-2"></i>Tidak ada pengguna yang ditemukan
+                  <td colspan="8" class="text-center py-5 text-muted">
+                    <span class="mdi mdi-account-off-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+                    <span class="d-block fw-semibold mb-1">Tidak ada pengguna</span>
+                    <span class="d-block small">Coba ubah filter pencarian</span>
                   </td>
                 </tr>
                 @endforelse
@@ -141,7 +141,7 @@
           @if($users->count() > 0)
           <div class="d-flex align-items-center justify-content-between mt-3">
             <div class="d-flex align-items-center">
-              <span class="text-muted mr-2 me-2">Rows per page:</span>
+              <span class="text-muted me-2">Rows per page:</span>
               <form method="GET" action="{{ route('user') }}" class="d-inline" id="perPageForm">
                 @foreach(request()->query() as $key => $value)
                   @if($key !== 'per_page' && $key !== 'page')
@@ -324,7 +324,7 @@
       body: JSON.stringify({ layout, page: 'user' })
     })
     .then(r => r.json())
-    .then(d => { if (d.success) exitEdit(); });
+    .then(d => { if (d.success) { exitEdit(); gsShowSavedToast(); } });
   });
 
   document.getElementById('gs-reset').addEventListener('click', () => {

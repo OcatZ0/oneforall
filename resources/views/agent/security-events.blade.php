@@ -276,8 +276,10 @@
                 </tr>
                 @empty
                 <tr>
-                  <td colspan="6" class="text-center text-muted py-3">
-                    <i class="mdi mdi-information-outline me-1"></i>No alerts found in the selected time range
+                  <td colspan="6" class="text-center py-5 text-muted">
+                    <span class="mdi mdi-shield-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+                    <span class="d-block fw-semibold mb-1">Tidak ada alert</span>
+                    <span class="d-block small">Tidak ada event keamanan dalam periode ini</span>
                   </td>
                 </tr>
                 @endforelse
@@ -356,7 +358,11 @@
                 </tr>
                 @empty
                 <tr>
-                  <td colspan="2" class="text-center text-muted py-3 small">No group data available</td>
+                  <td colspan="2" class="text-center py-5 text-muted">
+                    <span class="mdi mdi-shield-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+                    <span class="d-block fw-semibold mb-1">Tidak ada alert</span>
+                    <span class="d-block small">Tidak ada event keamanan dalam periode ini</span>
+                  </td>
                 </tr>
                 @endforelse
               </tbody>
@@ -472,10 +478,50 @@ function updateTimeRange(timeRange, event) {
   refreshData();
 }
 
-function refreshData() {
+const seChartDataEndpoint = '{{ route("agent.se.chart-data", $agent->id_agent ?? "") }}';
+
+async function refreshData() {
+  // Update URL so page refresh re-loads with the selected time range
   const url = new URL(window.location.href);
   url.searchParams.set('time_range', currentTimeRange);
-  window.location.href = url.toString();
+  history.replaceState({}, '', url.toString());
+
+  // Dim metrics card while loading
+  const metricsCard = document.querySelector('[gs-id="se-metrics"] .card');
+  if (metricsCard) metricsCard.style.opacity = '0.5';
+
+  try {
+    const res = await fetch(`${seChartDataEndpoint}?time_range=${encodeURIComponent(currentTimeRange)}`, {
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+
+    // Update metrics
+    const m = json.metrics || {};
+    document.getElementById('metricTotal').textContent       = m.total       ?? 0;
+    document.getElementById('metricLevel12').textContent     = m.level12     ?? 0;
+    document.getElementById('metricAuthFailure').textContent = m.auth_failure ?? 0;
+    document.getElementById('metricAuthSuccess').textContent = m.auth_success ?? 0;
+
+    // Update chart data and re-render
+    securityData.alertGroupsEvolution   = json.alertGroupsEvolution   ?? { labels: [], datasets: [] };
+    securityData.alertsEvolutionByLevel = json.alertsEvolutionByLevel ?? { labels: [], datasets: [] };
+    securityData.topAlerts              = json.topAlerts     ?? { labels: [], data: [] };
+    securityData.topRuleGroups          = json.topRuleGroups ?? { labels: [], data: [] };
+    securityData.topPCIDSS              = json.topPCIDSS     ?? { labels: [], data: [] };
+
+    initializeCharts();
+
+    // Refresh tables
+    loadAlerts(1, 10);
+    loadGroups(1, 10);
+  } catch (e) {
+    console.error('refreshData failed', e);
+  } finally {
+    if (metricsCard) metricsCard.style.opacity = '';
+  }
 }
 
 function convertLabelsToLocalTime(labels) {
@@ -489,7 +535,11 @@ function convertLabelsToLocalTime(labels) {
 
 function showNoData(containerId, height = '200px') {
   const el = document.getElementById(containerId);
-  if (el) el.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:${height};background:#f8f9fa;border-radius:4px;color:#6c757d;font-size:14px;font-weight:500;">No data available</div>`;
+  if (el) el.innerHTML = `<div class="d-flex flex-column align-items-center justify-content-center text-muted text-center" style="height:${height};">
+    <span class="mdi mdi-shield-check-outline" style="font-size:2.5rem; opacity:0.3; margin-bottom:8px;"></span>
+    <span class="fw-semibold mb-1">Tidak ada alert</span>
+    <span class="small">Tidak ada event keamanan dalam periode ini</span>
+  </div>`;
 }
 
 function initializeCharts() {
@@ -643,7 +693,11 @@ async function loadAlerts(page, perPage) {
         <td class="text-center fw-bold">${r.count||1}</td>
         <td><span class="badge bg-secondary">${escHtml(r.groups)}</span></td>
       </tr>`;
-    }).join('') : '<tr><td colspan="6" class="text-center text-muted py-3">No alerts found in the selected time range</td></tr>';
+    }).join('') : `<tr><td colspan="6" class="text-center py-5 text-muted">
+      <span class="mdi mdi-shield-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+      <span class="d-block fw-semibold mb-1">Tidak ada alert</span>
+      <span class="d-block small">Tidak ada event keamanan dalam periode ini</span>
+    </td></tr>`;
     renderPagination('alerts-footer', json.total, json.page, json.perPage, 'loadAlerts');
   } catch(e) { console.error('loadAlerts failed', e); }
 }
@@ -657,7 +711,11 @@ async function loadGroups(page, perPage) {
     const tbody = document.getElementById('groups-tbody');
     tbody.innerHTML = json.data.length ? json.data.map(r =>
       `<tr><td><span class="badge bg-secondary">${escHtml(r.group)}</span></td><td class="fw-bold">${r.count.toLocaleString()}</td></tr>`
-    ).join('') : '<tr><td colspan="2" class="text-center text-muted py-3 small">No group data available</td></tr>';
+    ).join('') : `<tr><td colspan="2" class="text-center py-5 text-muted">
+      <span class="mdi mdi-shield-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+      <span class="d-block fw-semibold mb-1">Tidak ada alert</span>
+      <span class="d-block small">Tidak ada event keamanan dalam periode ini</span>
+    </td></tr>`;
     renderPagination('groups-footer', json.total, json.page, json.perPage, 'loadGroups');
   } catch(e) { console.error('loadGroups failed', e); }
 }
@@ -820,7 +878,7 @@ document.addEventListener('DOMContentLoaded', initializeCharts);
       body: JSON.stringify({ layout, page: 'security-events' })
     })
     .then(r => r.json())
-    .then(d => { if (d.success) exitEdit(); });
+    .then(d => { if (d.success) { exitEdit(); gsShowSavedToast(); } });
   });
 
   document.getElementById('gs-reset').addEventListener('click', () => {

@@ -17,20 +17,20 @@
         <div class="card-body">
           <p class="card-title text-center">STATUS</p>
           <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
-            <span><span class="badge badge-success mr-2 me-2">&nbsp;&nbsp;&nbsp;</span> Active</span>
-            <span class="font-weight-bold">{{ $stats['active'] }}</span>
+            <span><span class="badge bg-success me-2">&nbsp;&nbsp;&nbsp;</span> Active</span>
+            <span class="fw-bold">{{ $stats['active'] }}</span>
           </div>
           <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
-            <span><span class="badge badge-danger mr-2 me-2">&nbsp;&nbsp;&nbsp;</span> Disconnected</span>
-            <span class="font-weight-bold">{{ $stats['disconnected'] }}</span>
+            <span><span class="badge bg-danger me-2">&nbsp;&nbsp;&nbsp;</span> Disconnected</span>
+            <span class="fw-bold">{{ $stats['disconnected'] }}</span>
           </div>
           <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
-            <span><span class="badge badge-warning mr-2 me-2">&nbsp;&nbsp;&nbsp;</span> Pending</span>
-            <span class="font-weight-bold">{{ $stats['pending'] }}</span>
+            <span><span class="badge bg-warning text-dark me-2">&nbsp;&nbsp;&nbsp;</span> Pending</span>
+            <span class="fw-bold">{{ $stats['pending'] }}</span>
           </div>
           <div class="d-flex justify-content-between align-items-center">
-            <span><span class="badge badge-secondary mr-2 me-2">&nbsp;&nbsp;&nbsp;</span> Never Connected</span>
-            <span class="font-weight-bold">{{ $stats['never_connected'] }}</span>
+            <span><span class="badge bg-secondary me-2">&nbsp;&nbsp;&nbsp;</span> Never Connected</span>
+            <span class="fw-bold">{{ $stats['never_connected'] }}</span>
           </div>
         </div>
       </div>
@@ -46,23 +46,23 @@
           <div class="row text-center mb-3">
             <div class="col-6">
               <p class="text-muted mb-1">Active</p>
-              <h4 class="text-success font-weight-bold">{{ $stats['active'] }}</h4>
+              <h4 class="text-success fw-bold">{{ $stats['active'] }}</h4>
             </div>
             <div class="col-6">
               <p class="text-muted mb-1">Disconnected</p>
-              <h4 class="text-danger font-weight-bold">{{ $stats['disconnected'] }}</h4>
+              <h4 class="text-danger fw-bold">{{ $stats['disconnected'] }}</h4>
             </div>
             <div class="col-6">
               <p class="text-muted mb-1">Pending</p>
-              <h4 class="text-warning font-weight-bold">{{ $stats['pending'] }}</h4>
+              <h4 class="text-warning fw-bold">{{ $stats['pending'] }}</h4>
             </div>
             <div class="col-6">
               <p class="text-muted mb-1">Never Connected</p>
-              <h4 class="text-secondary font-weight-bold">{{ $stats['never_connected'] }}</h4>
+              <h4 class="text-secondary fw-bold">{{ $stats['never_connected'] }}</h4>
             </div>
             <div class="col-12">
               <p class="text-muted mb-1">Coverage</p>
-              <h4 class="text-success font-weight-bold">{{ $stats['total'] > 0 ? round(($stats['active'] / $stats['total']) * 100) : 0 }}%</h4>
+              <h4 class="text-success fw-bold">{{ $stats['total'] > 0 ? round(($stats['active'] / $stats['total']) * 100) : 0 }}%</h4>
             </div>
           </div>
         </div>
@@ -98,8 +98,10 @@
               </div>
             </div>
           </div>
-          <p class="mb-2"><span class="text-success mr-1">●</span> <small>active</small></p>
-          <canvas id="evolution-chart" height="100"></canvas>
+          <p class="mb-2"><span class="text-success me-1">●</span> <small>active</small></p>
+          <div id="evolution-chart-container" style="position:relative;">
+            <canvas id="evolution-chart" height="100"></canvas>
+          </div>
           <p class="text-center mb-0 mt-1"><small class="text-muted" id="chartIntervalText">timestamp per 10 minutes</small></p>
         </div>
       </div>
@@ -115,11 +117,11 @@
             <h4 class="card-title mb-0">Agents</h4>
             <div class="d-flex gap-2 flex-wrap justify-content-end">
               <button class="btn btn-sm btn-primary" onclick="location.reload()">
-                <i class="mdi mdi-refresh mr-1"></i> Refresh
+                <i class="mdi mdi-refresh me-1"></i> Refresh
               </button>
               @if(auth()->user()->peran === 'admin')
               <button class="btn btn-sm btn-success" id="syncBtn" onclick="syncAgentsFromWazuh()">
-                <i class="mdi mdi-refresh mr-1"></i><span id="syncBtnText">Update Data Agent</span>
+                <i class="mdi mdi-refresh me-1"></i><span id="syncBtnText">Update Data Agent</span>
               </button>
               @endif
             </div>
@@ -128,12 +130,10 @@
           <form method="GET" action="{{ route('agent') }}" id="filterForm" class="mb-3">
             <div class="d-flex align-items-center gap-2 flex-wrap">
               <div class="input-group" style="max-width:400px">
-                <div class="input-group-prepend">
-                  <span class="input-group-text bg-white border-right-0">
-                    <i class="mdi mdi-magnify text-muted"></i>
-                  </span>
-                </div>
-                <input type="text" id="searchInput" name="search" class="form-control border-left-0"
+                <span class="input-group-text bg-white border-end-0">
+                  <i class="mdi mdi-magnify text-muted"></i>
+                </span>
+                <input type="text" id="searchInput" name="search" class="form-control border-start-0"
                   placeholder="Cari agent ID atau nama..."
                   value="{{ request('search') }}">
               </div>
@@ -145,7 +145,7 @@
                 <option value="never_connected" {{ request('status') === 'never_connected' ? 'selected' : '' }}>Never Connected</option>
               </select>
               <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-secondary">
-                <i class="mdi mdi-refresh mr-1"></i>Reset
+                <i class="mdi mdi-refresh me-1"></i>Reset
               </a>
             </div>
           </form>
@@ -165,36 +165,38 @@
                   <th>Status</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="agent-tbody">
                 @forelse($agents as $agent)
                 <tr onclick="window.location='{{ route('agent.detail', $agent->id_agent) }}'" style="cursor: pointer;">
                   <td>{{ ($agents->currentPage() - 1) * $agents->perPage() + $loop->iteration }}</td>
-                  <td class="font-weight-bold">{{ $agent->id_agent }}</td>
+                  <td class="fw-bold">{{ $agent->id_agent }}</td>
                   <td>{{ $agent->nama }}</td>
                   <td>{{ $agent->ip }}</td>
                   <td>
-                    <i class="mdi {{ \App\Http\Controllers\AgentController::getOSIcon($agent->os) }} mr-1"></i>
+                    <i class="mdi {{ \App\Http\Controllers\AgentController::getOSIcon($agent->os) }} me-1"></i>
                     <small>{{ $agent->os }}</small>
                   </td>
                   <td><small class="text-muted">{{ $agent->version }}</small></td>
                   <td>
                     @if($agent->user)
-                      <span class="badge badge-primary">{{ $agent->user->username }}</span>
+                      <span class="badge bg-primary">{{ $agent->user->username }}</span>
                     @else
-                      <span class="text-muted font-italic">Unassigned</span>
+                      <span class="text-muted fst-italic">Unassigned</span>
                     @endif
                   </td>
                   <td><small class="text-muted">{{ $agent->cluster_node }}</small></td>
                   <td>
-                    <span class="badge badge-{{ \App\Http\Controllers\AgentController::getStatusBadgeColor($agent->status) }}">
+                    <span class="badge bg-{{ \App\Http\Controllers\AgentController::getStatusBadgeColor($agent->status) }}">
                       {{ \App\Http\Controllers\AgentController::formatStatus($agent->status) }}
                     </span>
                   </td>
                 </tr>
                 @empty
                 <tr>
-                  <td colspan="9" class="text-center text-muted py-4">
-                    <i class="mdi mdi-information-outline mr-2"></i>Tidak ada agent yang ditemukan
+                  <td colspan="9" class="text-center py-5 text-muted">
+                    <span class="mdi mdi-server-network-off d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+                    <span class="d-block fw-semibold mb-1">Tidak ada agent</span>
+                    <span class="d-block small">Coba ubah filter pencarian atau tambahkan agent baru</span>
                   </td>
                 </tr>
                 @endforelse
@@ -202,31 +204,35 @@
             </table>
           </div>
 
+          <div id="agent-pagination-footer">
           @if($agents->count() > 0)
           <div class="d-flex align-items-center justify-content-between mt-3">
             <div class="d-flex align-items-center">
-              <span class="text-muted mr-2 me-2">Rows per page:</span>
-              <form method="GET" action="{{ route('agent') }}" class="d-inline" id="perPageForm">
-                @foreach(request()->query() as $key => $value)
-                  @if($key !== 'per_page' && $key !== 'page')
-                    <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                  @endif
+              <span class="text-muted me-2">Rows per page:</span>
+              <div class="d-flex gap-1">
+                @foreach([10, 25, 50] as $pp)
+                <button onclick="loadAgents(1, {{ $pp }})"
+                  class="btn btn-sm py-0 px-2 {{ (int) request('per_page', 10) === $pp ? 'btn-primary' : 'btn-outline-secondary' }}">
+                  {{ $pp }}
+                </button>
                 @endforeach
-                <input type="hidden" name="page" value="1">
-                <select name="per_page" class="form-control form-select" style="width:90px" onchange="document.getElementById('perPageForm').submit()">
-                  <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
-                  <option value="25" {{ request('per_page', 10) == 25 ? 'selected' : '' }}>25</option>
-                  <option value="50" {{ request('per_page', 10) == 50 ? 'selected' : '' }}>50</option>
-                </select>
-              </form>
+              </div>
             </div>
-            <div>{{ $agents->appends(request()->query())->links('pagination::bootstrap-4') }}</div>
+            <div class="d-flex align-items-center gap-1">
+              <button {{ $agents->currentPage() <= 1 ? 'disabled' : '' }} onclick="loadAgents(1, {{ $agents->perPage() }})" class="btn btn-sm py-0 px-2 btn-outline-secondary{{ $agents->currentPage() <= 1 ? ' disabled' : '' }}">«</button>
+              <button {{ $agents->currentPage() <= 1 ? 'disabled' : '' }} onclick="loadAgents({{ max(1, $agents->currentPage() - 1) }}, {{ $agents->perPage() }})" class="btn btn-sm py-0 px-2 btn-outline-secondary{{ $agents->currentPage() <= 1 ? ' disabled' : '' }}">‹</button>
+              @for($p = max(1, $agents->currentPage() - 2); $p <= min($agents->lastPage(), $agents->currentPage() + 2); $p++)
+              <button onclick="loadAgents({{ $p }}, {{ $agents->perPage() }})" class="btn btn-sm py-0 px-2 {{ $p === $agents->currentPage() ? 'btn-primary' : 'btn-outline-secondary' }}">{{ $p }}</button>
+              @endfor
+              <button {{ $agents->currentPage() >= $agents->lastPage() ? 'disabled' : '' }} onclick="loadAgents({{ min($agents->lastPage(), $agents->currentPage() + 1) }}, {{ $agents->perPage() }})" class="btn btn-sm py-0 px-2 btn-outline-secondary{{ $agents->currentPage() >= $agents->lastPage() ? ' disabled' : '' }}">›</button>
+              <button {{ $agents->currentPage() >= $agents->lastPage() ? 'disabled' : '' }} onclick="loadAgents({{ $agents->lastPage() }}, {{ $agents->perPage() }})" class="btn btn-sm py-0 px-2 btn-outline-secondary{{ $agents->currentPage() >= $agents->lastPage() ? ' disabled' : '' }}">»</button>
+            </div>
           </div>
-          <div class="text-muted text-sm mt-2">
-            Menampilkan {{ ($agents->currentPage() - 1) * $agents->perPage() + 1 }} hingga
-            {{ min($agents->currentPage() * $agents->perPage(), $agents->total()) }} dari {{ $agents->total() }} agent
+          <div class="text-muted small mt-2" id="agent-count-text">
+            Menampilkan {{ ($agents->currentPage() - 1) * $agents->perPage() + 1 }}–{{ min($agents->currentPage() * $agents->perPage(), $agents->total()) }} dari {{ $agents->total() }} agent
           </div>
           @endif
+          </div>
 
         </div>
       </div>
@@ -318,6 +324,23 @@ const intervalTexts = {
 };
 
 function initChart(labels, dataPoints) {
+  const container = document.getElementById('evolution-chart-container');
+  if (!container) return;
+
+  if (labels.length === 0 || dataPoints.length === 0) {
+    if (evolutionChartInstance) { evolutionChartInstance.destroy(); evolutionChartInstance = null; }
+    container.innerHTML = `<div class="d-flex flex-column align-items-center justify-content-center text-muted py-4 text-center" style="min-height:100px;">
+      <span class="mdi mdi-chart-line-variant" style="font-size:2.5rem; opacity:0.3; margin-bottom:8px;"></span>
+      <span class="fw-semibold mb-1">Tidak ada data</span>
+      <span class="small">Tidak ada data evolution dalam periode ini</span>
+    </div>`;
+    return;
+  }
+
+  if (!document.getElementById('evolution-chart')) {
+    container.innerHTML = '<canvas id="evolution-chart" height="100"></canvas>';
+  }
+
   const evolutionChart = document.getElementById('evolution-chart');
   if (evolutionChart && typeof Chart !== 'undefined') {
     if (evolutionChartInstance) evolutionChartInstance.destroy();
@@ -381,8 +404,8 @@ function updateChart(timeRange, event) {
   document.getElementById('timeRangeLabel').textContent = timeRangeLabels[timeRange] || 'Select time range';
   document.getElementById('chartIntervalText').textContent = intervalTexts[timeRange] || 'loading...';
 
-  const evolutionChart = document.getElementById('evolution-chart');
-  if (evolutionChart) evolutionChart.style.opacity = '0.5';
+  const container = document.getElementById('evolution-chart-container');
+  if (container) container.style.opacity = '0.5';
 
   fetch('{{ route("agent.chart-data") }}?time_range=' + timeRange)
     .then(r => r.json())
@@ -390,26 +413,15 @@ function updateChart(timeRange, event) {
       if (data.success) {
         const dataPoints = Array.isArray(data.data) ? data.data : (data.data.active ?? []);
         const labels = data.labels ?? [];
-        if (labels.length > 0 && dataPoints.length > 0) {
-          initChart(labels, dataPoints);
-        } else {
-          const chartContainer = evolutionChart?.parentNode;
-          if (chartContainer && evolutionChart) {
-            const noDataDiv = document.createElement('div');
-            noDataDiv.id = 'evolution-chart';
-            noDataDiv.style.cssText = 'display:flex;align-items:center;justify-content:center;height:100px;background-color:#f8f9fa;border-radius:4px;color:#6c757d;font-size:14px;font-weight:500;';
-            noDataDiv.textContent = 'No data available';
-            chartContainer.replaceChild(noDataDiv, evolutionChart);
-          }
-        }
+        initChart(labels, dataPoints);
         document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
         if (event?.target) event.target.classList.add('active');
       }
-      if (evolutionChart) evolutionChart.style.opacity = '1';
+      if (container) container.style.opacity = '1';
     })
     .catch(error => {
       console.error('Error fetching chart data:', error);
-      if (evolutionChart) evolutionChart.style.opacity = '1';
+      if (container) container.style.opacity = '1';
     });
 }
 
@@ -520,18 +532,7 @@ function syncAgentsFromWazuh() {
 document.addEventListener('DOMContentLoaded', function () {
   const labels     = {!! $evolutionLabels ?? '[]' !!};
   const dataPoints = {!! $evolutionData ?? '[]' !!};
-
-  if (labels.length > 0 && dataPoints.length > 0) {
-    initChart(labels, dataPoints);
-  } else {
-    const evolutionChart = document.getElementById('evolution-chart');
-    if (evolutionChart) {
-      const noDataDiv = document.createElement('div');
-      noDataDiv.style.cssText = `display:flex;align-items:center;justify-content:center;height:${evolutionChart.height}px;background-color:#f8f9fa;border-radius:4px;color:#6c757d;font-size:14px;font-weight:500;`;
-      noDataDiv.textContent = 'No data available';
-      evolutionChart.parentNode.replaceChild(noDataDiv, evolutionChart);
-    }
-  }
+  initChart(labels, dataPoints);
 });
 
 // ── GridStack ─────────────────────────────────────────────────────────────────
@@ -667,7 +668,7 @@ document.addEventListener('DOMContentLoaded', function () {
       body: JSON.stringify({ layout, page: 'agent' })
     })
     .then(r => r.json())
-    .then(d => { if (d.success) exitEdit(); });
+    .then(d => { if (d.success) { exitEdit(); gsShowSavedToast(); } });
   });
 
   document.getElementById('gs-reset').addEventListener('click', () => {
@@ -685,32 +686,144 @@ document.addEventListener('DOMContentLoaded', function () {
     location.reload();
   });
 
-  // ── Search & filter debounce ─────────────────────────────────────────────
+})();
+
+// ── AJAX search & filter ──────────────────────────────────────────────────────
+const searchEndpoint = '{{ route("agent.search") }}';
+let searchPage    = {{ (int) request('page', 1) }};
+let searchPerPage = {{ (int) request('per_page', 10) }};
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s != null ? String(s) : '';
+  return d.innerHTML;
+}
+
+function getOsIcon(os) {
+  if (!os) return 'mdi-help-circle-outline';
+  const l = os.toLowerCase();
+  if (l.includes('windows')) return 'mdi-microsoft-windows';
+  if (l.includes('ubuntu') || l.includes('debian') || l.includes('linux') || l.includes('centos') || l.includes('rhel') || l.includes('fedora')) return 'mdi-linux';
+  if (l.includes('mac') || l.includes('darwin')) return 'mdi-apple';
+  return 'mdi-help-circle-outline';
+}
+
+function getStatusColor(status) {
+  return { active: 'success', disconnected: 'danger', pending: 'warning', never_connected: 'secondary' }[status] || 'secondary';
+}
+
+function getStatusLabel(status) {
+  return { active: 'Active', disconnected: 'Disconnected', pending: 'Pending', never_connected: 'Never Connected' }[status] || status;
+}
+
+function renderPaginationFooter(data) {
+  const totalPages = data.totalPages || 1;
+  const page = data.page;
+  const perPage = data.perPage;
+  const btn = (p, pp, label, disabled, active) =>
+    `<button ${disabled ? 'disabled' : `onclick="loadAgents(${p},${pp})"`} class="btn btn-sm py-0 px-2 ${active ? 'btn-primary' : 'btn-outline-secondary'}${disabled ? ' disabled' : ''}">${label}</button>`;
+  const ppBtns = [10, 25, 50].map(pp => btn(1, pp, pp, false, perPage === pp)).join('');
+  const winBtns = [];
+  for (let p = Math.max(1, page - 2); p <= Math.min(totalPages, page + 2); p++) winBtns.push(btn(p, perPage, p, false, p === page));
+
+  return `<div class="d-flex align-items-center justify-content-between mt-3">
+    <div class="d-flex align-items-center">
+      <span class="text-muted me-2">Rows per page:</span>
+      <div class="d-flex gap-1">${ppBtns}</div>
+    </div>
+    <div class="d-flex align-items-center gap-1">
+      ${btn(1, perPage, '«', page <= 1, false)}
+      ${btn(Math.max(1, page - 1), perPage, '‹', page <= 1, false)}
+      ${winBtns.join('')}
+      ${btn(Math.min(totalPages, page + 1), perPage, '›', page >= totalPages, false)}
+      ${btn(totalPages, perPage, '»', page >= totalPages, false)}
+    </div>
+  </div>
+  <div class="text-muted small mt-2" id="agent-count-text">Menampilkan ${data.from}–${data.to} dari ${data.total} agent</div>`;
+}
+
+async function loadAgents(page, perPage) {
+  searchPage    = page    || searchPage;
+  searchPerPage = perPage || searchPerPage;
+
+  const search = document.getElementById('searchInput')?.value || '';
+  const status = document.getElementById('statusFilter')?.value || '';
+  const params = new URLSearchParams({ page: searchPage, per_page: searchPerPage });
+  if (search) params.set('search', search);
+  if (status) params.set('status', status);
+
+  // Update URL without reload
+  const url = new URL(window.location.href);
+  url.searchParams.set('page', searchPage);
+  url.searchParams.set('per_page', searchPerPage);
+  if (search) url.searchParams.set('search', search); else url.searchParams.delete('search');
+  if (status) url.searchParams.set('status', status); else url.searchParams.delete('status');
+  window.history.replaceState({}, '', url);
+
+  const tbody = document.getElementById('agent-tbody');
+  const footer = document.getElementById('agent-pagination-footer');
+  if (tbody) tbody.style.opacity = '0.5';
+
+  try {
+    const res  = await fetch(`${searchEndpoint}?${params}`, { headers: { 'Accept': 'application/json' } });
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error);
+
+    if (tbody) {
+      if (data.agents.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-muted">
+          <span class="mdi mdi-server-network-off d-block" style="font-size:2.5rem;opacity:.35;margin-bottom:8px;"></span>
+          <span class="d-block fw-semibold mb-1">Tidak ada agent</span>
+          <span class="d-block small">Coba ubah filter pencarian atau tambahkan agent baru</span>
+        </td></tr>`;
+      } else {
+        tbody.innerHTML = data.agents.map((a, i) => {
+          const rowNum = (searchPage - 1) * searchPerPage + i + 1;
+          const osIcon = getOsIcon(a.os);
+          const statusColor = getStatusColor(a.status);
+          const statusLabel = getStatusLabel(a.status);
+          const userBadge = a.user
+            ? `<span class="badge bg-primary">${escHtml(a.user.username)}</span>`
+            : `<span class="text-muted fst-italic">Unassigned</span>`;
+          return `<tr onclick="window.location='/agent/${escHtml(a.id_agent)}/detail'" style="cursor:pointer;">
+            <td>${rowNum}</td>
+            <td class="fw-bold">${escHtml(a.id_agent)}</td>
+            <td>${escHtml(a.nama)}</td>
+            <td>${escHtml(a.ip)}</td>
+            <td><i class="mdi ${osIcon} me-1"></i><small>${escHtml(a.os)}</small></td>
+            <td><small class="text-muted">${escHtml(a.version)}</small></td>
+            <td>${userBadge}</td>
+            <td><small class="text-muted">${escHtml(a.cluster_node)}</small></td>
+            <td><span class="badge bg-${statusColor}">${statusLabel}</span></td>
+          </tr>`;
+        }).join('');
+      }
+      tbody.style.opacity = '1';
+    }
+
+    if (footer) footer.innerHTML = renderPaginationFooter(data);
+
+  } catch (e) {
+    console.error('loadAgents error', e);
+    if (tbody) tbody.style.opacity = '1';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const searchInput  = document.getElementById('searchInput');
+  const statusFilter = document.getElementById('statusFilter');
+
   function debounce(fn, ms) {
     let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
   }
 
-  const searchInput = document.getElementById('searchInput');
   if (searchInput) {
-    searchInput.addEventListener('input', debounce(() => {
-      const form = document.getElementById('filterForm');
-      const p = document.createElement('input');
-      p.type = 'hidden'; p.name = 'page'; p.value = '1';
-      form.appendChild(p);
-      form.submit();
-    }, 500));
+    searchInput.addEventListener('input', debounce(() => loadAgents(1, searchPerPage), 400));
   }
-
-  const statusFilter = document.getElementById('statusFilter');
   if (statusFilter) {
-    statusFilter.addEventListener('change', () => {
-      const form = document.getElementById('filterForm');
-      const p = document.createElement('input');
-      p.type = 'hidden'; p.name = 'page'; p.value = '1';
-      form.appendChild(p);
-      form.submit();
-    });
+    statusFilter.addEventListener('change', () => loadAgents(1, searchPerPage));
   }
-})();
+});
 </script>
 @endpush

@@ -20,7 +20,7 @@
             <p class="card-title mb-0">Active Agents</p>
             <i class="mdi mdi-server-network text-success icon-lg"></i>
           </div>
-          <h2 class="font-weight-bold mb-1">{{ $agentStats['active'] }}</h2>
+          <h2 class="fw-bold mb-1">{{ $agentStats['active'] }}</h2>
           <p class="text-muted mb-0">Terhubung &amp; berjalan normal</p>
         </div>
       </div>
@@ -36,7 +36,7 @@
             <p class="card-title mb-0">Disconnected</p>
             <i class="mdi mdi-server-off text-danger icon-lg"></i>
           </div>
-          <h2 class="font-weight-bold mb-1">{{ $agentStats['disconnected'] }}</h2>
+          <h2 class="fw-bold mb-1">{{ $agentStats['disconnected'] }}</h2>
           <p class="text-muted mb-0">Pernah terhubung, kini terputus</p>
         </div>
       </div>
@@ -52,7 +52,7 @@
             <p class="card-title mb-0">Pending</p>
             <i class="mdi mdi-server text-warning icon-lg"></i>
           </div>
-          <h2 class="font-weight-bold mb-1">{{ $agentStats['pending'] }}</h2>
+          <h2 class="fw-bold mb-1">{{ $agentStats['pending'] }}</h2>
           <p class="text-muted mb-0">Menunggu registrasi selesai</p>
         </div>
       </div>
@@ -68,7 +68,7 @@
             <p class="card-title mb-0">Never Connected</p>
             <i class="mdi mdi-server-minus text-secondary icon-lg"></i>
           </div>
-          <h2 class="font-weight-bold mb-1">{{ $agentStats['never_connected'] }}</h2>
+          <h2 class="fw-bold mb-1">{{ $agentStats['never_connected'] }}</h2>
           <p class="text-muted mb-0">Belum pernah terhubung sama sekali</p>
         </div>
       </div>
@@ -84,7 +84,7 @@
             <p class="card-title mb-0">Total Agents</p>
             <i class="mdi mdi-server-network text-primary icon-lg"></i>
           </div>
-          <h2 class="font-weight-bold mb-1">{{ $agentStats['total'] }}</h2>
+          <h2 class="fw-bold mb-1">{{ $agentStats['total'] }}</h2>
           <p class="text-muted mb-0">
             @if($agentStats['change'] >= 0)
               <span class="text-success me-1"><i class="mdi mdi-arrow-up"></i>{{ $agentStats['change'] }}</span>
@@ -108,7 +108,7 @@
             <p class="card-title mb-0">Total Customers</p>
             <i class="mdi mdi-account-group text-info icon-lg"></i>
           </div>
-          <h2 class="font-weight-bold mb-1">{{ $customerStats['total'] }}</h2>
+          <h2 class="fw-bold mb-1">{{ $customerStats['total'] }}</h2>
           <p class="text-muted mb-0">
             @if($customerStats['change'] >= 0)
               <span class="text-success me-1"><i class="mdi mdi-arrow-up"></i>{{ $customerStats['change'] }}</span>
@@ -139,13 +139,13 @@
         <div class="card-body">
           <p class="card-title mb-1">Komposisi Status Agent</p>
           <p class="text-muted mb-3">Dari total {{ $agentStats['total'] }} agent terdaftar</p>
-          <div class="d-flex justify-content-between mb-1"><span class="text-success">Active</span><span class="font-weight-bold">{{ $agentStats['active'] }} ({{ $activePct }}%)</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-success">Active</span><span class="fw-bold">{{ $agentStats['active'] }} ({{ $activePct }}%)</span></div>
           <div class="progress mb-2" style="height:8px"><div class="progress-bar bg-success" style="width:{{ $activePct }}%"></div></div>
-          <div class="d-flex justify-content-between mb-1"><span class="text-danger">Disconnected</span><span class="font-weight-bold">{{ $agentStats['disconnected'] }} ({{ $disconnectedPct }}%)</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-danger">Disconnected</span><span class="fw-bold">{{ $agentStats['disconnected'] }} ({{ $disconnectedPct }}%)</span></div>
           <div class="progress mb-2" style="height:8px"><div class="progress-bar bg-danger" style="width:{{ $disconnectedPct }}%"></div></div>
-          <div class="d-flex justify-content-between mb-1"><span class="text-warning">Pending</span><span class="font-weight-bold">{{ $agentStats['pending'] }} ({{ $pendingPct }}%)</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-warning">Pending</span><span class="fw-bold">{{ $agentStats['pending'] }} ({{ $pendingPct }}%)</span></div>
           <div class="progress mb-2" style="height:8px"><div class="progress-bar bg-warning" style="width:{{ $pendingPct }}%"></div></div>
-          <div class="d-flex justify-content-between mb-1"><span class="text-secondary">Never Connected</span><span class="font-weight-bold">{{ $agentStats['never_connected'] }} ({{ $neverConnectedPct }}%)</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-secondary">Never Connected</span><span class="fw-bold">{{ $agentStats['never_connected'] }} ({{ $neverConnectedPct }}%)</span></div>
           <div class="progress" style="height:8px"><div class="progress-bar bg-secondary" style="width:{{ $neverConnectedPct }}%"></div></div>
         </div>
       </div>
@@ -159,7 +159,7 @@
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between mb-1">
             <p class="card-title mb-0">Alert Trend (7 Hari)</p>
-            <span class="badge badge-success badge-pill">Live</span>
+            <span class="badge bg-success badge-pill">Live</span>
           </div>
           <p class="text-muted mb-3">Pergerakan alert harian seluruh agent</p>
           <canvas id="alert-trend-chart"></canvas>
@@ -184,10 +184,10 @@
           <p class="text-muted mb-1">Level 1–5 = Low, 6–8 = Medium, 9–11 = High, 12–15 = Critical.</p>
           <canvas id="severity-chart"></canvas>
           <div class="d-flex justify-content-around mt-3">
-            <span class="badge badge-danger">Critical</span>
-            <span class="badge badge-warning">High</span>
-            <span class="badge badge-info">Medium</span>
-            <span class="badge badge-success">Low</span>
+            <span class="badge bg-danger">Critical</span>
+            <span class="badge bg-warning text-dark">High</span>
+            <span class="badge bg-info text-dark">Medium</span>
+            <span class="badge bg-success">Low</span>
           </div>
         </div>
       </div>
@@ -200,15 +200,15 @@
       <div class="card gs-card">
         <div class="card-body">
           <p class="card-title">Total Security Alerts</p>
-          <h2 class="font-weight-bold mb-1">{{ number_format($totalAlerts) }}</h2>
+          <h2 class="fw-bold mb-1">{{ number_format($totalAlerts) }}</h2>
           <p class="text-muted mb-3">Dari seluruh agent</p>
-          <div class="d-flex justify-content-between mb-1"><span class="text-danger">Critical</span><span class="font-weight-bold">{{ number_format($alertSeverity['critical']) }}</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-danger">Critical</span><span class="fw-bold">{{ number_format($alertSeverity['critical']) }}</span></div>
           <div class="progress mb-3" style="height:6px"><div class="progress-bar bg-danger" style="width:{{ $critical_pct }}%"></div></div>
-          <div class="d-flex justify-content-between mb-1"><span class="text-warning">High</span><span class="font-weight-bold">{{ number_format($alertSeverity['high']) }}</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-warning">High</span><span class="fw-bold">{{ number_format($alertSeverity['high']) }}</span></div>
           <div class="progress mb-3" style="height:6px"><div class="progress-bar bg-warning" style="width:{{ $high_pct }}%"></div></div>
-          <div class="d-flex justify-content-between mb-1"><span class="text-info">Medium</span><span class="font-weight-bold">{{ number_format($alertSeverity['medium']) }}</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-info">Medium</span><span class="fw-bold">{{ number_format($alertSeverity['medium']) }}</span></div>
           <div class="progress mb-3" style="height:6px"><div class="progress-bar bg-info" style="width:{{ $medium_pct }}%"></div></div>
-          <div class="d-flex justify-content-between mb-1"><span class="text-success">Low</span><span class="font-weight-bold">{{ number_format($alertSeverity['low']) }}</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-success">Low</span><span class="fw-bold">{{ number_format($alertSeverity['low']) }}</span></div>
           <div class="progress" style="height:6px"><div class="progress-bar bg-success" style="width:{{ $low_pct }}%"></div></div>
         </div>
       </div>
@@ -241,16 +241,22 @@
               <tbody>
                 @forelse($topRules as $rule)
                 <tr>
-                  <td><span class="badge badge-secondary">{{ $rule['id'] }}</span></td>
+                  <td><span class="badge bg-secondary">{{ $rule['id'] }}</span></td>
                   <td>{{ $rule['description'] }}</td>
                   <td>
                     @php $lc = $rule['level'] >= 12 ? 'danger' : ($rule['level'] >= 9 ? 'warning' : ($rule['level'] >= 6 ? 'info' : 'success')); @endphp
-                    <span class="badge badge-{{ $lc }}">{{ $rule['level'] }}</span>
+                    <span class="badge bg-{{ $lc }} {{ in_array($lc, ['warning','info']) ? 'text-dark' : '' }}">{{ $rule['level'] }}</span>
                   </td>
-                  <td class="font-weight-bold">{{ number_format($rule['count']) }}</td>
+                  <td class="fw-bold">{{ number_format($rule['count']) }}</td>
                 </tr>
                 @empty
-                <tr><td colspan="4" class="text-center text-muted">No data available</td></tr>
+                <tr>
+                  <td colspan="4" class="text-center py-5 text-muted">
+                    <span class="mdi mdi-shield-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+                    <span class="d-block fw-semibold mb-1">Tidak ada alert</span>
+                    <span class="d-block small">Tidak ada event keamanan dalam periode ini</span>
+                  </td>
+                </tr>
                 @endforelse
               </tbody>
             </table>
@@ -276,8 +282,8 @@
                 @php $maxAlerts = collect($topAgents)->max('alert_count') ?? 1; @endphp
                 @forelse($topAgents as $agent)
                 <tr>
-                  <td><span class="badge badge-secondary">{{ $agent['id'] }}</span></td>
-                  <td class="font-weight-bold">{{ $agent['name'] }}</td>
+                  <td><span class="badge bg-secondary">{{ $agent['id'] }}</span></td>
+                  <td class="fw-bold">{{ $agent['name'] }}</td>
                   <td>{{ $agent['ip'] }}</td>
                   <td>
                     @php
@@ -287,7 +293,7 @@
                     @endphp
                     <i class="mdi {{ $osIcon }} me-1"></i>{{ $agent['os'] }}
                   </td>
-                  <td class="font-weight-bold text-danger">{{ number_format($agent['alert_count']) }}</td>
+                  <td class="fw-bold text-danger">{{ number_format($agent['alert_count']) }}</td>
                   <td style="min-width:120px">
                     <div class="progress" style="height:8px">
                       <div class="progress-bar bg-danger" style="width:{{ ($agent['alert_count'] / $maxAlerts) * 100 }}%"></div>
@@ -295,7 +301,13 @@
                   </td>
                 </tr>
                 @empty
-                <tr><td colspan="6" class="text-center text-muted">No data available</td></tr>
+                <tr>
+                  <td colspan="6" class="text-center py-5 text-muted">
+                    <span class="mdi mdi-server-network-off d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+                    <span class="d-block fw-semibold mb-1">Tidak ada agent</span>
+                    <span class="d-block small">Belum ada agent dengan alert keamanan</span>
+                  </td>
+                </tr>
                 @endforelse
               </tbody>
             </table>
@@ -418,8 +430,11 @@
     if (!el) return;
     el.style.display = 'none';
     const msg = document.createElement('div');
-    msg.style.cssText = 'display:flex;align-items:center;justify-content:center;height:120px;color:#999;font-size:14px;';
-    msg.textContent = 'No data available';
+    msg.className = 'd-flex flex-column align-items-center justify-content-center text-muted text-center';
+    msg.style.cssText = 'height:120px;';
+    msg.innerHTML = `<span class="mdi mdi-chart-line-variant" style="font-size:2.5rem; opacity:0.3; margin-bottom:8px;"></span>
+      <span class="fw-semibold mb-1">Tidak ada data</span>
+      <span class="small">Tidak ada data untuk ditampilkan</span>`;
     el.parentElement.appendChild(msg);
   }
 
@@ -531,7 +546,7 @@
       body: JSON.stringify({ layout, page: 'home' })
     })
     .then(r => r.json())
-    .then(d => { if (d.success) exitEdit(); });
+    .then(d => { if (d.success) { exitEdit(); gsShowSavedToast(); } });
   });
 
   document.getElementById('gs-reset').addEventListener('click', () => {

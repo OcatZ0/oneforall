@@ -216,6 +216,44 @@ class AgentController extends Controller
         return response()->json(['data' => $result['data'], 'total' => $result['total'], 'page' => $page, 'perPage' => $perPage]);
     }
 
+    public function getSeChartData($id)
+    {
+        if (!$this->userHasAccessToAgent($id)) return response()->json(['error' => 'Forbidden'], 403);
+        $timeRange = request('time_range', '24h');
+        try {
+            return response()->json([
+                'metrics'                => $this->_openSearch->getSecurityEventsMetrics($id, 'now-' . $timeRange),
+                'alertGroupsEvolution'   => $this->_openSearch->getAlertGroupsEvolution($id, $timeRange),
+                'alertsEvolutionByLevel' => $this->_openSearch->getAlertsEvolutionByLevel($id, $timeRange),
+                'topAlerts'              => $this->_openSearch->getTopAlerts($id, $timeRange, 5),
+                'topRuleGroups'          => $this->_openSearch->getTopRuleGroups($id, $timeRange, 5),
+                'topPCIDSS'              => $this->_openSearch->getTopPCIDSS($id, $timeRange, 5),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('SE chart data error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load data'], 500);
+        }
+    }
+
+    public function getFimChartData($id)
+    {
+        if (!$this->userHasAccessToAgent($id)) return response()->json(['error' => 'Forbidden'], 403);
+        $timeRange = request('time_range', '24h');
+        try {
+            return response()->json([
+                'fimSummary'     => $this->_openSearch->getFimSummary($id, $timeRange),
+                'fimEvolution'   => $this->_openSearch->getFimEvolution($id, $timeRange),
+                'fimTopRules'    => $this->_openSearch->getFimTopRules($id, $timeRange, 5),
+                'fimTopModified' => $this->_openSearch->getFimTopFiles($id, $timeRange, 'modified', 5),
+                'fimTopDeleted'  => $this->_openSearch->getFimTopFiles($id, $timeRange, 'deleted', 5),
+                'fimTopAdded'    => $this->_openSearch->getFimTopFiles($id, $timeRange, 'added', 5),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('FIM chart data error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to load data'], 500);
+        }
+    }
+
     public function getScaChecksJson($id)
     {
         if (!$this->userHasAccessToAgent($id)) return response()->json(['error' => 'Forbidden'], 403);
@@ -490,6 +528,56 @@ class AgentController extends Controller
         }
     }
 
+    public function search()
+    {
+        try {
+            $user    = auth()->user();
+            $isAdmin = ($user->peran ?? null) === 'admin';
+            $perPage = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
+            $page    = max((int) request('page', 1), 1);
+            $offset  = ($page - 1) * $perPage;
+
+            $token     = $this->_wazuhService->getToken();
+            $wazuhData = $this->_wazuhService->getAgents($token ?? '', $offset, $perPage, request('search'), request('status'));
+            $accessibleIds = $isAdmin ? null : $this->getAccessibleAgentIds();
+
+            $agentsList = collect($wazuhData['agents'])
+                ->map(fn($a) => $this->enrichAgentData($this->mapWazuhAgent($a)))
+                ->filter(function ($agent) use ($accessibleIds, $isAdmin) {
+                    if ($agent->id_agent === '000') return false;
+                    return $isAdmin || in_array($agent->id_agent, $accessibleIds);
+                })
+                ->values();
+
+            $total      = $wazuhData['total'];
+            $totalPages = $total > 0 ? (int) ceil($total / $perPage) : 1;
+            $from       = $total > 0 ? $offset + 1 : 0;
+            $to         = min($offset + $perPage, $total);
+
+            return response()->json([
+                'agents'     => $agentsList->map(fn($a) => [
+                    'id_agent'     => $a->id_agent,
+                    'nama'         => $a->nama,
+                    'ip'           => $a->ip,
+                    'os'           => $a->os,
+                    'version'      => $a->version,
+                    'status'       => $a->status,
+                    'cluster_node' => $a->cluster_node,
+                    'user'         => $a->user ? ['username' => $a->user->username] : null,
+                ]),
+                'total'      => $total,
+                'page'       => $page,
+                'perPage'    => $perPage,
+                'totalPages' => $totalPages,
+                'from'       => $from,
+                'to'         => $to,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Agent search error', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Failed to search agents'], 500);
+        }
+    }
+
     // ── Static view helpers ───────────────────────────────────────────────────
 
     public static function getOSIcon(?string $os): string
@@ -709,22 +797,8 @@ class AgentController extends Controller
     private function buildDetailData(string $agentId): array
     {
         return [
-            'alertStats'              => $this->_openSearch->getAgentAlertStats($agentId),
-            'fimEvents'               => $this->_openSearch->getFimEvents($agentId, 5),
-            'eventsEvolution'         => $this->_openSearch->getEventsCountEvolution($agentId, '24h'),
-            'complianceGdpr'          => $this->_openSearch->getAgentCompliance($agentId, 'gdpr', '30d'),
-            'compliancePciDss'        => $this->_openSearch->getAgentCompliance($agentId, 'pci_dss', '30d'),
-            'complianceNist'          => $this->_openSearch->getAgentCompliance($agentId, 'nist_800_53', '30d'),
-            'complianceHipaa'         => $this->_openSearch->getAgentCompliance($agentId, 'hipaa', '30d'),
-            'complianceGpg13'         => $this->_openSearch->getAgentCompliance($agentId, 'gpg13', '30d'),
-            'complianceTsc'           => $this->_openSearch->getAgentCompliance($agentId, 'tsc', '30d'),
-            'eventsEvolutionGdpr'     => $this->_openSearch->getEventsCountEvolutionByCompliance($agentId, 'gdpr', '24h'),
-            'eventsEvolutionPciDss'   => $this->_openSearch->getEventsCountEvolutionByCompliance($agentId, 'pci_dss', '24h'),
-            'eventsEvolutionNist'     => $this->_openSearch->getEventsCountEvolutionByCompliance($agentId, 'nist_800_53', '24h'),
-            'eventsEvolutionHipaa'    => $this->_openSearch->getEventsCountEvolutionByCompliance($agentId, 'hipaa', '24h'),
-            'eventsEvolutionGpg13'    => $this->_openSearch->getEventsCountEvolutionByCompliance($agentId, 'gpg13', '24h'),
-            'eventsEvolutionTsc'      => $this->_openSearch->getEventsCountEvolutionByCompliance($agentId, 'tsc', '24h'),
-            'mitreTactics'            => $this->_openSearch->getMitreTactics($agentId, '24h'),
+            'alertStats' => $this->_openSearch->getAgentAlertStats($agentId),
+            'fimEvents'  => $this->_openSearch->getFimEvents($agentId, 5),
         ];
     }
 

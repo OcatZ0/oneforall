@@ -148,8 +148,9 @@
           </div>
           @else
           <div class="no-data-placeholder">
-            <span class="mdi mdi-chart-donut"></span>
-            <div>No data for this time range</div>
+            <span class="mdi mdi-chart-line-variant" style="opacity:0.3;"></span>
+            <span class="fw-semibold">Tidak ada data</span>
+            <div>Tidak ada event keamanan dalam periode ini</div>
           </div>
           @endif
         </div>
@@ -171,8 +172,9 @@
           </div>
           @else
           <div class="no-data-placeholder">
-            <span class="mdi mdi-chart-donut"></span>
-            <div>No data for this time range</div>
+            <span class="mdi mdi-chart-line-variant" style="opacity:0.3;"></span>
+            <span class="fw-semibold">Tidak ada data</span>
+            <div>Tidak ada event keamanan dalam periode ini</div>
           </div>
           @endif
         </div>
@@ -194,8 +196,9 @@
           </div>
           @else
           <div class="no-data-placeholder">
-            <span class="mdi mdi-chart-donut"></span>
-            <div>No {{ $currentTypeLabel }} data for this time range</div>
+            <span class="mdi mdi-chart-line-variant" style="opacity:0.3;"></span>
+            <span class="fw-semibold">Tidak ada data</span>
+            <div>Tidak ada data {{ $currentTypeLabel }} dalam periode ini</div>
           </div>
           @endif
         </div>
@@ -219,8 +222,9 @@
           </div>
           @else
           <div class="no-data-placeholder">
-            <span class="mdi mdi-chart-bar"></span>
-            <div>No {{ $currentTypeLabel }} data for this time range</div>
+            <span class="mdi mdi-chart-line-variant" style="opacity:0.3;"></span>
+            <span class="fw-semibold">Tidak ada data</span>
+            <div>Tidak ada data {{ $currentTypeLabel }} dalam periode ini</div>
           </div>
           @endif
         </div>
@@ -242,8 +246,9 @@
           </div>
           @else
           <div class="no-data-placeholder">
-            <span class="mdi mdi-chart-donut"></span>
-            <div>No data</div>
+            <span class="mdi mdi-chart-line-variant" style="opacity:0.3;"></span>
+            <span class="fw-semibold">Tidak ada data</span>
+            <div>Tidak ada data dalam periode ini</div>
           </div>
           @endif
         </div>
@@ -564,7 +569,7 @@ function resetFilters() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
       body: JSON.stringify({ layout, page: 'compliance' })
-    }).then(r => r.json()).then(d => { if (d.success) exitEdit(); });
+    }).then(r => r.json()).then(d => { if (d.success) { exitEdit(); gsShowSavedToast(); } });
   });
 
   document.getElementById('gs-reset').addEventListener('click', () => {

@@ -20,6 +20,24 @@
     </div>
   </div>
 
+  {{-- GridStack save toast --}}
+  <div id="gs-saved-toast" aria-live="polite" style="
+    position:fixed; bottom:88px; left:50%; transform:translateX(-50%);
+    z-index:10000; display:none; align-items:center; gap:8px;
+    background:#27ae60; color:#fff; padding:10px 20px;
+    border-radius:24px; box-shadow:0 4px 16px rgba(0,0,0,.18);
+    font-size:13px; font-weight:500; white-space:nowrap; pointer-events:none;">
+    <span class="mdi mdi-check-circle"></span> Layout saved
+  </div>
+  <script>
+  function gsShowSavedToast() {
+    const t = document.getElementById('gs-saved-toast');
+    if (!t) return;
+    t.style.display = 'flex';
+    clearTimeout(t._hideTimer);
+    t._hideTimer = setTimeout(() => { t.style.display = 'none'; }, 2000);
+  }
+  </script>
   @include('partials._scripts')
   @stack('scripts')
   <script>

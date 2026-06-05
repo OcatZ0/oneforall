@@ -96,19 +96,19 @@
           <div class="row g-2 h-100 align-items-center">
             <div class="col-3 text-center">
               <div class="text-muted fw-semibold small mb-2">Total events</div>
-              <div class="display-6 fw-bold text-primary">{{ number_format($fimSummary['total']) }}</div>
+              <div class="display-6 fw-bold text-primary" id="fimMetricTotal">{{ number_format($fimSummary['total']) }}</div>
             </div>
             <div class="col-3 text-center">
               <div class="text-muted fw-semibold small mb-2">Added</div>
-              <div class="display-6 fw-bold text-success">{{ number_format($fimSummary['added']) }}</div>
+              <div class="display-6 fw-bold text-success" id="fimMetricAdded">{{ number_format($fimSummary['added']) }}</div>
             </div>
             <div class="col-3 text-center">
               <div class="text-muted fw-semibold small mb-2">Modified</div>
-              <div class="display-6 fw-bold text-warning">{{ number_format($fimSummary['modified']) }}</div>
+              <div class="display-6 fw-bold text-warning" id="fimMetricModified">{{ number_format($fimSummary['modified']) }}</div>
             </div>
             <div class="col-3 text-center">
               <div class="text-muted fw-semibold small mb-2">Deleted</div>
-              <div class="display-6 fw-bold text-danger">{{ number_format($fimSummary['deleted']) }}</div>
+              <div class="display-6 fw-bold text-danger" id="fimMetricDeleted">{{ number_format($fimSummary['deleted']) }}</div>
             </div>
           </div>
         </div>
@@ -191,7 +191,7 @@
         <div class="card-header py-2">
           <span class="fw-semibold small">Top 5 modified files</span>
         </div>
-        <div class="card-body p-0">
+        <div class="card-body p-0" id="fimTopModifiedBody">
           @if(count($fimTopModified) > 0)
           <ul class="list-group list-group-flush">
             @foreach($fimTopModified as $i => $file)
@@ -205,7 +205,11 @@
             @endforeach
           </ul>
           @else
-          <div class="d-flex align-items-center justify-content-center h-100 text-muted small">No data available</div>
+          <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4 text-center">
+            <span class="mdi mdi-file-check-outline" style="font-size:2rem; opacity:0.3; margin-bottom:6px;"></span>
+            <span class="fw-semibold small mb-1">Tidak ada event FIM</span>
+            <span style="font-size:11px;">Tidak ada perubahan file yang terdeteksi</span>
+          </div>
           @endif
         </div>
       </div>
@@ -219,7 +223,7 @@
         <div class="card-header py-2">
           <span class="fw-semibold small">Top 5 deleted files</span>
         </div>
-        <div class="card-body p-0">
+        <div class="card-body p-0" id="fimTopDeletedBody">
           @if(count($fimTopDeleted) > 0)
           <ul class="list-group list-group-flush">
             @foreach($fimTopDeleted as $i => $file)
@@ -233,7 +237,11 @@
             @endforeach
           </ul>
           @else
-          <div class="d-flex align-items-center justify-content-center h-100 text-muted small">No data available</div>
+          <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4 text-center">
+            <span class="mdi mdi-file-check-outline" style="font-size:2rem; opacity:0.3; margin-bottom:6px;"></span>
+            <span class="fw-semibold small mb-1">Tidak ada event FIM</span>
+            <span style="font-size:11px;">Tidak ada perubahan file yang terdeteksi</span>
+          </div>
           @endif
         </div>
       </div>
@@ -247,7 +255,7 @@
         <div class="card-header py-2">
           <span class="fw-semibold small">Top 5 added files</span>
         </div>
-        <div class="card-body p-0">
+        <div class="card-body p-0" id="fimTopAddedBody">
           @if(count($fimTopAdded) > 0)
           <ul class="list-group list-group-flush">
             @foreach($fimTopAdded as $i => $file)
@@ -261,7 +269,11 @@
             @endforeach
           </ul>
           @else
-          <div class="d-flex align-items-center justify-content-center h-100 text-muted small">No data available</div>
+          <div class="d-flex flex-column align-items-center justify-content-center text-muted py-4 text-center">
+            <span class="mdi mdi-file-check-outline" style="font-size:2rem; opacity:0.3; margin-bottom:6px;"></span>
+            <span class="fw-semibold small mb-1">Tidak ada event FIM</span>
+            <span style="font-size:11px;">Tidak ada perubahan file yang terdeteksi</span>
+          </div>
           @endif
         </div>
       </div>
@@ -311,7 +323,11 @@
                 </tr>
                 @empty
                 <tr>
-                  <td colspan="5" class="text-center text-muted py-3 small">No FIM events in this time range</td>
+                  <td colspan="5" class="text-center py-5 text-muted">
+                    <span class="mdi mdi-file-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+                    <span class="d-block fw-semibold mb-1">Tidak ada event FIM</span>
+                    <span class="d-block small">Tidak ada perubahan file yang terdeteksi</span>
+                  </td>
                 </tr>
                 @endforelse
               </tbody>
@@ -418,10 +434,74 @@ function updateTimeRange(timeRange, event) {
   refreshData();
 }
 
-function refreshData() {
+const fimChartDataEndpoint = '{{ route("agent.fim.chart-data", $agent->id_agent ?? "") }}';
+
+function renderTopFilesList(containerId, files, badgeClass) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (!files || files.length === 0) {
+    el.innerHTML = `<div class="d-flex flex-column align-items-center justify-content-center text-muted py-4 text-center">
+      <span class="mdi mdi-file-check-outline" style="font-size:2rem; opacity:0.3; margin-bottom:6px;"></span>
+      <span class="fw-semibold small mb-1">Tidak ada event FIM</span>
+      <span style="font-size:11px;">Tidak ada perubahan file yang terdeteksi</span>
+    </div>`;
+    return;
+  }
+  const items = files.map((file, i) => `
+    <li class="list-group-item d-flex justify-content-between align-items-start px-3 py-2">
+      <div class="d-flex align-items-center gap-2 overflow-hidden">
+        <span class="badge bg-secondary rounded-pill">${i + 1}</span>
+        <span class="small text-truncate" style="max-width:200px;" title="${escHtml(file.path)}">${escHtml(file.path)}</span>
+      </div>
+      <span class="badge ${badgeClass} ms-2 flex-shrink-0">${Number(file.count).toLocaleString()}</span>
+    </li>`).join('');
+  el.innerHTML = `<ul class="list-group list-group-flush">${items}</ul>`;
+}
+
+async function refreshData() {
+  // Update URL so page refresh re-loads with the selected time range
   const url = new URL(window.location.href);
   url.searchParams.set('time_range', currentTimeRange);
-  window.location.href = url.toString();
+  history.replaceState({}, '', url.toString());
+
+  // Dim metrics card while loading
+  const metricsCard = document.querySelector('[gs-id="fim-metrics"] .card');
+  if (metricsCard) metricsCard.style.opacity = '0.5';
+
+  try {
+    const res = await fetch(`${fimChartDataEndpoint}?time_range=${encodeURIComponent(currentTimeRange)}`, {
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+
+    // Update metrics
+    const s = json.fimSummary || {};
+    document.getElementById('fimMetricTotal').textContent    = Number(s.total    ?? 0).toLocaleString();
+    document.getElementById('fimMetricAdded').textContent    = Number(s.added    ?? 0).toLocaleString();
+    document.getElementById('fimMetricModified').textContent = Number(s.modified ?? 0).toLocaleString();
+    document.getElementById('fimMetricDeleted').textContent  = Number(s.deleted  ?? 0).toLocaleString();
+
+    // Update chart data
+    fimData.evolution = json.fimEvolution ?? { labels: [], datasets: [] };
+    fimData.topRules  = json.fimTopRules  ?? { labels: [], data:     [] };
+
+    // Re-render charts
+    initializeCharts();
+
+    // Re-render top-files lists
+    renderTopFilesList('fimTopModifiedBody', json.fimTopModified, 'bg-warning text-dark');
+    renderTopFilesList('fimTopDeletedBody',  json.fimTopDeleted,  'bg-danger');
+    renderTopFilesList('fimTopAddedBody',    json.fimTopAdded,    'bg-success');
+
+    // Refresh events table
+    loadFimEvents(1, 10);
+  } catch (e) {
+    console.error('refreshData failed', e);
+  } finally {
+    if (metricsCard) metricsCard.style.opacity = '';
+  }
 }
 
 function convertLabelsToLocalTime(labels) {
@@ -435,7 +515,11 @@ function convertLabelsToLocalTime(labels) {
 
 function showNoData(containerId, height = '200px') {
   const el = document.getElementById(containerId);
-  if (el) el.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:${height};background:#f8f9fa;border-radius:4px;color:#6c757d;font-size:14px;font-weight:500;">No data available</div>`;
+  if (el) el.innerHTML = `<div class="d-flex flex-column align-items-center justify-content-center text-muted text-center" style="height:${height};">
+    <span class="mdi mdi-file-check-outline" style="font-size:2.5rem; opacity:0.3; margin-bottom:8px;"></span>
+    <span class="fw-semibold mb-1">Tidak ada event FIM</span>
+    <span class="small">Tidak ada perubahan file yang terdeteksi</span>
+  </div>`;
 }
 
 // ── Charts ─────────────────────────────────────────────────────────────────────
@@ -551,7 +635,11 @@ async function loadFimEvents(page, perPage) {
         </td>
         <td><span class="badge bg-${lc}">${lv}</span></td>
       </tr>`;
-    }).join('') : '<tr><td colspan="5" class="text-center text-muted py-3 small">No FIM events in this time range</td></tr>';
+    }).join('') : `<tr><td colspan="5" class="text-center py-5 text-muted">
+      <span class="mdi mdi-file-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+      <span class="d-block fw-semibold mb-1">Tidak ada event FIM</span>
+      <span class="d-block small">Tidak ada perubahan file yang terdeteksi</span>
+    </td></tr>`;
     renderPagination('fim-footer', json.total, json.page, json.perPage, 'loadFimEvents');
   } catch(e) { console.error('loadFimEvents failed', e); }
 }
@@ -706,7 +794,7 @@ document.addEventListener('DOMContentLoaded', initializeCharts);
       body: JSON.stringify({ layout, page: 'integrity-monitoring' })
     })
     .then(r => r.json())
-    .then(d => { if (d.success) exitEdit(); });
+    .then(d => { if (d.success) { exitEdit(); gsShowSavedToast(); } });
   });
 
   document.getElementById('gs-reset').addEventListener('click', () => {

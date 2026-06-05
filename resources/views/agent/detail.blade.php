@@ -204,20 +204,10 @@
           <a href="https://attack.mitre.org/" target="_blank" class="text-secondary small"><span class="mdi mdi-open-in-new"></span></a>
         </div>
         <div class="card-body" data-mitre-container>
-          @forelse($mitreTactics ?? [] as $tactic)
-          <div class="mb-2 pb-2" style="border-bottom: 1px solid #eee;">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <small class="fw-semibold text-truncate" title="{{ $tactic['tactic'] }}">{{ $tactic['tactic'] }}</small>
-              <span class="badge bg-danger">{{ $tactic['count'] }}</span>
-            </div>
-          </div>
-          @empty
           <div class="d-flex flex-column align-items-center justify-content-center text-center py-5">
-            <span class="mdi mdi-chart-bar display-4 text-muted opacity-25 mb-3"></span>
-            <h6 class="text-muted">No results</h6>
-            <p class="text-muted small mb-0">No MITRE ATT&amp;CK tactics in the last 24 hours</p>
+            <span class="mdi mdi-loading mdi-spin display-4 text-muted opacity-25 mb-3"></span>
+            <p class="text-muted small mb-0">Loading...</p>
           </div>
-          @endforelse
         </div>
       </div>
     </div>
@@ -298,8 +288,10 @@
                 </tr>
                 @empty
                 <tr>
-                  <td colspan="6" class="text-center text-muted py-3">
-                    <i class="mdi mdi-information-outline me-1"></i>No FIM events found in the last 24 hours
+                  <td colspan="6" class="text-center py-5 text-muted">
+                    <span class="mdi mdi-file-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+                    <span class="d-block fw-semibold mb-1">Tidak ada event FIM</span>
+                    <span class="d-block small">Tidak ada perubahan file yang terdeteksi</span>
                   </td>
                 </tr>
                 @endforelse
@@ -455,7 +447,11 @@ function initEventsChart(labels, data) {
 
   if (labels.length === 0 || data.length === 0) {
     if (eventsChartInstance) { eventsChartInstance.destroy(); eventsChartInstance = null; }
-    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:90px;background-color:#f8f9fa;border-radius:4px;color:#6c757d;font-size:14px;font-weight:500;">No events data available</div>';
+    container.innerHTML = `<div class="d-flex flex-column align-items-center justify-content-center text-muted py-4 text-center" style="min-height:90px;">
+      <span class="mdi mdi-chart-line-variant" style="font-size:2rem; opacity:0.3; margin-bottom:6px;"></span>
+      <span class="fw-semibold mb-1 small">Tidak ada data</span>
+      <span style="font-size:11px;">Tidak ada event keamanan dalam periode ini</span>
+    </div>`;
     return;
   }
 
@@ -505,7 +501,11 @@ function initComplianceChart(data) {
 
   if (!data || data.length === 0) {
     if (complianceChartInstance) { complianceChartInstance.destroy(); complianceChartInstance = null; }
-    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:200px;background-color:#f8f9fa;border-radius:4px;color:#6c757d;font-size:14px;font-weight:500;">No compliance data available</div>';
+    container.innerHTML = `<div class="d-flex flex-column align-items-center justify-content-center text-muted py-4 text-center" style="min-height:200px;">
+      <span class="mdi mdi-chart-line-variant" style="font-size:2.5rem; opacity:0.3; margin-bottom:8px;"></span>
+      <span class="fw-semibold mb-1">Tidak ada data</span>
+      <span class="small">Tidak ada data kepatuhan dalam periode ini</span>
+    </div>`;
     return;
   }
 
@@ -567,7 +567,7 @@ function updateChart(timeRange, event) {
   const agentId = '{{ $agent->id_agent ?? "" }}';
   if (!agentId) return;
 
-  const url = '/agent/' + agentId + '/chart-data?time_range=' + timeRange + '&compliance_type=' + currentComplianceType;
+  const url = '{{ route("agent.detail-chart-data", $agent->id_agent ?? 0) }}' + '?time_range=' + timeRange + '&compliance_type=' + currentComplianceType;
 
   fetch(url)
     .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
@@ -578,7 +578,16 @@ function updateChart(timeRange, event) {
         updateMitreTactics(data.mitre_tactics ?? []);
       }
     })
-    .catch(error => console.error('Error fetching chart data:', error));
+    .catch(error => {
+      console.error('Error fetching chart data:', error);
+      const errHtml = '<div style="display:flex;align-items:center;justify-content:center;height:90px;background:#fef2f2;border-radius:4px;color:#dc3545;font-size:13px;"><span class="mdi mdi-alert-circle-outline me-2"></span>Failed to load data</div>';
+      const evCont = document.getElementById('eventsChartContainer');
+      if (evCont) { if (eventsChartInstance) { eventsChartInstance.destroy(); eventsChartInstance = null; } evCont.innerHTML = errHtml; }
+      const compCont = document.getElementById('complianceChartContainer');
+      if (compCont) { if (complianceChartInstance) { complianceChartInstance.destroy(); complianceChartInstance = null; } compCont.innerHTML = errHtml; }
+      const mitreCont = document.querySelector('[data-mitre-container]');
+      if (mitreCont) mitreCont.innerHTML = '<div class="d-flex flex-column align-items-center justify-content-center text-center py-5"><span class="mdi mdi-alert-circle-outline display-4 text-muted opacity-25 mb-3"></span><p class="text-muted small mb-0">Failed to load data</p></div>';
+    });
 }
 
 function updateComplianceData() {
@@ -593,9 +602,9 @@ function updateMitreTactics(tactics) {
   if (!tactics || tactics.length === 0) {
     container.innerHTML = `
       <div class="d-flex flex-column align-items-center justify-content-center text-center py-5">
-        <span class="mdi mdi-chart-bar display-4 text-muted opacity-25 mb-3"></span>
-        <h6 class="text-muted">No results</h6>
-        <p class="text-muted small mb-0">No MITRE ATT&CK tactics in the selected time range</p>
+        <span class="mdi mdi-sword-cross display-4 text-muted opacity-25 mb-3"></span>
+        <span class="fw-semibold text-muted mb-1">Tidak ada taktik</span>
+        <p class="text-muted small mb-0">Tidak ada taktik MITRE ATT&CK yang terdeteksi</p>
       </div>`;
   } else {
     container.innerHTML = tactics.map(t => `
@@ -610,18 +619,7 @@ function updateMitreTactics(tactics) {
 
 function initializeCharts() {
   if (typeof Chart === 'undefined') { setTimeout(initializeCharts, 100); return; }
-
-  @if(isset($eventsEvolution) && !empty($eventsEvolution['labels']))
-    initEventsChart(@json($eventsEvolution['labels'] ?? []), @json($eventsEvolution['data'] ?? []));
-  @else
-    initEventsChart([], []);
-  @endif
-
-  @if(isset($complianceGdpr))
-    initComplianceChart(@json($complianceGdpr ?? []));
-  @else
-    initComplianceChart([]);
-  @endif
+  updateChart('24h');
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -770,7 +768,7 @@ document.addEventListener('DOMContentLoaded', function () {
       body: JSON.stringify({ layout, page: 'agent-detail' })
     })
     .then(r => r.json())
-    .then(d => { if (d.success) exitEdit(); });
+    .then(d => { if (d.success) { exitEdit(); gsShowSavedToast(); } });
   });
 
   document.getElementById('gs-reset').addEventListener('click', () => {

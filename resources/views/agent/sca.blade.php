@@ -180,11 +180,10 @@
             </table>
           </div>
           @else
-          <div class="d-flex align-items-center justify-content-center h-100 text-muted small">
-            <div class="text-center">
-              <span class="mdi mdi-shield-off-outline d-block fs-1 mb-2"></span>
-              No SCA policies found for this agent
-            </div>
+          <div class="d-flex flex-column align-items-center justify-content-center text-muted py-5 text-center">
+            <span class="mdi mdi-clipboard-check-outline" style="font-size:3rem; opacity:0.3; margin-bottom:12px;"></span>
+            <span class="fw-semibold mb-1">Tidak ada pemeriksaan SCA</span>
+            <span class="small">Pilih kebijakan SCA untuk melihat pemeriksaan</span>
           </div>
           @endif
         </div>
@@ -221,9 +220,10 @@
           <p class="text-muted small mt-2 text-center px-2" style="font-size:10px;">{{ Str::limit($selectedPolicy['description'], 120) }}</p>
           @endif
           @else
-          <div class="text-muted small text-center">
-            <span class="mdi mdi-chart-donut d-block fs-1 mb-2"></span>
-            Select a policy to view score
+          <div class="d-flex flex-column align-items-center justify-content-center text-muted text-center">
+            <span class="mdi mdi-clipboard-check-outline" style="font-size:3rem; opacity:0.3; margin-bottom:12px;"></span>
+            <span class="fw-semibold mb-1">Pilih kebijakan</span>
+            <span class="small">Pilih kebijakan SCA untuk melihat skor</span>
           </div>
           @endif
         </div>
@@ -289,9 +289,15 @@
                 </tr>
                 @empty
                 <tr>
-                  <td colspan="4" class="text-center text-muted py-3 small">
-                    @if(!$policyId) Select a policy to view checks
-                    @else No checks found{{ $resultFilter ? ' for filter: ' . $resultFilter : '' }}
+                  <td colspan="4" class="text-center py-5 text-muted">
+                    @if(!$policyId)
+                    <span class="mdi mdi-clipboard-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+                    <span class="d-block fw-semibold mb-1">Pilih kebijakan</span>
+                    <span class="d-block small">Pilih kebijakan SCA untuk melihat pemeriksaan</span>
+                    @else
+                    <span class="mdi mdi-clipboard-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+                    <span class="d-block fw-semibold mb-1">Tidak ada pemeriksaan SCA</span>
+                    <span class="d-block small">Tidak ada data{{ $resultFilter ? ' untuk filter: ' . $resultFilter : '' }}</span>
                     @endif
                   </td>
                 </tr>
@@ -467,7 +473,11 @@ async function loadScaData(policyId, resultFilter, page, perPage) {
         <td><span class="badge bg-${rc}">${escHtml(r.result||'n/a')}</span></td>
         <td class="text-muted" title="${escHtml(detail)}">${escHtml(detail.substring(0,100))}</td>
       </tr>`;
-    }).join('') : `<tr><td colspan="4" class="text-center text-muted py-3 small">${currentPolicyId ? 'No checks found' + (currentResultFilter ? ' for filter: ' + currentResultFilter : '') : 'Select a policy to view checks'}</td></tr>`;
+    }).join('') : `<tr><td colspan="4" class="text-center py-5 text-muted">
+      <span class="mdi mdi-clipboard-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+      <span class="d-block fw-semibold mb-1">${currentPolicyId ? 'Tidak ada pemeriksaan SCA' : 'Pilih kebijakan'}</span>
+      <span class="d-block small">${currentPolicyId ? ('Tidak ada data' + (currentResultFilter ? ' untuk filter: ' + currentResultFilter : '')) : 'Pilih kebijakan SCA untuk melihat pemeriksaan'}</span>
+    </td></tr>`;
 
     renderPagination('sca-footer', json.total, json.page, json.perPage, 'loadScaPage');
 
@@ -657,7 +667,7 @@ document.addEventListener('DOMContentLoaded', initializeCharts);
       body: JSON.stringify({ layout, page: 'sca' })
     })
     .then(r => r.json())
-    .then(d => { if (d.success) exitEdit(); });
+    .then(d => { if (d.success) { exitEdit(); gsShowSavedToast(); } });
   });
 
   document.getElementById('gs-reset').addEventListener('click', () => {

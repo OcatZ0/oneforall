@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ActivityLogController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -25,10 +26,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/dashboard/layout', [DashboardController::class, 'saveLayout'])->name('dashboard.layout');
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+    Route::post('/profile/change-password', [ProfileController::class, 'changePassword'])->name('profile.change-password');
     Route::post('auth/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Agent routes - available for both admin and customer
     Route::get('/agent', [AgentController::class, 'index'])->name('agent');
+    Route::get('/agent/search', [AgentController::class, 'search'])->name('agent.search');
     Route::get('/agent/{id}/detail', [AgentController::class, 'detail'])->name('agent.detail');
     Route::get('/agent/{id}/security-events', [AgentController::class, 'securityEvents'])->name('agent.security-events');
     Route::get('/agent/{id}/integrity-monitoring', [AgentController::class, 'integrityMonitoring'])->name('agent.integrity-monitoring');
@@ -38,6 +41,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/agent/{id}/security-events/alerts', [AgentController::class, 'getSeAlerts'])->name('agent.se.alerts');
     Route::get('/agent/{id}/security-events/groups', [AgentController::class, 'getSeGroups'])->name('agent.se.groups');
     Route::get('/agent/{id}/integrity-monitoring/events', [AgentController::class, 'getIntegrityEvents'])->name('agent.fim.events');
+    Route::get('/agent/{id}/security-events/chart-data', [AgentController::class, 'getSeChartData'])->name('agent.se.chart-data');
+    Route::get('/agent/{id}/integrity-monitoring/chart-data', [AgentController::class, 'getFimChartData'])->name('agent.fim.chart-data');
     Route::get('/agent/{id}/sca/checks', [AgentController::class, 'getScaChecksJson'])->name('agent.sca.checks');
     Route::get('/agent/{id}/mitre-attack/alerts', [AgentController::class, 'getMitreAlertsJson'])->name('agent.mitre.alerts');
     Route::get('/agent/{id}/compliance', [AgentController::class, 'compliance'])->name('agent.compliance');
@@ -52,5 +57,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/user', [UserController::class, 'store'])->name('user.store');
         Route::get('/user/{id}/edit', [UserController::class, 'edit'])->name('edit-user');
         Route::put('/user/{id}', [UserController::class, 'update'])->name('user.update');
+        Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log');
     });
 });

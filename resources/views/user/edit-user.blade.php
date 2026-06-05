@@ -12,7 +12,7 @@
         <div class="d-flex align-items-center justify-content-between mb-4">
           <h4 class="card-title mb-0">Edit Pengguna: {{ $user->username }}</h4>
           <a href="{{ route('user') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="mdi mdi-arrow-left mr-1"></i> Kembali
+            <i class="mdi mdi-arrow-left me-1"></i> Kembali
           </a>
         </div>
 
@@ -92,11 +92,11 @@
                           </div>
                           <div style="flex-shrink: 0;">
                             @if($agent['assigned'])
-                              <span class="badge badge-{{ in_array($agent['id'], $userAgentIds) ? 'primary' : 'secondary' }}">
+                              <span class="badge bg-{{ in_array($agent['id'], $userAgentIds) ? 'primary' : 'secondary' }}">
                                 Assigned to: <strong>{{ $agent['assigned_to'] }}</strong>
                               </span>
                             @else
-                              <span class="badge badge-success">Available</span>
+                              <span class="badge bg-success">Available</span>
                             @endif
                           </div>
                         </div>
@@ -116,10 +116,10 @@
           <!-- Action Buttons -->
           <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">
-              <i class="mdi mdi-check mr-1"></i> Simpan Perubahan
+              <i class="mdi mdi-check me-1"></i> Simpan Perubahan
             </button>
             <a href="{{ route('user') }}" class="btn btn-outline-secondary">
-              <i class="mdi mdi-close mr-1"></i> Batal
+              <i class="mdi mdi-close me-1"></i> Batal
             </a>
           </div>
         </form>
