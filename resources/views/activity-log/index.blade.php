@@ -11,7 +11,7 @@
 <div class="grid-stack" id="actlog-grid">
 
   {{-- Filter --}}
-  <div class="grid-stack-item" gs-id="actlog-filter" data-label="Filter" gs-x="0" gs-y="0" gs-w="12" gs-h="5">
+  <div class="grid-stack-item" gs-id="actlog-filter" data-label="Filter" gs-x="0" gs-y="0" gs-w="12" gs-h="3">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -104,10 +104,10 @@
                 @forelse($logs as $log)
                 @php
                   $activity = strtolower($log->activity);
-                  if      (str_contains($activity, 'login'))    { $bgColor = 'success'; $textColor = 'text-success'; }
-                  elseif  (str_contains($activity, 'logout'))   { $bgColor = 'warning'; $textColor = 'text-dark'; }
-                  elseif  (str_contains($activity, 'password')) { $bgColor = 'danger';  $textColor = 'text-danger'; }
-                  else                                          { $bgColor = 'secondary'; $textColor = 'text-dark'; }
+                  if      (str_contains($activity, 'login'))    { $bgColor = 'success'; }
+                  elseif  (str_contains($activity, 'logout'))   { $bgColor = 'warning'; }
+                  elseif  (str_contains($activity, 'password')) { $bgColor = 'danger';  }
+                  else                                          { $bgColor = 'secondary'; }
 
                   $peranBadge = match($log->user->role ?? '') {
                     'admin'    => 'bg-danger',
@@ -126,7 +126,7 @@
                     @endif
                   </td>
                   <td>
-                    <span class="badge bg-{{ $bgColor }} bg-opacity-15 {{ $textColor }} border border-{{ $bgColor }} border-opacity-25 fw-normal">
+                    <span class="badge bg-{{ $bgColor }} text-white fw-normal">
                       {{ $log->activity }}
                     </span>
                   </td>
