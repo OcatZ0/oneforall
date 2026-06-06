@@ -46,6 +46,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/agent/{id}/sca/checks', [AgentController::class, 'getScaChecksJson'])->name('agent.sca.checks');
     Route::get('/agent/{id}/mitre-attack/alerts', [AgentController::class, 'getMitreAlertsJson'])->name('agent.mitre.alerts');
     Route::get('/agent/{id}/compliance', [AgentController::class, 'compliance'])->name('agent.compliance');
+    Route::get('/agent/{id}/inventory', [AgentController::class, 'inventoryData'])->name('agent.inventory');
+    Route::get('/agent/{id}/inventory/{type}', [AgentController::class, 'getInventoryJson'])->name('agent.inventory.data');
     Route::get('/agent/chart-data', [AgentController::class, 'getChartData'])->name('agent.chart-data');
     Route::get('/agent/{id}/chart-data', [AgentController::class, 'getDetailChartData'])->name('agent.detail-chart-data');
     Route::post('/agent/sync', [AgentController::class, 'syncAgentsFromWazuh'])->name('agent.sync');

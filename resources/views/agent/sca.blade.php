@@ -77,6 +77,12 @@
           <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->agent_id) }}?compliance_type=tsc">TSC</a></li>
         </ul>
       </li>
+
+      <li class="nav-item">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.inventory', $agent->agent_id) }}">
+          <span class="mdi mdi-database"></span> Inventory Data
+        </a>
+      </li>
     </ul>
     <div class="ms-auto d-flex gap-2 flex-shrink-0 py-1">
       <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Back to Agents List">

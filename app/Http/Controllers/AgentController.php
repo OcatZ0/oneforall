@@ -504,6 +504,70 @@ class AgentController extends Controller
         }
     }
 
+    public function inventoryData($id)
+    {
+        try {
+            if (!$this->userHasAccessToAgent($id)) {
+                return view('agent.inventory-data', ['agent' => null, 'error' => 'You do not have permission to view this agent']);
+            }
+            $agent = $this->resolveAgent($id);
+            if (!$agent) {
+                return view('agent.inventory-data', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
+            }
+
+            $token    = $this->_wazuhService->getToken();
+            $hardware = $token ? $this->_wazuhService->getInventoryHardware($token, $id) : null;
+            $osInfo   = $token ? $this->_wazuhService->getInventoryOS($token, $id)       : null;
+
+            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
+                                          ->where('page', 'inventory-data')
+                                          ->value('layout');
+
+            return view('agent.inventory-data', compact('agent', 'hardware', 'osInfo', 'savedLayout'));
+        } catch (\Exception $e) {
+            Log::error('Inventory data error: ' . $e->getMessage());
+            return view('agent.inventory-data', ['agent' => null, 'error' => 'Error loading inventory data']);
+        }
+    }
+
+    public function getInventoryJson($id, $type)
+    {
+        if (!$this->userHasAccessToAgent($id)) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+
+        $allowed = ['netiface', 'ports', 'netaddr', 'hotfixes', 'packages', 'processes'];
+        if (!in_array($type, $allowed)) {
+            return response()->json(['error' => 'Invalid type'], 400);
+        }
+
+        $token = $this->_wazuhService->getToken();
+        if (!$token) {
+            return response()->json(['error' => 'Unable to authenticate with Wazuh'], 503);
+        }
+
+        $perPage = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
+        $page    = max((int) request('page', 1), 1);
+        $offset  = ($page - 1) * $perPage;
+        $search  = request('search') ?: null;
+
+        $result = match($type) {
+            'netiface'  => $this->_wazuhService->getInventoryNetInterfaces($token, $id, $perPage, $offset, $search),
+            'ports'     => $this->_wazuhService->getInventoryNetPorts($token, $id, $perPage, $offset, $search),
+            'netaddr'   => $this->_wazuhService->getInventoryNetAddr($token, $id, $perPage, $offset, $search),
+            'hotfixes'  => $this->_wazuhService->getInventoryHotfixes($token, $id, $perPage, $offset, $search),
+            'packages'  => $this->_wazuhService->getInventoryPackages($token, $id, $perPage, $offset, $search),
+            'processes' => $this->_wazuhService->getInventoryProcesses($token, $id, $perPage, $offset, $search),
+        };
+
+        return response()->json([
+            'data'    => $result['data'],
+            'total'   => $result['total'],
+            'page'    => $page,
+            'perPage' => $perPage,
+        ]);
+    }
+
     public function syncAgentsFromWazuh()
     {
         try {

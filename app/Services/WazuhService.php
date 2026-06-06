@@ -223,4 +223,83 @@ class WazuhService
 
         return [];
     }
+
+    public function getInventoryHardware(string $token, string $agentId): ?array
+    {
+        try {
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)
+                ->withToken($token)->get("{$this->_host}/syscollector/{$agentId}/hardware");
+            if ($response->successful()) {
+                $items = $response->json('data.affected_items');
+                return !empty($items) ? $items[0] : null;
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to fetch inventory hardware: ' . $e->getMessage());
+        }
+        return null;
+    }
+
+    public function getInventoryOS(string $token, string $agentId): ?array
+    {
+        try {
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)
+                ->withToken($token)->get("{$this->_host}/syscollector/{$agentId}/os");
+            if ($response->successful()) {
+                $items = $response->json('data.affected_items');
+                return !empty($items) ? $items[0] : null;
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to fetch inventory OS: ' . $e->getMessage());
+        }
+        return null;
+    }
+
+    public function getInventoryNetInterfaces(string $token, string $agentId, int $limit = 10, int $offset = 0, ?string $search = null): array
+    {
+        return $this->_getSyscollector($token, $agentId, 'netiface', $limit, $offset, $search);
+    }
+
+    public function getInventoryNetPorts(string $token, string $agentId, int $limit = 10, int $offset = 0, ?string $search = null): array
+    {
+        return $this->_getSyscollector($token, $agentId, 'ports', $limit, $offset, $search);
+    }
+
+    public function getInventoryNetAddr(string $token, string $agentId, int $limit = 10, int $offset = 0, ?string $search = null): array
+    {
+        return $this->_getSyscollector($token, $agentId, 'netaddr', $limit, $offset, $search);
+    }
+
+    public function getInventoryHotfixes(string $token, string $agentId, int $limit = 10, int $offset = 0, ?string $search = null): array
+    {
+        return $this->_getSyscollector($token, $agentId, 'hotfixes', $limit, $offset, $search);
+    }
+
+    public function getInventoryPackages(string $token, string $agentId, int $limit = 10, int $offset = 0, ?string $search = null): array
+    {
+        return $this->_getSyscollector($token, $agentId, 'packages', $limit, $offset, $search);
+    }
+
+    public function getInventoryProcesses(string $token, string $agentId, int $limit = 10, int $offset = 0, ?string $search = null): array
+    {
+        return $this->_getSyscollector($token, $agentId, 'processes', $limit, $offset, $search);
+    }
+
+    private function _getSyscollector(string $token, string $agentId, string $endpoint, int $limit, int $offset, ?string $search): array
+    {
+        try {
+            $params = ['limit' => $limit, 'offset' => $offset];
+            if ($search) $params['search'] = $search;
+
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(10)
+                ->withToken($token)->get("{$this->_host}/syscollector/{$agentId}/{$endpoint}", $params);
+
+            if ($response->successful()) {
+                $data = $response->json('data');
+                return ['data' => $data['affected_items'] ?? [], 'total' => $data['total_affected_items'] ?? 0];
+            }
+        } catch (\Exception $e) {
+            Log::warning("Failed to fetch syscollector/{$endpoint}: " . $e->getMessage());
+        }
+        return ['data' => [], 'total' => 0];
+    }
 }

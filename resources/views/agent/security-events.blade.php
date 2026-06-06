@@ -77,6 +77,12 @@
           <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->agent_id) }}?compliance_type=tsc">TSC</a></li>
         </ul>
       </li>
+
+      <li class="nav-item">
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.inventory', $agent->agent_id) }}">
+          <span class="mdi mdi-database"></span> Inventory Data
+        </a>
+      </li>
     </ul>
     <div class="ms-auto d-flex gap-2 flex-shrink-0 py-1">
       <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Back to Agents List">
@@ -277,7 +283,7 @@
                 @empty
                 <tr>
                   <td colspan="6" class="text-center py-5 text-muted">
-                    <span class="mdi mdi-shield-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+                    <span class="mdi mdi-monitor-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
                     <span class="d-block fw-semibold mb-1">Tidak ada alert</span>
                     <span class="d-block small">Tidak ada event keamanan dalam periode ini</span>
                   </td>
@@ -359,7 +365,7 @@
                 @empty
                 <tr>
                   <td colspan="2" class="text-center py-5 text-muted">
-                    <span class="mdi mdi-shield-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+                    <span class="mdi mdi-monitor-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
                     <span class="d-block fw-semibold mb-1">Tidak ada alert</span>
                     <span class="d-block small">Tidak ada event keamanan dalam periode ini</span>
                   </td>
@@ -536,7 +542,7 @@ function convertLabelsToLocalTime(labels) {
 function showNoData(containerId, height = '200px') {
   const el = document.getElementById(containerId);
   if (el) el.innerHTML = `<div class="d-flex flex-column align-items-center justify-content-center text-muted text-center" style="height:${height};">
-    <span class="mdi mdi-shield-check-outline" style="font-size:2.5rem; opacity:0.3; margin-bottom:8px;"></span>
+    <span class="mdi mdi-monitor-outline" style="font-size:2.5rem; opacity:0.3; margin-bottom:8px;"></span>
     <span class="fw-semibold mb-1">Tidak ada alert</span>
     <span class="small">Tidak ada event keamanan dalam periode ini</span>
   </div>`;
@@ -694,7 +700,7 @@ async function loadAlerts(page, perPage) {
         <td><span class="badge bg-secondary">${escHtml(r.groups)}</span></td>
       </tr>`;
     }).join('') : `<tr><td colspan="6" class="text-center py-5 text-muted">
-      <span class="mdi mdi-shield-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+      <span class="mdi mdi-monitor-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
       <span class="d-block fw-semibold mb-1">Tidak ada alert</span>
       <span class="d-block small">Tidak ada event keamanan dalam periode ini</span>
     </td></tr>`;
@@ -712,7 +718,7 @@ async function loadGroups(page, perPage) {
     tbody.innerHTML = json.data.length ? json.data.map(r =>
       `<tr><td><span class="badge bg-secondary">${escHtml(r.group)}</span></td><td class="fw-bold">${r.count.toLocaleString()}</td></tr>`
     ).join('') : `<tr><td colspan="2" class="text-center py-5 text-muted">
-      <span class="mdi mdi-shield-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+      <span class="mdi mdi-monitor-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
       <span class="d-block fw-semibold mb-1">Tidak ada alert</span>
       <span class="d-block small">Tidak ada event keamanan dalam periode ini</span>
     </td></tr>`;

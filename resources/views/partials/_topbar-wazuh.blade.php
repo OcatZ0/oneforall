@@ -16,6 +16,7 @@
                 'agent.vulnerabilities'      => 'Vulnerabilities',
                 'agent.mitre-attack'         => 'MITRE ATT&CK',
                 'agent.compliance'           => 'Compliance',
+                'agent.inventory'           => 'Inventory Data',
             ];
             $currentRoute     = Route::currentRouteName();
             $currentPageLabel = $breadcrumbPageLabels[$currentRoute] ?? null;
