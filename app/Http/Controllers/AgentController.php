@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agent;
+use App\Models\WazuhAgent;
 use App\Models\DashboardLayout;
 use App\Services\OpenSearchService;
 use App\Services\WazuhService;
@@ -688,7 +688,7 @@ class AgentController extends Controller
 
         if ($user->role === 'admin') return true;
 
-        $dbAgent = Agent::where('agent_id', $agentId)->first();
+        $dbAgent = WazuhAgent::where('agent_id', $agentId)->first();
         if (!$dbAgent) {
             Log::warning('Agent not found in database', ['agent_id' => $agentId, 'user_id' => $user->id]);
             return false;
@@ -705,15 +705,15 @@ class AgentController extends Controller
     private function getAccessibleAgentIds(): array
     {
         $user = auth()->user();
-        if ($user->role === 'admin') return Agent::pluck('agent_id')->toArray();
-        return Agent::where('user_id', $user->id)->pluck('agent_id')->toArray();
+        if ($user->role === 'admin') return WazuhAgent::pluck('agent_id')->toArray();
+        return WazuhAgent::where('user_id', $user->id)->pluck('agent_id')->toArray();
     }
 
     private function enrichAgentData(object $agent): object
     {
         $agentId = $agent->agent_id ?? null;
         if ($agentId) {
-            $dbAgent = Agent::where('agent_id', $agentId)->with('user')->first();
+            $dbAgent = WazuhAgent::where('agent_id', $agentId)->with('user')->first();
             if ($dbAgent) $agent->user = $dbAgent->user;
         }
         return $agent;
@@ -766,14 +766,14 @@ class AgentController extends Controller
 
                 try {
                     $agentData   = ['agent_id' => $agentId, 'name' => $wa['name'] ?? 'Unknown'];
-                    $existing    = Agent::where('agent_id', $agentId)->first();
+                    $existing    = WazuhAgent::where('agent_id', $agentId)->first();
                     $syncedIds[] = $agentId;
 
                     if ($existing) {
                         if ($existing->name !== $agentData['name']) $existing->update($agentData);
                         $updated++;
                     } else {
-                        Agent::create(array_merge($agentData, ['description' => '', 'created_at' => Carbon::now()]));
+                        WazuhAgent::create(array_merge($agentData, ['description' => '', 'created_at' => Carbon::now()]));
                         $synced++;
                     }
                     $processed++;
@@ -786,7 +786,7 @@ class AgentController extends Controller
             $offset += $limit;
         } while ($processed < $total && count($agents) > 0);
 
-        $deleted = Agent::whereNotIn('agent_id', $syncedIds)->delete();
+        $deleted = WazuhAgent::whereNotIn('agent_id', $syncedIds)->delete();
 
         Log::info('Agent sync completed', compact('synced', 'updated', 'deleted', 'errors', 'processed', 'total'));
 

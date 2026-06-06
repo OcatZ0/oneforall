@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use App\Models\Agent;
+use App\Models\WazuhAgent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -44,14 +44,14 @@ class AgentAccessControlTest extends TestCase
     public function test_admin_can_see_all_agents()
     {
         // Create agents assigned to different users
-        $agent1 = Agent::create([
+        $agent1 = WazuhAgent::create([
             'agent_id' =>'agent_001',
             'name' =>'Agent 1',
             'description' =>'Test Agent 1',
             'user_id' => $this->customerUser1->id
         ]);
         
-        $agent2 = Agent::create([
+        $agent2 = WazuhAgent::create([
             'agent_id' =>'agent_002',
             'name' =>'Agent 2',
             'description' =>'Test Agent 2',
@@ -71,7 +71,7 @@ class AgentAccessControlTest extends TestCase
     public function test_customer_sees_only_assigned_agents()
     {
         // Create agents assigned to customer1
-        $agent1 = Agent::create([
+        $agent1 = WazuhAgent::create([
             'agent_id' =>'agent_001',
             'name' =>'Agent 1',
             'description' =>'Assigned to Customer 1',
@@ -79,7 +79,7 @@ class AgentAccessControlTest extends TestCase
         ]);
         
         // Create agent assigned to customer2
-        $agent2 = Agent::create([
+        $agent2 = WazuhAgent::create([
             'agent_id' =>'agent_002',
             'name' =>'Agent 2',
             'description' =>'Assigned to Customer 2',
@@ -87,12 +87,12 @@ class AgentAccessControlTest extends TestCase
         ]);
         
         // Customer1 should only see their agent
-        $customer1Agents = Agent::where('user_id', $this->customerUser1->id)->get();
+        $customer1Agents = WazuhAgent::where('user_id', $this->customerUser1->id)->get();
         $this->assertCount(1, $customer1Agents);
         $this->assertEquals('agent_001', $customer1Agents->first()->agent_id);
 
         // Customer2 should only see their agent
-        $customer2Agents = Agent::where('user_id', $this->customerUser2->id)->get();
+        $customer2Agents = WazuhAgent::where('user_id', $this->customerUser2->id)->get();
         $this->assertCount(1, $customer2Agents);
         $this->assertEquals('agent_002', $customer2Agents->first()->agent_id);
     }
@@ -103,7 +103,7 @@ class AgentAccessControlTest extends TestCase
     public function test_customer_cannot_access_unassigned_agent_details()
     {
         // Create agent assigned to customer2
-        $agent = Agent::create([
+        $agent = WazuhAgent::create([
             'agent_id' =>'agent_001',
             'name' =>'Agent 1',
             'description' =>'Assigned to Customer 2',
@@ -125,7 +125,7 @@ class AgentAccessControlTest extends TestCase
     public function test_admin_can_access_any_agent_detail()
     {
         // Create agent assigned to customer1
-        $agent = Agent::create([
+        $agent = WazuhAgent::create([
             'agent_id' =>'agent_001',
             'name' =>'Agent 1',
             'description' =>'Assigned to Customer 1',
@@ -147,7 +147,7 @@ class AgentAccessControlTest extends TestCase
     public function test_unauthorized_access_is_logged()
     {
         // Create unassigned agent
-        $agent = Agent::create([
+        $agent = WazuhAgent::create([
             'agent_id' =>'agent_001',
             'name' =>'Agent 1',
             'description' => 'Unassigned',

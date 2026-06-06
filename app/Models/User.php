@@ -60,7 +60,7 @@ class User extends Authenticatable
      */
     public function agents()
     {
-        return $this->hasMany(Agent::class, 'user_id', 'id');
+        return $this->hasMany(WazuhAgent::class, 'user_id', 'id');
     }
 
     /**

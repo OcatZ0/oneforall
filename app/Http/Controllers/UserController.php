@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agent;
+use App\Models\WazuhAgent;
 use App\Models\DashboardLayout;
 use App\Models\User;
 use App\Services\WazuhService;
@@ -86,7 +86,7 @@ class UserController extends Controller
 
         if (!empty($validated['agents'])) {
             foreach ($validated['agents'] as $agentId) {
-                Agent::where('agent_id', $agentId)->update(['user_id' => $user->id]);
+                WazuhAgent::where('agent_id', $agentId)->update(['user_id' => $user->id]);
             }
         }
 
@@ -138,7 +138,7 @@ class UserController extends Controller
 
         if (!empty($validated['agents'])) {
             foreach ($validated['agents'] as $agentId) {
-                Agent::where('agent_id', $agentId)->update(['user_id' => $user->id]);
+                WazuhAgent::where('agent_id', $agentId)->update(['user_id' => $user->id]);
             }
         }
 
@@ -166,7 +166,7 @@ class UserController extends Controller
 
     private function getAvailableAgents(): array
     {
-        $agentRecords   = Agent::with('user')->get();
+        $agentRecords   = WazuhAgent::with('user')->get();
         $wazuhAgents    = $this->_wazuhService->getAgentsWithIPs();
         $wazuhAgentsMap = [];
         foreach ($wazuhAgents as $wa) {
@@ -189,7 +189,7 @@ class UserController extends Controller
     {
         if (empty($agentIds)) return null;
 
-        $query = Agent::whereIn('agent_id', $agentIds)->whereNotNull('user_id');
+        $query = WazuhAgent::whereIn('agent_id', $agentIds)->whereNotNull('user_id');
         if ($excludeUserId !== null) {
             $query->where('user_id', '!=', $excludeUserId);
         }

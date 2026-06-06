@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agent;
+use App\Models\WazuhAgent;
 use App\Models\LogActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,9 +16,9 @@ class ProfileController extends Controller
 
         // Admin sees all agents, customers see only their own
         if ($user->role === 'admin') {
-            $agents = Agent::all();
+            $agents = WazuhAgent::all();
         } else {
-            $agents = Agent::where('user_id', $user->id)->get();
+            $agents = WazuhAgent::where('user_id', $user->id)->get();
         }
 
         // Fetch activity logs with pagination and search

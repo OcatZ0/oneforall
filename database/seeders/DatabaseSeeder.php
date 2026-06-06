@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\User;
-use App\Models\Agent;
+use App\Models\WazuhAgent;
 use App\Models\LogActivity;
 
 class DatabaseSeeder extends Seeder

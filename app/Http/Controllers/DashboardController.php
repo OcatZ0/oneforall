@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Agent;
+use App\Models\WazuhAgent;
 use App\Models\DashboardLayout;
 use App\Models\User;
 use App\Services\OpenSearchService;
@@ -35,7 +35,7 @@ class DashboardController extends Controller
 
             $accessibleAgentIds = null;
             if (!$isAdmin) {
-                $accessibleAgentIds = Agent::where('user_id', $userId)
+                $accessibleAgentIds = WazuhAgent::where('user_id', $userId)
                     ->pluck('agent_id')
                     ->map(fn($id) => (string) $id)
                     ->values()
@@ -96,7 +96,7 @@ class DashboardController extends Controller
             if ($isAdmin) {
                 $agentStats = $this->_wazuhService->getAgentSummaryStatus($token);
             } else {
-                $accessibleIds = Agent::where('user_id', $userId)
+                $accessibleIds = WazuhAgent::where('user_id', $userId)
                     ->pluck('agent_id')
                     ->map(fn($id) => (string) $id)
                     ->values()
@@ -119,8 +119,8 @@ class DashboardController extends Controller
 
             $previousMonthEnd   = Carbon::now()->subMonth()->endOfMonth();
             $totalPreviousMonth = $isAdmin
-                ? Agent::where('created_at', '<=', $previousMonthEnd)->count()
-                : Agent::where('user_id', $userId)->where('created_at', '<=', $previousMonthEnd)->count();
+                ? WazuhAgent::where('created_at', '<=', $previousMonthEnd)->count()
+                : WazuhAgent::where('user_id', $userId)->where('created_at', '<=', $previousMonthEnd)->count();
 
             $change        = $agentStats['total'] - $totalPreviousMonth;
             $changePercent = $totalPreviousMonth > 0 ? round(($change / $totalPreviousMonth) * 100, 1) : 0;
