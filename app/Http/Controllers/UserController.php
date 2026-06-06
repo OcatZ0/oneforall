@@ -145,6 +145,23 @@ class UserController extends Controller
         return redirect()->route('user')->with('success', "User '{$validated['username']}' berhasil diperbarui.");
     }
 
+    public function destroy($id)
+    {
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'User tidak ditemukan.'], 404);
+        }
+
+        if ($user->id === auth()->user()->id) {
+            return response()->json(['success' => false, 'message' => 'Tidak dapat menghapus akun sendiri.'], 403);
+        }
+
+        $user->agents()->update(['user_id' => null]);
+        $user->delete();
+
+        return response()->json(['success' => true, 'message' => "User '{$user->username}' berhasil dihapus."]);
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private function getAvailableAgents(): array

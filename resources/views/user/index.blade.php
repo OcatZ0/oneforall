@@ -4,6 +4,7 @@
 
 @push('styles')
 @include('partials._gridstack-styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
 @endpush
 
 @section('content')
@@ -120,9 +121,10 @@
                     <a href="/user/{{ $user->id }}/edit" class="btn btn-sm btn-outline-primary me-1">
                       <i class="mdi mdi-pencil"></i>
                     </a>
-                    <a href="#" class="btn btn-sm btn-outline-danger">
+                    <button type="button" class="btn btn-sm btn-outline-danger"
+                      onclick="openDeleteModal({{ $user->id }}, '{{ addslashes($user->username) }}')">
                       <i class="mdi mdi-delete"></i>
-                    </a>
+                    </button>
                   </td>
                 </tr>
                 @empty
@@ -183,6 +185,29 @@
   <button class="gs-tb-btn gs-tb-btn-save"   id="gs-save">  <i class="mdi mdi-content-save me-1"></i>Save</button>
   <button class="gs-tb-btn gs-tb-btn-reset"  id="gs-reset"> <i class="mdi mdi-restore me-1"></i>Reset</button>
   <button class="gs-tb-btn gs-tb-btn-cancel" id="gs-cancel"><i class="mdi mdi-close me-1"></i>Cancel</button>
+</div>
+
+{{-- Delete Confirmation Modal --}}
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-semibold" id="deleteUserModalLabel">
+          <i class="mdi mdi-alert-circle text-danger me-1"></i> Hapus Pengguna
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body py-3">
+        <p class="mb-0">Hapus pengguna <strong id="deleteUserName"></strong>? Semua agent yang ditugaskan akan dilepas. Tindakan ini tidak dapat dibatalkan.</p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteBtn">
+          <i class="mdi mdi-delete me-1"></i>Hapus
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 @endsection
@@ -370,5 +395,67 @@
     });
   }
 })();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+<script>
+const notyf = new Notyf({
+  duration: 3000,
+  position: { x: 'right', y: 'top' },
+  ripple: false,
+  dismissible: true,
+});
+
+// Show success toast after page reload post-delete
+const _pendingSuccess = sessionStorage.getItem('userDeleteSuccess');
+if (_pendingSuccess) {
+  sessionStorage.removeItem('userDeleteSuccess');
+  notyf.success(_pendingSuccess);
+}
+
+let _deleteUserId = null;
+const _deleteModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
+
+function openDeleteModal(id, username) {
+  _deleteUserId = id;
+  document.getElementById('deleteUserName').textContent = username;
+  _deleteModal.show();
+}
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+  if (!_deleteUserId) return;
+
+  const btn = document.getElementById('confirmDeleteBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="mdi mdi-loading mdi-spin me-1"></span>Menghapus...';
+
+  fetch(`/user/${_deleteUserId}`, {
+    method: 'DELETE',
+    headers: {
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+  })
+  .then(r => r.json())
+  .then(data => {
+    _deleteModal.hide();
+    btn.disabled = false;
+    btn.innerHTML = '<i class="mdi mdi-delete me-1"></i>Hapus';
+
+    if (data.success) {
+      sessionStorage.setItem('userDeleteSuccess', data.message);
+      location.reload();
+    } else {
+      notyf.error(data.message || 'Gagal menghapus pengguna.');
+    }
+  })
+  .catch(() => {
+    _deleteModal.hide();
+    btn.disabled = false;
+    btn.innerHTML = '<i class="mdi mdi-delete me-1"></i>Hapus';
+    notyf.error('Terjadi kesalahan. Coba lagi.');
+  });
+});
 </script>
 @endpush

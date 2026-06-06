@@ -59,6 +59,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/user', [UserController::class, 'store'])->name('user.store');
         Route::get('/user/{id}/edit', [UserController::class, 'edit'])->name('edit-user');
         Route::put('/user/{id}', [UserController::class, 'update'])->name('user.update');
+        Route::delete('/user/{id}', [UserController::class, 'destroy'])->name('user.destroy');
         Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log');
     });
 });
