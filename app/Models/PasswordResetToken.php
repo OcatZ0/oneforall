@@ -9,7 +9,7 @@ class PasswordResetToken extends Model
     /**
      * The table associated with the model.
      */
-    protected $table = 'password_reset_tokens';
+    protected $table = 'password_reset_token';
 
     /**
      * Indicates if the model should be timestamped.

@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('activity_logs', function (Blueprint $table) {
+        Schema::create('activity_log', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreign('user_id')->references('id')->on('user')->cascadeOnDelete();
             $table->string('activity', 255);
             $table->dateTime('created_at')->useCurrent();
         });
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('activity_logs');
+        Schema::dropIfExists('activity_log');
     }
 };

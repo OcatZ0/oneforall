@@ -44,7 +44,7 @@ class ActivityLogController extends Controller
             Log::error('Activity log error: ' . $e->getMessage());
             return view('activity-log.index', [
                 'logs'        => collect(),
-                'users'       => collect(),
+                'users'      => collect(),
                 'search'      => null,
                 'userId'      => null,
                 'dateFrom'    => null,

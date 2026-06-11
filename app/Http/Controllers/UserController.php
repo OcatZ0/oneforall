@@ -50,7 +50,7 @@ class UserController extends Controller
                                       ->where('page', 'user')
                                       ->value('layout');
 
-        return view('user.index', compact('users', 'userStats', 'savedLayout'));
+        return view('user.index', compact('user', 'userStats', 'savedLayout'));
     }
 
     public function create()
@@ -62,8 +62,8 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'username' => 'required|string|min:3|max:50|unique:users,username',
-            'email'    => 'required|email|unique:users,email',
+            'username' => 'required|string|min:3|max:50|unique:user,username',
+            'email'    => 'required|email|unique:user,email',
             'password' => 'required|string|min:6',
             'role'     => 'required|in:admin,customer',
             'agents'   => 'array',
@@ -114,8 +114,8 @@ class UserController extends Controller
         }
 
         $validated = $request->validate([
-            'username' => "required|string|min:3|max:50|unique:users,username,{$id},id",
-            'email'    => "required|email|unique:users,email,{$id},id",
+            'username' => "required|string|min:3|max:50|unique:user,username,{$id},id",
+            'email'    => "required|email|unique:user,email,{$id},id",
             'role'     => 'required|in:admin,customer',
             'agents'   => 'array',
             'agents.*' => 'string',

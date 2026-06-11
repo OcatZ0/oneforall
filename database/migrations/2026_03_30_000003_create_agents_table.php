@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('agents', function (Blueprint $table) {
+        Schema::create('agent', function (Blueprint $table) {
             $table->string('agent_id', 255)->primary();
             $table->string('name', 100);
             $table->string('description', 255);
             $table->dateTime('created_at')->useCurrent();
             $table->unsignedBigInteger('user_id')->nullable();
-            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreign('user_id')->references('id')->on('user')->cascadeOnDelete();
         });
     }
 
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('agents');
+        Schema::dropIfExists('agent');
     }
 };

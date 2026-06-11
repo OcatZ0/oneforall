@@ -12,7 +12,7 @@ class LogActivity extends Model
     /**
      * The table associated with the model.
      */
-    protected $table = 'activity_logs';
+    protected $table = 'activity_log';
 
     /**
      * Indicates if the model should be timestamped.

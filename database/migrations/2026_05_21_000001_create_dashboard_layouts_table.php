@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('dashboard_layouts', function (Blueprint $table) {
+        Schema::create('dashboard_layout', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->string('page', 50)->default('home');
@@ -17,13 +17,13 @@ return new class extends Migration
             $table->unique(['user_id', 'page']);
             $table->foreign('user_id')
                   ->references('id')
-                  ->on('users')
+                  ->on('user')
                   ->onDelete('cascade');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('dashboard_layouts');
+        Schema::dropIfExists('dashboard_layout');
     }
 };

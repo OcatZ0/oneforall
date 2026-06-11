@@ -15,7 +15,7 @@ class User extends Authenticatable
     /**
      * The table associated with the model.
      */
-    protected $table = 'users';
+    protected $table = 'user';
 
     /**
      * Indicates if the model should be timestamped.
