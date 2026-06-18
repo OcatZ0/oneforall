@@ -182,6 +182,7 @@ class UserController extends Controller
                     'ip'          => $wa['ip'] ?? 'N/A',
                     'assigned'    => $db && !is_null($db->user_id),
                     'assigned_to' => $db?->user?->username,
+                    'in_db'       => (bool) $db,
                 ];
             })
             ->values()
