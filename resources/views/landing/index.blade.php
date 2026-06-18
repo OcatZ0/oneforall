@@ -1,6 +1,6 @@
 @extends('layouts.landing')
 
-@section('title', 'One For All — Security Monitoring Dashboard')
+@section('title', 'One For All - Security Monitoring Dashboard')
 
 @section('content')
 
