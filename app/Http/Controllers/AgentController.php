@@ -28,33 +28,35 @@ class AgentController extends Controller
             $user    = auth()->user();
             $isAdmin = ($user->role ?? null) === 'admin';
             $token   = $this->_wazuhService->getToken();
-            $stats   = $this->buildFilteredStats($token, $isAdmin);
             $perPage = request('per_page', 10);
             $page    = max(request('page', 1), 1);
             $offset  = ($page - 1) * $perPage;
 
-            $wazuhData     = $this->_wazuhService->getAgents($token ?? '', $offset, $perPage, request('search'), request('status'));
-            $accessibleIds = $isAdmin ? null : $this->getAccessibleAgentIds();
+            $dbAgentIds = $this->getAccessibleAgentIds();
+            $stats      = $this->buildFilteredStats($token, $dbAgentIds);
 
+            if (empty($dbAgentIds)) {
+                $agents      = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage, $page, ['path' => route('agent'), 'query' => request()->query()]);
+                $savedLayout = DashboardLayout::where('user_id', $user->id)->where('page', 'agent')->value('layout');
+                return view('agent.index', ['agents' => $agents, 'stats' => $stats, 'evolutionLabels' => '[]', 'evolutionData' => '[]', 'savedLayout' => $savedLayout]);
+            }
+
+            $wazuhData  = $this->_wazuhService->getAgents($token ?? '', $offset, $perPage, request('search'), request('status'), $dbAgentIds);
             $agentsList = collect($wazuhData['agents'])
-                ->map(fn($a) => $this->enrichAgentData($this->mapWazuhAgent($a)))
-                ->filter(function ($agent) use ($accessibleIds, $isAdmin) {
-                    if ($agent->agent_id === '000') return false;
-                    return $isAdmin || in_array($agent->agent_id, $accessibleIds);
-                });
+                ->reject(fn($a) => ($a['id'] ?? '') === '000')
+                ->map(fn($a) => $this->enrichAgentData($this->mapWazuhAgent($a)));
 
             $agents = new \Illuminate\Pagination\LengthAwarePaginator(
-                items: $agentsList->forPage($page, $perPage)->values(),
+                items: $agentsList->values(),
                 total: $wazuhData['total'],
                 perPage: $perPage,
                 currentPage: $page,
                 options: ['path' => route('agent'), 'query' => request()->query()]
             );
 
-            $sessionKey         = 'agent_evolution_base_time_' . floor(date('n'));
-            $baseTime           = session($sessionKey) ?? tap(Carbon::now(), fn($t) => session([$sessionKey => $t]));
-            $accessibleAgentIds = $isAdmin ? null : array_map('strval', $this->getAccessibleAgentIds());
-            $evolution          = $this->getAgentEvolution('24h', $accessibleAgentIds, $isAdmin, $baseTime);
+            $sessionKey = 'agent_evolution_base_time_' . floor(date('n'));
+            $baseTime   = session($sessionKey) ?? tap(Carbon::now(), fn($t) => session([$sessionKey => $t]));
+            $evolution  = $this->getAgentEvolution('24h', $dbAgentIds, $isAdmin, $baseTime);
             $evolutionLabels    = json_encode($evolution['labels'] ?? []);
             $evolutionData      = json_encode($evolution['data']['active'] ?? $evolution['data'] ?? []);
 
@@ -601,16 +603,17 @@ class AgentController extends Controller
             $page    = max((int) request('page', 1), 1);
             $offset  = ($page - 1) * $perPage;
 
-            $token     = $this->_wazuhService->getToken();
-            $wazuhData = $this->_wazuhService->getAgents($token ?? '', $offset, $perPage, request('search'), request('status'));
-            $accessibleIds = $isAdmin ? null : $this->getAccessibleAgentIds();
+            $token      = $this->_wazuhService->getToken();
+            $dbAgentIds = $this->getAccessibleAgentIds();
 
+            if (empty($dbAgentIds)) {
+                return response()->json(['agents' => [], 'total' => 0, 'page' => $page, 'perPage' => $perPage, 'totalPages' => 1, 'from' => 0, 'to' => 0]);
+            }
+
+            $wazuhData  = $this->_wazuhService->getAgents($token ?? '', $offset, $perPage, request('search'), request('status'), $dbAgentIds);
             $agentsList = collect($wazuhData['agents'])
+                ->reject(fn($a) => ($a['id'] ?? '') === '000')
                 ->map(fn($a) => $this->enrichAgentData($this->mapWazuhAgent($a)))
-                ->filter(function ($agent) use ($accessibleIds, $isAdmin) {
-                    if ($agent->agent_id === '000') return false;
-                    return $isAdmin || in_array($agent->agent_id, $accessibleIds);
-                })
                 ->values();
 
             $total      = $wazuhData['total'];
@@ -793,25 +796,19 @@ class AgentController extends Controller
         return ['success' => true, 'synced_new' => $synced, 'updated_existing' => $updated, 'deleted_obsolete' => $deleted, 'total_processed' => $processed, 'errors' => $errors, 'total_in_wazuh' => $total];
     }
 
-    private function buildFilteredStats(?string $token, bool $isAdmin): array
+    private function buildFilteredStats(?string $token, array $dbAgentIds): array
     {
         $empty = ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0];
-        if (!$token) return $empty;
-
-        if ($isAdmin) return $this->_wazuhService->getAgentSummaryStatus($token);
-
-        $accessibleIds = $this->getAccessibleAgentIds();
-        if (empty($accessibleIds)) return $empty;
+        if (!$token || empty($dbAgentIds)) return $empty;
 
         $stats = $empty;
         try {
-            $data = $this->_wazuhService->getAgents($token, 0, 50000);
+            $data = $this->_wazuhService->getAgents($token, 0, count($dbAgentIds), null, null, $dbAgentIds);
             foreach ($data['agents'] as $a) {
-                if (in_array($a['id'], $accessibleIds)) {
-                    $stats['total']++;
-                    $status = $a['status'] ?? 'unknown';
-                    if (isset($stats[$status])) $stats[$status]++;
-                }
+                if (($a['id'] ?? '') === '000') continue;
+                $stats['total']++;
+                $status = $a['status'] ?? 'unknown';
+                if (isset($stats[$status])) $stats[$status]++;
             }
         } catch (\Exception $e) {
             Log::warning('Failed to fetch filtered agent stats: ' . $e->getMessage());

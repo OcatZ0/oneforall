@@ -67,13 +67,16 @@ class WazuhService
         }
     }
 
-    public function getAgents(string $token, int $offset = 0, int $limit = 10, ?string $search = null, ?string $status = null): array
+    public function getAgents(string $token, int $offset = 0, int $limit = 10, ?string $search = null, ?string $status = null, ?array $agentIds = null): array
     {
         try {
             $params = ['offset' => $offset, 'limit' => $limit, 'sort' => 'id'];
             if ($search) $params['search'] = $search;
             if ($status && in_array($status, ['active', 'disconnected', 'pending', 'never_connected'])) {
                 $params['status'] = $status;
+            }
+            if (!empty($agentIds)) {
+                $params['agents_list'] = implode(',', $agentIds);
             }
 
             $response = Http::withoutVerifying()

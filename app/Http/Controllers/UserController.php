@@ -85,12 +85,8 @@ class UserController extends Controller
         ]);
 
         if (!empty($validated['agents'])) {
-            $wazuhAgentMap = $this->fetchWazuhAgentMap($validated['agents']);
             foreach ($validated['agents'] as $agentId) {
-                WazuhAgent::firstOrCreate(
-                    ['agent_id' => $agentId],
-                    ['name' => $wazuhAgentMap[$agentId] ?? 'Unknown', 'description' => '', 'created_at' => now()]
-                )->update(['user_id' => $user->id]);
+                WazuhAgent::where('agent_id', $agentId)->update(['user_id' => $user->id]);
             }
         }
 
@@ -141,12 +137,8 @@ class UserController extends Controller
         $user->agents()->update(['user_id' => null]);
 
         if (!empty($validated['agents'])) {
-            $wazuhAgentMap = $this->fetchWazuhAgentMap($validated['agents']);
             foreach ($validated['agents'] as $agentId) {
-                WazuhAgent::firstOrCreate(
-                    ['agent_id' => $agentId],
-                    ['name' => $wazuhAgentMap[$agentId] ?? 'Unknown', 'description' => '', 'created_at' => now()]
-                )->update(['user_id' => $user->id]);
+                WazuhAgent::where('agent_id', $agentId)->update(['user_id' => $user->id]);
             }
         }
 
@@ -172,40 +164,32 @@ class UserController extends Controller
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private function fetchWazuhAgentMap(array $agentIds): array
-    {
-        $token = $this->_wazuhService->getToken();
-        if (!$token) return [];
-
-        $wazuhAgents = $this->_wazuhService->getAgents($token, 0, 500)['agents'] ?? [];
-        return collect($wazuhAgents)
-            ->whereIn('id', $agentIds)
-            ->pluck('name', 'id')
-            ->toArray();
-    }
-
     private function getAvailableAgents(): array
     {
+        $dbAgents = WazuhAgent::with('user')->get()->keyBy('agent_id');
+        if ($dbAgents->isEmpty()) return [];
+
         $token = $this->_wazuhService->getToken();
-        if (!$token) return [];
+        if (!$token) {
+            return $dbAgents->map(fn($db) => [
+                'id'          => $db->agent_id,
+                'name'        => $db->name,
+                'ip'          => 'N/A',
+                'assigned'    => !is_null($db->user_id),
+                'assigned_to' => $db->user?->username,
+            ])->values()->toArray();
+        }
 
-        $wazuhAgents = $this->_wazuhService->getAgents($token, 0, 500)['agents'] ?? [];
-        $dbAgents    = WazuhAgent::with('user')->get()->keyBy('agent_id');
+        $wazuhAgents = $this->_wazuhService->getAgents($token, 0, $dbAgents->count(), null, null, $dbAgents->keys()->toArray())['agents'] ?? [];
+        $wazuhMap    = collect($wazuhAgents)->keyBy('id');
 
-        return collect($wazuhAgents)
-            ->filter(fn($wa) => !empty($wa['id']) && $wa['id'] !== '000')
-            ->map(function ($wa) use ($dbAgents) {
-                $db = $dbAgents->get($wa['id']);
-                return [
-                    'id'          => $wa['id'],
-                    'name'        => $wa['name'] ?? 'Unknown',
-                    'ip'          => $wa['ip'] ?? 'N/A',
-                    'assigned'    => $db && !is_null($db->user_id),
-                    'assigned_to' => $db?->user?->username,
-                ];
-            })
-            ->values()
-            ->toArray();
+        return $dbAgents->map(fn($db) => [
+            'id'          => $db->agent_id,
+            'name'        => $db->name,
+            'ip'          => $wazuhMap->get($db->agent_id)['ip'] ?? 'N/A',
+            'assigned'    => !is_null($db->user_id),
+            'assigned_to' => $db->user?->username,
+        ])->values()->toArray();
     }
 
     private function validateAgentAssignment(array $agentIds, ?int $excludeUserId = null): ?string
