@@ -705,13 +705,6 @@ class AgentController extends Controller
         return $hasAccess;
     }
 
-    private function getAccessibleAgentIds(): array
-    {
-        $user = auth()->user();
-        if ($user->role === 'admin') return WazuhAgent::pluck('agent_id')->toArray();
-        return WazuhAgent::where('user_id', $user->id)->pluck('agent_id')->toArray();
-    }
-
     private function enrichAgentData(object $agent): object
     {
         $agentId = $agent->agent_id ?? null;

@@ -33,9 +33,7 @@ class DashboardController extends Controller
             $token      = $this->_wazuhService->getToken();
             $agentStats = $this->getAgentStatsWithChange($token, $isAdmin, $userId);
 
-            $accessibleAgentIds = $isAdmin
-                ? WazuhAgent::pluck('agent_id')->map(fn($id) => (string) $id)->values()->toArray()
-                : WazuhAgent::where('user_id', $userId)->pluck('agent_id')->map(fn($id) => (string) $id)->values()->toArray();
+            $accessibleAgentIds = $this->getAccessibleAgentIds();
 
             $alertTrend     = $this->_openSearch->getAlertTrendLast7Days($accessibleAgentIds, $isAdmin);
             $alertSeverity  = $this->_openSearch->getAlertSeverityDistribution($accessibleAgentIds, $isAdmin);
@@ -88,9 +86,7 @@ class DashboardController extends Controller
         try {
             if (!$token) return $empty;
 
-            $dbAgentIds = $isAdmin
-                ? WazuhAgent::pluck('agent_id')->map(fn($id) => (string) $id)->toArray()
-                : WazuhAgent::where('user_id', $userId)->pluck('agent_id')->map(fn($id) => (string) $id)->toArray();
+            $dbAgentIds = $this->getAccessibleAgentIds();
 
             $agentStats = ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0];
             if (!empty($dbAgentIds)) {
