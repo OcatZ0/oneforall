@@ -85,8 +85,12 @@ class UserController extends Controller
         ]);
 
         if (!empty($validated['agents'])) {
+            $wazuhAgentMap = $this->fetchWazuhAgentMap($validated['agents']);
             foreach ($validated['agents'] as $agentId) {
-                WazuhAgent::where('agent_id', $agentId)->update(['user_id' => $user->id]);
+                WazuhAgent::firstOrCreate(
+                    ['agent_id' => $agentId],
+                    ['name' => $wazuhAgentMap[$agentId] ?? 'Unknown', 'description' => '', 'created_at' => now()]
+                )->update(['user_id' => $user->id]);
             }
         }
 
@@ -137,8 +141,12 @@ class UserController extends Controller
         $user->agents()->update(['user_id' => null]);
 
         if (!empty($validated['agents'])) {
+            $wazuhAgentMap = $this->fetchWazuhAgentMap($validated['agents']);
             foreach ($validated['agents'] as $agentId) {
-                WazuhAgent::where('agent_id', $agentId)->update(['user_id' => $user->id]);
+                WazuhAgent::firstOrCreate(
+                    ['agent_id' => $agentId],
+                    ['name' => $wazuhAgentMap[$agentId] ?? 'Unknown', 'description' => '', 'created_at' => now()]
+                )->update(['user_id' => $user->id]);
             }
         }
 
@@ -164,6 +172,18 @@ class UserController extends Controller
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
+    private function fetchWazuhAgentMap(array $agentIds): array
+    {
+        $token = $this->_wazuhService->getToken();
+        if (!$token) return [];
+
+        $wazuhAgents = $this->_wazuhService->getAgents($token, 0, 500)['agents'] ?? [];
+        return collect($wazuhAgents)
+            ->whereIn('id', $agentIds)
+            ->pluck('name', 'id')
+            ->toArray();
+    }
+
     private function getAvailableAgents(): array
     {
         $token = $this->_wazuhService->getToken();
@@ -182,7 +202,6 @@ class UserController extends Controller
                     'ip'          => $wa['ip'] ?? 'N/A',
                     'assigned'    => $db && !is_null($db->user_id),
                     'assigned_to' => $db?->user?->username,
-                    'in_db'       => (bool) $db,
                 ];
             })
             ->values()

@@ -82,7 +82,7 @@
                       <input type="checkbox" class="form-check-input flex-shrink-0 mt-1" id="agent_{{ $agent['id'] }}"
                         name="agents[]" value="{{ $agent['id'] }}"
                         {{ in_array($agent['id'], old('agents', $userAgentIds)) ? 'checked' : '' }}
-                        {{ (!$agent['in_db'] || ($agent['assigned'] && !in_array($agent['id'], $userAgentIds))) ? 'disabled' : '' }}
+                        {{ $agent['assigned'] && !in_array($agent['id'], $userAgentIds) ? 'disabled' : '' }}
                         style="width: 18px; height: 18px; cursor: pointer; margin-top: 2px; margin-left: 0;">
                       <label class="form-check-label flex-grow-1 ms-3" for="agent_{{ $agent['id'] }}" style="cursor: pointer;">
                         <div class="d-flex justify-content-between align-items-start gap-2">
@@ -91,9 +91,7 @@
                             <small class="text-muted d-block">ID: {{ $agent['id'] }} | IP: {{ $agent['ip'] }}</small>
                           </div>
                           <div style="flex-shrink: 0;">
-                            @if(!$agent['in_db'])
-                              <span class="badge bg-warning text-dark">Perlu disinkronkan</span>
-                            @elseif($agent['assigned'])
+                            @if($agent['assigned'])
                               <span class="badge bg-{{ in_array($agent['id'], $userAgentIds) ? 'primary' : 'secondary' }}">
                                 Assigned to: <strong>{{ $agent['assigned_to'] }}</strong>
                               </span>
