@@ -33,14 +33,9 @@ class DashboardController extends Controller
             $token      = $this->_wazuhService->getToken();
             $agentStats = $this->getAgentStatsWithChange($token, $isAdmin, $userId);
 
-            $accessibleAgentIds = null;
-            if (!$isAdmin) {
-                $accessibleAgentIds = WazuhAgent::where('user_id', $userId)
-                    ->pluck('agent_id')
-                    ->map(fn($id) => (string) $id)
-                    ->values()
-                    ->toArray();
-            }
+            $accessibleAgentIds = $isAdmin
+                ? WazuhAgent::pluck('agent_id')->map(fn($id) => (string) $id)->values()->toArray()
+                : WazuhAgent::where('user_id', $userId)->pluck('agent_id')->map(fn($id) => (string) $id)->values()->toArray();
 
             $alertTrend     = $this->_openSearch->getAlertTrendLast7Days($accessibleAgentIds, $isAdmin);
             $alertSeverity  = $this->_openSearch->getAlertSeverityDistribution($accessibleAgentIds, $isAdmin);
@@ -93,27 +88,18 @@ class DashboardController extends Controller
         try {
             if (!$token) return $empty;
 
-            if ($isAdmin) {
-                $agentStats = $this->_wazuhService->getAgentSummaryStatus($token);
-            } else {
-                $accessibleIds = WazuhAgent::where('user_id', $userId)
-                    ->pluck('agent_id')
-                    ->map(fn($id) => (string) $id)
-                    ->values()
-                    ->toArray();
+            $dbAgentIds = $isAdmin
+                ? WazuhAgent::pluck('agent_id')->map(fn($id) => (string) $id)->toArray()
+                : WazuhAgent::where('user_id', $userId)->pluck('agent_id')->map(fn($id) => (string) $id)->toArray();
 
-                $agentStats = ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0];
-
-                if (!empty($accessibleIds)) {
-                    $data = $this->_wazuhService->getAgents($token, 0, 50000);
-                    foreach ($data['agents'] as $agent) {
-                        $agentId = (string) ($agent['id'] ?? null);
-                        if (in_array($agentId, $accessibleIds, true)) {
-                            $agentStats['total']++;
-                            $status = $agent['status'] ?? 'unknown';
-                            if (isset($agentStats[$status])) $agentStats[$status]++;
-                        }
-                    }
+            $agentStats = ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0];
+            if (!empty($dbAgentIds)) {
+                $data = $this->_wazuhService->getAgents($token, 0, count($dbAgentIds), null, null, $dbAgentIds);
+                foreach ($data['agents'] as $agent) {
+                    if (($agent['id'] ?? '') === '000') continue;
+                    $agentStats['total']++;
+                    $status = $agent['status'] ?? 'unknown';
+                    if (isset($agentStats[$status])) $agentStats[$status]++;
                 }
             }
 
