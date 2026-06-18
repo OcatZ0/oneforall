@@ -50,7 +50,7 @@ class UserController extends Controller
                                       ->where('page', 'user')
                                       ->value('layout');
 
-        return view('user.index', compact('user', 'userStats', 'savedLayout'));
+        return view('user.index', compact('users', 'userStats', 'savedLayout'));
     }
 
     public function create()
@@ -166,23 +166,26 @@ class UserController extends Controller
 
     private function getAvailableAgents(): array
     {
-        $agentRecords   = WazuhAgent::with('user')->get();
-        $wazuhAgents    = $this->_wazuhService->getAgentsWithIPs();
-        $wazuhAgentsMap = [];
-        foreach ($wazuhAgents as $wa) {
-            $wazuhAgentsMap[(string) $wa['id']] = $wa;
-        }
+        $token = $this->_wazuhService->getToken();
+        if (!$token) return [];
 
-        return $agentRecords->map(function ($agent) use ($wazuhAgentsMap) {
-            $agentId = (string) $agent->agent_id;
-            return [
-                'id'          => $agent->agent_id,
-                'name'        => $agent->name,
-                'ip'          => $wazuhAgentsMap[$agentId]['ip'] ?? 'N/A',
-                'assigned'    => !is_null($agent->user_id),
-                'assigned_to' => $agent->user?->username,
-            ];
-        })->toArray();
+        $wazuhAgents = $this->_wazuhService->getAgents($token, 0, 500)['agents'] ?? [];
+        $dbAgents    = WazuhAgent::with('user')->get()->keyBy('agent_id');
+
+        return collect($wazuhAgents)
+            ->filter(fn($wa) => !empty($wa['id']) && $wa['id'] !== '000')
+            ->map(function ($wa) use ($dbAgents) {
+                $db = $dbAgents->get($wa['id']);
+                return [
+                    'id'          => $wa['id'],
+                    'name'        => $wa['name'] ?? 'Unknown',
+                    'ip'          => $wa['ip'] ?? 'N/A',
+                    'assigned'    => $db && !is_null($db->user_id),
+                    'assigned_to' => $db?->user?->username,
+                ];
+            })
+            ->values()
+            ->toArray();
     }
 
     private function validateAgentAssignment(array $agentIds, ?int $excludeUserId = null): ?string
