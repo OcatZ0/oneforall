@@ -16,10 +16,10 @@
   <div class="alert alert-danger d-flex align-items-center gap-3" role="alert">
     <i class="mdi mdi-alert-circle-outline display-4"></i>
     <div>
-      <h5 class="alert-heading mb-1">Agent Not Found</h5>
-      <p class="mb-0">Unable to load agent details. The agent may no longer exist or access has been denied.</p>
+      <h5 class="alert-heading mb-1">Agen Tidak Ditemukan</h5>
+      <p class="mb-0">Gagal memuat detail agen. Agen mungkin sudah tidak ada atau akses ditolak.</p>
       <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2">
-        <i class="mdi mdi-arrow-left me-1"></i> Back to Agents
+        <i class="mdi mdi-arrow-left me-1"></i> Kembali ke Agen
       </a>
     </div>
   </div>
@@ -32,17 +32,17 @@
     <ul class="nav flex-nowrap overflow-auto">
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.detail', $agent->agent_id) }}">
-          <span class="mdi mdi-home"></span> Details
+          <span class="mdi mdi-home"></span> Detail
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.security-events', $agent->agent_id) }}">
-          <span class="mdi mdi-format-list-bulleted"></span> Security events
+          <span class="mdi mdi-format-list-bulleted"></span> Event Keamanan
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.integrity-monitoring', $agent->agent_id) }}">
-          <span class="mdi mdi-shield"></span> Integrity monitoring
+          <span class="mdi mdi-shield"></span> Pemantauan Integritas
         </a>
       </li>
       <li class="nav-item">
@@ -52,7 +52,7 @@
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small active" href="{{ route('agent.vulnerabilities', $agent->agent_id) }}">
-          <span class="mdi mdi-bug"></span> Vulnerabilities
+          <span class="mdi mdi-bug"></span> Kerentanan
         </a>
       </li>
       <li class="nav-item">
@@ -62,7 +62,7 @@
       </li>
       <li class="nav-item dropdown">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <span class="mdi mdi-check-decagram"></span> Compliance
+          <span class="mdi mdi-check-decagram"></span> Kepatuhan
         </a>
         <ul class="dropdown-menu dropdown-menu-dark">
           <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->agent_id) }}?compliance_type=pci_dss">PCI DSS</a></li>
@@ -75,13 +75,13 @@
 
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.inventory', $agent->agent_id) }}">
-          <span class="mdi mdi-database"></span> Inventory Data
+          <span class="mdi mdi-database"></span> Data Inventaris
         </a>
       </li>
     </ul>
     <div class="ms-auto d-flex gap-2 flex-shrink-0 py-1">
-      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Back to Agents List">
-        <span class="mdi mdi-arrow-left"></span> Back
+      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Kembali ke Daftar Agen">
+        <span class="mdi mdi-arrow-left"></span> Kembali
       </a>
     </div>
   </div>
@@ -91,11 +91,11 @@
 <div class="grid-stack" id="vuln-grid">
 
   {{-- SEVERITY CHART --}}
-  <div class="grid-stack-item" gs-id="vuln-severity" data-label="Severity" gs-x="0" gs-y="0" gs-w="4" gs-h="8">
+  <div class="grid-stack-item" gs-id="vuln-severity" data-label="Tingkat Keparahan" gs-x="0" gs-y="0" gs-w="4" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2 text-center">
-          <span class="fw-semibold small text-uppercase text-muted tracking-wide">Severity</span>
+          <span class="fw-semibold small text-uppercase text-muted tracking-wide">Tingkat Keparahan</span>
         </div>
         <div class="card-body d-flex flex-column align-items-center justify-content-center">
           @php $totalSev = array_sum($severityCounts); @endphp
@@ -104,10 +104,10 @@
             <canvas id="vulnSeverityChart"></canvas>
           </div>
           <div class="d-flex flex-wrap gap-3 mt-3 justify-content-center small">
-            <span><span class="mdi mdi-circle text-danger"></span> Critical: <strong>{{ $severityCounts['Critical'] }}</strong></span>
-            <span><span class="mdi mdi-circle" style="color:#fd7e14;"></span> High: <strong>{{ $severityCounts['High'] }}</strong></span>
-            <span><span class="mdi mdi-circle text-warning"></span> Medium: <strong>{{ $severityCounts['Medium'] }}</strong></span>
-            <span><span class="mdi mdi-circle text-secondary"></span> Low: <strong>{{ $severityCounts['Low'] }}</strong></span>
+            <span><span class="mdi mdi-circle text-danger"></span> Kritis: <strong>{{ $severityCounts['Critical'] }}</strong></span>
+            <span><span class="mdi mdi-circle" style="color:#fd7e14;"></span> Tinggi: <strong>{{ $severityCounts['High'] }}</strong></span>
+            <span><span class="mdi mdi-circle text-warning"></span> Sedang: <strong>{{ $severityCounts['Medium'] }}</strong></span>
+            <span><span class="mdi mdi-circle text-secondary"></span> Rendah: <strong>{{ $severityCounts['Low'] }}</strong></span>
           </div>
           @else
           <div class="d-flex flex-column align-items-center justify-content-center text-muted text-center">
@@ -122,35 +122,35 @@
   </div>
 
   {{-- DETAILS --}}
-  <div class="grid-stack-item" gs-id="vuln-details" data-label="Details" gs-x="4" gs-y="0" gs-w="4" gs-h="8">
+  <div class="grid-stack-item" gs-id="vuln-details" data-label="Rincian" gs-x="4" gs-y="0" gs-w="4" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2 text-center">
-          <span class="fw-semibold small text-uppercase text-muted">Details</span>
+          <span class="fw-semibold small text-uppercase text-muted">Rincian</span>
         </div>
         <div class="card-body d-flex flex-column justify-content-center">
           <div class="row g-3 text-center mb-4">
             <div class="col-3">
-              <div class="text-muted small mb-1">Critical</div>
+              <div class="text-muted small mb-1">Kritis</div>
               <div class="vuln-stat-val text-danger">{{ $severityCounts['Critical'] }}</div>
             </div>
             <div class="col-3">
-              <div class="text-muted small mb-1">High</div>
+              <div class="text-muted small mb-1">Tinggi</div>
               <div class="vuln-stat-val" style="color:#fd7e14;">{{ $severityCounts['High'] }}</div>
             </div>
             <div class="col-3">
-              <div class="text-muted small mb-1">Medium</div>
+              <div class="text-muted small mb-1">Sedang</div>
               <div class="vuln-stat-val text-warning">{{ $severityCounts['Medium'] }}</div>
             </div>
             <div class="col-3">
-              <div class="text-muted small mb-1">Low</div>
+              <div class="text-muted small mb-1">Rendah</div>
               <div class="vuln-stat-val text-secondary">{{ $severityCounts['Low'] }}</div>
             </div>
           </div>
           <hr class="my-2">
           <div class="row g-2 text-center small">
             <div class="col-6">
-              <div class="text-muted mb-1">Last full scan</div>
+              <div class="text-muted mb-1">Pemindaian penuh terakhir</div>
               <div class="fw-semibold" style="font-size:11px;">
                 @if($lastScan && !empty($lastScan['end']))
                   {{ \Carbon\Carbon::parse($lastScan['end'])->format('Y-m-d H:i') }}
@@ -160,7 +160,7 @@
               </div>
             </div>
             <div class="col-6">
-              <div class="text-muted mb-1">Last partial scan</div>
+              <div class="text-muted mb-1">Pemindaian parsial terakhir</div>
               <div class="fw-semibold" style="font-size:11px;">
                 @if($lastScan && !empty($lastScan['start']))
                   {{ \Carbon\Carbon::parse($lastScan['start'])->format('Y-m-d H:i') }}
@@ -176,15 +176,15 @@
   </div>
 
   {{-- SUMMARY --}}
-  <div class="grid-stack-item" gs-id="vuln-summary" data-label="Summary" gs-x="8" gs-y="0" gs-w="4" gs-h="8">
+  <div class="grid-stack-item" gs-id="vuln-summary" data-label="Ringkasan" gs-x="8" gs-y="0" gs-w="4" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2 d-flex align-items-center justify-content-between">
-          <span class="fw-semibold small text-uppercase text-muted">Summary</span>
+          <span class="fw-semibold small text-uppercase text-muted">Ringkasan</span>
           <select id="vuln-summary-field" class="form-select form-select-sm" style="width:auto;font-size:11px;">
-            <option value="name">Name</option>
+            <option value="name">Nama</option>
             <option value="cve">CVE</option>
-            <option value="version">Version</option>
+            <option value="version">Versi</option>
             <option value="cvss2">CVSS2 Score</option>
             <option value="cvss3">CVSS3 Score</option>
           </select>
@@ -208,20 +208,20 @@
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
-          <span class="fw-semibold small">Vulnerabilities ({{ number_format($totalVulns) }})</span>
+          <span class="fw-semibold small">Kerentanan ({{ number_format($totalVulns) }})</span>
           {{-- Severity filter --}}
           @php $filterBase = array_merge(request()->query(), ['page' => 1]); @endphp
           <div id="vuln-severity-filter" class="btn-group btn-group-sm" role="group">
             <a href="?{{ http_build_query(array_merge($filterBase, ['severity' => ''])) }}"
-               class="btn {{ !$severity ? 'btn-primary' : 'btn-outline-secondary' }}">All</a>
+               class="btn {{ !$severity ? 'btn-primary' : 'btn-outline-secondary' }}">Semua</a>
             <a href="?{{ http_build_query(array_merge($filterBase, ['severity' => 'Critical'])) }}"
-               class="btn {{ $severity === 'Critical' ? 'btn-danger' : 'btn-outline-secondary' }}">Critical</a>
+               class="btn {{ $severity === 'Critical' ? 'btn-danger' : 'btn-outline-secondary' }}">Kritis</a>
             <a href="?{{ http_build_query(array_merge($filterBase, ['severity' => 'High'])) }}"
-               class="btn {{ $severity === 'High' ? 'btn-warning' : 'btn-outline-secondary' }}">High</a>
+               class="btn {{ $severity === 'High' ? 'btn-warning text-white' : 'btn-outline-secondary' }}">Tinggi</a>
             <a href="?{{ http_build_query(array_merge($filterBase, ['severity' => 'Medium'])) }}"
-               class="btn {{ $severity === 'Medium' ? 'btn-info text-dark' : 'btn-outline-secondary' }}">Medium</a>
+               class="btn {{ $severity === 'Medium' ? 'btn-info text-white' : 'btn-outline-secondary' }}">Sedang</a>
             <a href="?{{ http_build_query(array_merge($filterBase, ['severity' => 'Low'])) }}"
-               class="btn {{ $severity === 'Low' ? 'btn-secondary' : 'btn-outline-secondary' }}">Low</a>
+               class="btn {{ $severity === 'Low' ? 'btn-secondary' : 'btn-outline-secondary' }}">Rendah</a>
           </div>
         </div>
         <div class="card-body p-0">
@@ -229,14 +229,14 @@
             <table class="table table-sm table-hover table-striped mb-0" style="font-size:11px;">
               <thead class="table-light">
                 <tr>
-                  <th style="width:18%">Name</th>
-                  <th style="width:12%">Version</th>
-                  <th style="width:10%">Architecture</th>
-                  <th style="width:9%">Severity</th>
+                  <th style="width:18%">Nama</th>
+                  <th style="width:12%">Versi</th>
+                  <th style="width:10%">Arsitektur</th>
+                  <th style="width:9%">Tingkat Keparahan</th>
                   <th style="width:13%">CVE</th>
                   <th style="width:8%" class="text-center">CVSS2</th>
                   <th style="width:8%" class="text-center">CVSS3</th>
-                  <th style="width:22%">Detection time</th>
+                  <th style="width:22%">Waktu deteksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -265,7 +265,7 @@
                   </td>
                   <td class="text-muted">{{ $vuln['architecture'] ?? '—' }}</td>
                   <td>
-                    <span class="badge bg-{{ $sevColor }} {{ in_array($sev, ['High','Medium']) ? 'text-dark' : '' }}">{{ $sev }}</span>
+                    <span class="badge bg-{{ $sevColor }} {{ in_array($sev, ['High','Medium']) ? 'text-white' : '' }}">{{ $sev }}</span>
                   </td>
                   <td class="font-monospace text-primary" style="font-size:10px;" title="{{ $vuln['title'] ?? '' }}">
                     {{ $vuln['cve'] ?? '—' }}
@@ -310,14 +310,14 @@
         @endphp
         <div class="card-footer d-flex justify-content-between align-items-center py-2 small flex-wrap gap-2">
           <div class="d-flex align-items-center gap-1">
-            <span class="text-muted me-1">Rows:</span>
+            <span class="text-muted me-1">Baris:</span>
             @foreach([10, 25, 50] as $pp)
               <a href="{{ $ppUrl($pp) }}"
                  class="btn btn-sm py-0 px-2 {{ $perPage === $pp ? 'btn-primary' : 'btn-outline-secondary' }}">{{ $pp }}</a>
             @endforeach
           </div>
           <div class="d-flex align-items-center gap-1">
-            <span class="text-muted me-2">{{ $from }}–{{ $to }} of {{ number_format($totalVulns) }}</span>
+            <span class="text-muted me-2">{{ $from }}–{{ $to }} dari {{ number_format($totalVulns) }}</span>
             <a href="{{ $pageUrl(1) }}"
                class="btn btn-sm btn-outline-secondary py-0 px-2 {{ $page <= 1 ? 'disabled' : '' }}"
                title="First">«</a>
@@ -351,9 +351,9 @@
 
 {{-- Edit toolbar --}}
 <div id="gs-edit-toolbar">
-  <button id="gs-save"   class="gs-tb-btn gs-tb-btn-save">Save layout</button>
+  <button id="gs-save"   class="gs-tb-btn gs-tb-btn-save">Simpan</button>
   <button id="gs-reset"  class="gs-tb-btn gs-tb-btn-reset">Reset</button>
-  <button id="gs-cancel" class="gs-tb-btn gs-tb-btn-cancel">Cancel</button>
+  <button id="gs-cancel" class="gs-tb-btn gs-tb-btn-cancel">Batal</button>
 </div>
 
 @endif

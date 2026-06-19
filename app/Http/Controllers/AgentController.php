@@ -75,9 +75,11 @@ class AgentController extends Controller
     {
         try {
             $timeRange  = request('time_range', '24h');
+            $isAdmin    = (auth()->user()->role ?? null) === 'admin';
+            $dbAgentIds = $this->getAccessibleAgentIds();
             $sessionKey = 'agent_evolution_base_time_' . floor(date('n'));
             $baseTime   = session($sessionKey) ?? tap(Carbon::now(), fn($t) => session([$sessionKey => $t]));
-            $evolution  = $this->getAgentEvolution($timeRange, null, true, $baseTime);
+            $evolution  = $this->getAgentEvolution($timeRange, $dbAgentIds, $isAdmin, $baseTime);
 
             return response()->json(['success' => true, 'labels' => $evolution['labels'] ?? [], 'data' => $evolution['data'] ?? []]);
         } catch (\Exception $e) {
@@ -674,10 +676,10 @@ class AgentController extends Controller
     public static function formatStatus(?string $status): string
     {
         return match ($status) {
-            'active'          => 'Active',
-            'disconnected'    => 'Disconnected',
-            'pending'         => 'Pending',
-            'never_connected' => 'Never Connected',
+            'active'          => 'Aktif',
+            'disconnected'    => 'Terputus',
+            'pending'         => 'Menunggu',
+            'never_connected' => 'Tidak Pernah Terhubung',
             default           => ucfirst($status ?? ''),
         };
     }
@@ -689,13 +691,13 @@ class AgentController extends Controller
         $user    = auth()->user();
         $agentId = (string) $agentId;
 
-        if ($user->role === 'admin') return true;
-
         $dbAgent = WazuhAgent::where('agent_id', $agentId)->first();
         if (!$dbAgent) {
             Log::warning('Agent not found in database', ['agent_id' => $agentId, 'user_id' => $user->id]);
             return false;
         }
+
+        if ($user->role === 'admin') return true;
 
         $hasAccess = $dbAgent->user_id === $user->id;
         if (!$hasAccess) {

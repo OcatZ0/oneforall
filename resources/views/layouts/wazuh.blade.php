@@ -27,7 +27,7 @@
     background:#27ae60; color:#fff; padding:10px 20px;
     border-radius:24px; box-shadow:0 4px 16px rgba(0,0,0,.18);
     font-size:13px; font-weight:500; white-space:nowrap; pointer-events:none;">
-    <span class="mdi mdi-check-circle"></span> Layout saved
+    <span class="mdi mdi-check-circle"></span> Tata letak disimpan
   </div>
   <script>
   function gsShowSavedToast() {

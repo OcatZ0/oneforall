@@ -22,17 +22,17 @@
     <ul class="nav flex-nowrap overflow-auto">
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small active" href="{{ route('agent.detail', $agent->agent_id ?? '#') }}">
-          <span class="mdi mdi-home"></span> Details
+          <span class="mdi mdi-home"></span> Detail
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.security-events', $agent->agent_id ?? '#') }}">
-          <span class="mdi mdi-format-list-bulleted"></span> Security events
+          <span class="mdi mdi-format-list-bulleted"></span> Event Keamanan
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.integrity-monitoring', $agent->agent_id ?? '#') }}">
-          <span class="mdi mdi-shield"></span> Integrity monitoring
+          <span class="mdi mdi-shield"></span> Pemantauan Integritas
         </a>
       </li>
       <li class="nav-item">
@@ -42,7 +42,7 @@
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.vulnerabilities', $agent->agent_id ?? '#') }}">
-          <span class="mdi mdi-bug"></span> Vulnerabilities
+          <span class="mdi mdi-bug"></span> Kerentanan
         </a>
       </li>
       <li class="nav-item">
@@ -52,7 +52,7 @@
       </li>
       <li class="nav-item dropdown">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <span class="mdi mdi-check-decagram"></span> Compliance
+          <span class="mdi mdi-check-decagram"></span> Kepatuhan
         </a>
         <ul class="dropdown-menu dropdown-menu-dark">
           <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->agent_id ?? '#') }}?compliance_type=pci_dss">PCI DSS</a></li>
@@ -64,14 +64,14 @@
       </li>
 
       <li class="nav-item">
-        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.inventory', $agent->agent_id) }}">
-          <span class="mdi mdi-database"></span> Inventory Data
+        <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.inventory', $agent->agent_id ?? '#') }}">
+          <span class="mdi mdi-database"></span> Data Inventaris
         </a>
       </li>
     </ul>
     <div class="ms-auto d-flex gap-2 flex-shrink-0 py-1">
-      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Back to Agents List">
-        <span class="mdi mdi-arrow-left"></span> Back
+      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Kembali ke Daftar Agen">
+        <span class="mdi mdi-arrow-left"></span> Kembali
       </a>
     </div>
   </div>
@@ -109,15 +109,15 @@
               </div>
             </div>
             <div>
-              <div class="text-uppercase text-muted fw-semibold" style="font-size:10px;letter-spacing:.05em">IP Address</div>
+              <div class="text-uppercase text-muted fw-semibold" style="font-size:10px;letter-spacing:.05em">Alamat IP</div>
               <div>{{ $agent->ip ?? 'N/A' }}</div>
             </div>
             <div>
-              <div class="text-uppercase text-muted fw-semibold" style="font-size:10px;letter-spacing:.05em">Version</div>
+              <div class="text-uppercase text-muted fw-semibold" style="font-size:10px;letter-spacing:.05em">Versi</div>
               <div>{{ $agent->version ?? 'N/A' }}</div>
             </div>
             <div>
-              <div class="text-uppercase text-muted fw-semibold" style="font-size:10px;letter-spacing:.05em">Groups</div>
+              <div class="text-uppercase text-muted fw-semibold" style="font-size:10px;letter-spacing:.05em">Grup</div>
               <div>
                 @if($agent->group && $agent->group !== 'N/A')
                   @foreach(explode(', ', $agent->group) as $grp)
@@ -129,7 +129,7 @@
               </div>
             </div>
             <div>
-              <div class="text-uppercase text-muted fw-semibold" style="font-size:10px;letter-spacing:.05em">Operating System</div>
+              <div class="text-uppercase text-muted fw-semibold" style="font-size:10px;letter-spacing:.05em">Sistem Operasi</div>
               <div class="d-flex align-items-center">
                 <i class="mdi {{ \App\Http\Controllers\AgentController::getOSIcon($agent->os ?? '') }} text-primary"></i>
                 {{ $agent->os ?? 'Unknown' }}
@@ -140,7 +140,7 @@
               <div>{{ $agent->cluster_node ?? 'N/A' }}</div>
             </div>
             <div>
-              <div class="text-uppercase text-muted fw-semibold" style="font-size:10px;letter-spacing:.05em">Registration Date</div>
+              <div class="text-uppercase text-muted fw-semibold" style="font-size:10px;letter-spacing:.05em">Tanggal Registrasi</div>
               <div>
                 @if($agent->dateAdd)
                   {{ \Carbon\Carbon::parse($agent->dateAdd)->format('M d, Y @ H:i:s.000') }}
@@ -150,7 +150,7 @@
               </div>
             </div>
             <div>
-              <div class="text-uppercase text-muted fw-semibold" style="font-size:10px;letter-spacing:.05em">Last Keep Alive</div>
+              <div class="text-uppercase text-muted fw-semibold" style="font-size:10px;letter-spacing:.05em">Koneksi Terakhir</div>
               <div>
                 @if($agent->lastKeepAlive)
                   {{ \Carbon\Carbon::parse($agent->lastKeepAlive)->format('M d, Y @ H:i:s.000') }}
@@ -170,30 +170,30 @@
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Time Range</span>
+          <span class="fw-semibold small">Rentang Waktu</span>
         </div>
         <div class="card-body d-flex flex-column align-items-center justify-content-center gap-2">
           <div class="dropdown">
             <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="timeRangeDropdown"
               data-bs-toggle="dropdown" aria-expanded="false">
               <span class="mdi mdi-calendar-outline me-1"></span>
-              <span id="timeRangeLabel">Last 24 hours</span>
+              <span id="timeRangeLabel">24 Jam Terakhir</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="timeRangeDropdown">
-              <li><a class="dropdown-item" href="#" onclick="updateChart('15m', event)">Last 15 minutes</a></li>
-              <li><a class="dropdown-item" href="#" onclick="updateChart('30m', event)">Last 30 minutes</a></li>
-              <li><a class="dropdown-item" href="#" onclick="updateChart('1h', event)">Last 1 hour</a></li>
-              <li><a class="dropdown-item active" href="#" onclick="updateChart('24h', event)">Last 24 hours</a></li>
-              <li><a class="dropdown-item" href="#" onclick="updateChart('7d', event)">Last 7 days</a></li>
-              <li><a class="dropdown-item" href="#" onclick="updateChart('30d', event)">Last 30 days</a></li>
-              <li><a class="dropdown-item" href="#" onclick="updateChart('90d', event)">Last 90 days</a></li>
-              <li><a class="dropdown-item" href="#" onclick="updateChart('1y', event)">Last 1 year</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('15m', event)">15 Menit Terakhir</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('30m', event)">30 Menit Terakhir</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('1h', event)">1 Jam Terakhir</a></li>
+              <li><a class="dropdown-item active" href="#" onclick="updateChart('24h', event)">24 Jam Terakhir</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('7d', event)">7 Hari Terakhir</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('30d', event)">30 Hari Terakhir</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('90d', event)">90 Hari Terakhir</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('1y', event)">1 Tahun Terakhir</a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="#" onclick="updateChart('today', event)">Today</a></li>
-              <li><a class="dropdown-item" href="#" onclick="updateChart('week', event)">This week</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('today', event)">Hari Ini</a></li>
+              <li><a class="dropdown-item" href="#" onclick="updateChart('week', event)">Minggu Ini</a></li>
             </ul>
           </div>
-          <button class="btn btn-outline-warning btn-sm" onclick="updateChart('24h', event)" title="Reset to default (Last 24 hours)">
+          <button class="btn btn-outline-warning btn-sm" onclick="updateChart('24h', event)" title="Reset ke default (24 Jam Terakhir)">
             <span class="mdi mdi-restore me-1"></span> Reset
           </button>
         </div>
@@ -212,7 +212,7 @@
         <div class="card-body" data-mitre-container>
           <div class="d-flex flex-column align-items-center justify-content-center text-center py-5">
             <span class="mdi mdi-loading mdi-spin display-4 text-muted opacity-25 mb-3"></span>
-            <p class="text-muted small mb-0">Loading...</p>
+            <p class="text-muted small mb-0">Memuat...</p>
           </div>
         </div>
       </div>
@@ -224,7 +224,7 @@
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header d-flex align-items-center justify-content-between py-2">
-          <span class="fw-semibold small">Compliance</span>
+          <span class="fw-semibold small">Kepatuhan</span>
           <select class="form-select form-select-sm w-auto" id="complianceSelect" onchange="updateComplianceData()">
             <option value="gdpr">GDPR</option>
             <option value="pci_dss">PCI DSS</option>
@@ -248,7 +248,7 @@
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header d-flex align-items-center justify-content-between py-2">
-          <span class="fw-semibold small">FIM: Recent events</span>
+          <span class="fw-semibold small">FIM: Event Terbaru</span>
           <a href="#" class="text-secondary small"><span class="mdi mdi-open-in-new"></span></a>
         </div>
         <div class="card-body p-0">
@@ -256,12 +256,12 @@
             <table class="table table-sm table-hover table-striped mb-0" style="font-size:11px; min-width:900px;">
               <thead class="table-light">
                 <tr>
-                  <th style="width:15%; font-size:12px">Time</th>
+                  <th style="width:15%; font-size:12px">Waktu</th>
                   <th style="width:35%; font-size:12px">Path</th>
-                  <th style="width:10%; font-size:12px">Action</th>
-                  <th style="width:20%; font-size:12px">Rule description</th>
-                  <th style="width:10%; font-size:12px">Rule Level</th>
-                  <th style="width:10%; font-size:12px">Rule Id</th>
+                  <th style="width:10%; font-size:12px">Aksi</th>
+                  <th style="width:20%; font-size:12px">Deskripsi Aturan</th>
+                  <th style="width:10%; font-size:12px">Level Aturan</th>
+                  <th style="width:10%; font-size:12px">ID Aturan</th>
                 </tr>
               </thead>
               <tbody>
@@ -314,10 +314,10 @@
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Events count evolution</span>
+          <span class="fw-semibold small">Evolusi Jumlah Event</span>
         </div>
         <div class="card-body">
-          <p class="mb-2 small"><span class="text-success me-1">●</span> Count</p>
+          <p class="mb-2 small"><span class="text-success me-1">●</span> Jumlah</p>
           <div id="eventsChartContainer">
             <canvas id="eventsChart" height="90"></canvas>
           </div>
@@ -332,7 +332,7 @@
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header d-flex align-items-center justify-content-between py-2">
-          <span class="fw-semibold small">SCA: Latest scans</span>
+          <span class="fw-semibold small">SCA: Pemindaian Terbaru</span>
           <a href="#" class="text-secondary small"><span class="mdi mdi-open-in-new"></span></a>
         </div>
         <div class="px-3 py-2 border-bottom bg-light d-flex align-items-center flex-wrap gap-2">
@@ -344,12 +344,12 @@
             <table class="table table-sm table-hover mb-0" style="font-size:11px">
               <thead class="table-light">
                 <tr>
-                  <th>Policy</th>
-                  <th>End scan</th>
-                  <th>Passed</th>
-                  <th>Failed</th>
-                  <th>Not applica...</th>
-                  <th>Score</th>
+                  <th>Kebijakan</th>
+                  <th>Akhir pemindaian</th>
+                  <th>Lulus</th>
+                  <th>Gagal</th>
+                  <th>Tidak berlaku</th>
+                  <th>Skor</th>
                 </tr>
               </thead>
               <tbody>
@@ -387,9 +387,9 @@
 
 {{-- Edit toolbar --}}
 <div id="gs-edit-toolbar">
-  <button class="gs-tb-btn gs-tb-btn-save"   id="gs-save">  <i class="mdi mdi-content-save me-1"></i>Save</button>
+  <button class="gs-tb-btn gs-tb-btn-save"   id="gs-save">  <i class="mdi mdi-content-save me-1"></i>Simpan</button>
   <button class="gs-tb-btn gs-tb-btn-reset"  id="gs-reset"> <i class="mdi mdi-restore me-1"></i>Reset</button>
-  <button class="gs-tb-btn gs-tb-btn-cancel" id="gs-cancel"><i class="mdi mdi-close me-1"></i>Cancel</button>
+  <button class="gs-tb-btn gs-tb-btn-cancel" id="gs-cancel"><i class="mdi mdi-close me-1"></i>Batal</button>
 </div>
 
 @else
@@ -398,10 +398,10 @@
   <div class="alert alert-danger d-flex align-items-center gap-3" role="alert">
     <i class="mdi mdi-alert-circle-outline display-4"></i>
     <div>
-      <h5 class="alert-heading mb-1">Agent Not Found</h5>
-      <p class="mb-0">{{ $error ?? 'Unable to load agent details. Please try again or contact the administrator.' }}</p>
+      <h5 class="alert-heading mb-1">Agen Tidak Ditemukan</h5>
+      <p class="mb-0">{{ $error ?? 'Tidak dapat memuat detail agen. Silakan coba lagi atau hubungi administrator.' }}</p>
       <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2">
-        <i class="mdi mdi-arrow-left me-1"></i> Back to Agents
+        <i class="mdi mdi-arrow-left me-1"></i> Kembali ke Agen
       </a>
     </div>
   </div>
@@ -422,29 +422,29 @@ let currentTimeRange        = '24h';
 let currentComplianceType   = 'gdpr';
 
 const timeRangeLabels = {
-  '15m':  'Last 15 minutes',
-  '30m':  'Last 30 minutes',
-  '1h':   'Last 1 hour',
-  '24h':  'Last 24 hours',
-  '7d':   'Last 7 days',
-  '30d':  'Last 30 days',
-  '90d':  'Last 90 days',
-  '1y':   'Last 1 year',
-  'today':'Today',
-  'week': 'This week'
+  '15m':  '15 Menit Terakhir',
+  '30m':  '30 Menit Terakhir',
+  '1h':   '1 Jam Terakhir',
+  '24h':  '24 Jam Terakhir',
+  '7d':   '7 Hari Terakhir',
+  '30d':  '30 Hari Terakhir',
+  '90d':  '90 Hari Terakhir',
+  '1y':   '1 Tahun Terakhir',
+  'today':'Hari Ini',
+  'week': 'Minggu Ini'
 };
 
 const intervalTexts = {
-  '15m':  'timestamp per 3 minutes',
-  '30m':  'timestamp per 5 minutes',
-  '1h':   'timestamp per 10 minutes',
-  '24h':  'timestamp per hour',
-  '7d':   'timestamp per 12 hours',
-  '30d':  'timestamp per day',
-  '90d':  'timestamp per day',
-  '1y':   'timestamp per day',
-  'today':'timestamp per hour',
-  'week': 'timestamp per day'
+  '15m':  'timestamp per 3 menit',
+  '30m':  'timestamp per 5 menit',
+  '1h':   'timestamp per 10 menit',
+  '24h':  'timestamp per jam',
+  '7d':   'timestamp per 12 jam',
+  '30d':  'timestamp per hari',
+  '90d':  'timestamp per hari',
+  '1y':   'timestamp per hari',
+  'today':'timestamp per jam',
+  'week': 'timestamp per hari'
 };
 
 function initEventsChart(labels, data) {
@@ -557,8 +557,8 @@ function updateChart(timeRange, event) {
   if (event) event.preventDefault();
 
   currentTimeRange = timeRange;
-  document.getElementById('timeRangeLabel').textContent  = timeRangeLabels[timeRange] || 'Select time range';
-  document.getElementById('chartIntervalText').textContent = intervalTexts[timeRange] || 'loading...';
+  document.getElementById('timeRangeLabel').textContent  = timeRangeLabels[timeRange] || 'Pilih rentang waktu';
+  document.getElementById('chartIntervalText').textContent = intervalTexts[timeRange] || 'memuat...';
 
   const menu = document.getElementById('timeRangeDropdown')
                         ?.closest('.dropdown')
@@ -573,7 +573,7 @@ function updateChart(timeRange, event) {
   const agentId = '{{ $agent->agent_id ?? "" }}';
   if (!agentId) return;
 
-  const url = '{{ route("agent.detail-chart-data", $agent->agent_id ?? 0) }}' + '?time_range=' + timeRange + '&compliance_type=' + currentComplianceType;
+  const url = '{{ route("agent.detail-chart-data", request()->route("id")) }}' + '?time_range=' + timeRange + '&compliance_type=' + currentComplianceType;
 
   fetch(url)
     .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })

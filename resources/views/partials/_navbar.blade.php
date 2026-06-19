@@ -46,8 +46,8 @@
                     </div>
                   </div>
                   <div class="preview-item-content">
-                    <h6 class="preview-subject fw-normal">Logout</h6>
-                    <p class="fw-light small-text mb-0 text-muted">Keluar</p>
+                    <h6 class="preview-subject fw-normal">Keluar</h6>
+                    <p class="fw-light small-text mb-0 text-muted">Akhiri sesi</p>
                   </div>
                 </a>
 

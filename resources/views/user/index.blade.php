@@ -77,8 +77,8 @@
                   <th>Username</th>
                   <th>Email</th>
                   <th>Peran</th>
-                  <th>Total Agent</th>
-                  <th>Agents</th>
+                  <th>Total Agen</th>
+                  <th>Agen</th>
                   <th>Tanggal Dibuat</th>
                   <th style="width:100px">Aksi</th>
                 </tr>
@@ -143,7 +143,7 @@
           @if($users->count() > 0)
           <div class="d-flex align-items-center justify-content-between mt-3">
             <div class="d-flex align-items-center">
-              <span class="text-muted me-2">Rows per page:</span>
+              <span class="text-muted me-2">Baris per halaman:</span>
               <form method="GET" action="{{ route('user') }}" class="d-inline" id="perPageForm">
                 @foreach(request()->query() as $key => $value)
                   @if($key !== 'per_page' && $key !== 'page')
@@ -182,9 +182,9 @@
 
 {{-- Edit toolbar --}}
 <div id="gs-edit-toolbar">
-  <button class="gs-tb-btn gs-tb-btn-save"   id="gs-save">  <i class="mdi mdi-content-save me-1"></i>Save</button>
+  <button class="gs-tb-btn gs-tb-btn-save"   id="gs-save">  <i class="mdi mdi-content-save me-1"></i>Simpan</button>
   <button class="gs-tb-btn gs-tb-btn-reset"  id="gs-reset"> <i class="mdi mdi-restore me-1"></i>Reset</button>
-  <button class="gs-tb-btn gs-tb-btn-cancel" id="gs-cancel"><i class="mdi mdi-close me-1"></i>Cancel</button>
+  <button class="gs-tb-btn gs-tb-btn-cancel" id="gs-cancel"><i class="mdi mdi-close me-1"></i>Batal</button>
 </div>
 
 {{-- Delete Confirmation Modal --}}
@@ -412,6 +412,13 @@ if (_pendingSuccess) {
   sessionStorage.removeItem('userDeleteSuccess');
   notyf.success(_pendingSuccess);
 }
+
+@if(session('success'))
+notyf.success(@json(session('success')));
+@endif
+@if(session('error'))
+notyf.error(@json(session('error')));
+@endif
 
 let _deleteUserId = null;
 const _deleteModal = new bootstrap.Modal(document.getElementById('deleteUserModal'));

@@ -21,10 +21,10 @@
   <div class="alert alert-danger d-flex align-items-center gap-3" role="alert">
     <i class="mdi mdi-alert-circle-outline display-4"></i>
     <div>
-      <h5 class="alert-heading mb-1">Agent Not Found</h5>
-      <p class="mb-0">Unable to load agent details. The agent may no longer exist or access has been denied.</p>
+      <h5 class="alert-heading mb-1">Agen Tidak Ditemukan</h5>
+      <p class="mb-0">Gagal memuat detail agen. Agen mungkin sudah tidak ada atau akses ditolak.</p>
       <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2">
-        <i class="mdi mdi-arrow-left me-1"></i> Back to Agents
+        <i class="mdi mdi-arrow-left me-1"></i> Kembali ke Agen
       </a>
     </div>
   </div>
@@ -37,17 +37,17 @@
     <ul class="nav flex-nowrap overflow-auto">
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.detail', $agent->agent_id) }}">
-          <span class="mdi mdi-home"></span> Details
+          <span class="mdi mdi-home"></span> Detail
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small active" href="{{ route('agent.security-events', $agent->agent_id) }}">
-          <span class="mdi mdi-format-list-bulleted"></span> Security events
+          <span class="mdi mdi-format-list-bulleted"></span> Event Keamanan
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.integrity-monitoring', $agent->agent_id) }}">
-          <span class="mdi mdi-shield"></span> Integrity monitoring
+          <span class="mdi mdi-shield"></span> Pemantauan Integritas
         </a>
       </li>
       <li class="nav-item">
@@ -57,7 +57,7 @@
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.vulnerabilities', $agent->agent_id) }}">
-          <span class="mdi mdi-bug"></span> Vulnerabilities
+          <span class="mdi mdi-bug"></span> Kerentanan
         </a>
       </li>
       <li class="nav-item">
@@ -67,7 +67,7 @@
       </li>
       <li class="nav-item dropdown">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <span class="mdi mdi-check-decagram"></span> Compliance
+          <span class="mdi mdi-check-decagram"></span> Kepatuhan
         </a>
         <ul class="dropdown-menu dropdown-menu-dark">
           <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->agent_id) }}?compliance_type=pci_dss">PCI DSS</a></li>
@@ -80,13 +80,13 @@
 
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.inventory', $agent->agent_id) }}">
-          <span class="mdi mdi-database"></span> Inventory Data
+          <span class="mdi mdi-database"></span> Data Inventaris
         </a>
       </li>
     </ul>
     <div class="ms-auto d-flex gap-2 flex-shrink-0 py-1">
-      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Back to Agents List">
-        <span class="mdi mdi-arrow-left"></span> Back
+      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Kembali ke Daftar Agen">
+        <span class="mdi mdi-arrow-left"></span> Kembali
       </a>
     </div>
   </div>
@@ -96,7 +96,7 @@
 <div class="grid-stack" id="security-events-grid">
 
   {{-- METRICS --}}
-  <div class="grid-stack-item" gs-id="se-metrics" data-label="Metrics" gs-x="0" gs-y="0" gs-w="9" gs-h="3">
+  <div class="grid-stack-item" gs-id="se-metrics" data-label="Metrik" gs-x="0" gs-y="0" gs-w="9" gs-h="3">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -106,15 +106,15 @@
               <div class="display-6 fw-bold text-primary" id="metricTotal">{{ $metrics['total'] ?? 0 }}</div>
             </div>
             <div class="col-3 text-center">
-              <div class="text-muted fw-semibold small mb-2">Level 12 or above</div>
+              <div class="text-muted fw-semibold small mb-2">Level 12 ke atas</div>
               <div class="display-6 fw-bold text-danger" id="metricLevel12">{{ $metrics['level12'] ?? 0 }}</div>
             </div>
             <div class="col-3 text-center">
-              <div class="text-muted fw-semibold small mb-2">Authentication failure</div>
+              <div class="text-muted fw-semibold small mb-2">Kegagalan Autentikasi</div>
               <div class="display-6 fw-bold text-warning" id="metricAuthFailure">{{ $metrics['auth_failure'] ?? 0 }}</div>
             </div>
             <div class="col-3 text-center">
-              <div class="text-muted fw-semibold small mb-2">Authentication success</div>
+              <div class="text-muted fw-semibold small mb-2">Autentikasi Berhasil</div>
               <div class="display-6 fw-bold text-success" id="metricAuthSuccess">{{ $metrics['auth_success'] ?? 0 }}</div>
             </div>
           </div>
@@ -124,34 +124,34 @@
   </div>
 
   {{-- TIME RANGE --}}
-  <div class="grid-stack-item" gs-id="se-timerange" data-label="Time Range" gs-x="9" gs-y="0" gs-w="3" gs-h="3">
+  <div class="grid-stack-item" gs-id="se-timerange" data-label="Rentang Waktu" gs-x="9" gs-y="0" gs-w="3" gs-h="3">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Time Range</span>
+          <span class="fw-semibold small">Rentang Waktu</span>
         </div>
         <div class="card-body d-flex flex-column align-items-center justify-content-center gap-2">
           <div class="dropdown">
             <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="timeRangeDropdown"
               data-bs-toggle="dropdown" aria-expanded="false">
               <span class="mdi mdi-calendar-outline me-1"></span>
-              <span id="timeRangeLabel">{{ ['15m'=>'Last 15 minutes','30m'=>'Last 30 minutes','1h'=>'Last 1 hour','24h'=>'Last 24 hours','7d'=>'Last 7 days','30d'=>'Last 30 days','90d'=>'Last 90 days','1y'=>'Last 1 year','today'=>'Today','week'=>'This week'][$timeRange] ?? 'Last 24 hours' }}</span>
+              <span id="timeRangeLabel">{{ ['15m'=>'15 menit terakhir','30m'=>'30 menit terakhir','1h'=>'1 jam terakhir','24h'=>'24 jam terakhir','7d'=>'7 hari terakhir','30d'=>'30 hari terakhir','90d'=>'90 hari terakhir','1y'=>'1 tahun terakhir','today'=>'Hari ini','week'=>'Minggu ini'][$timeRange] ?? '24 jam terakhir' }}</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="timeRangeDropdown">
-              <li><a class="dropdown-item {{ $timeRange === '15m'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('15m',  event)">Last 15 minutes</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '30m'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('30m',  event)">Last 30 minutes</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '1h'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('1h',   event)">Last 1 hour</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '24h'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('24h',  event)">Last 24 hours</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '7d'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('7d',   event)">Last 7 days</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '30d'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('30d',  event)">Last 30 days</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '90d'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('90d',  event)">Last 90 days</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '1y'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('1y',   event)">Last 1 year</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '15m'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('15m',  event)">15 menit terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '30m'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('30m',  event)">30 menit terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '1h'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('1h',   event)">1 jam terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '24h'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('24h',  event)">24 jam terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '7d'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('7d',   event)">7 hari terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '30d'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('30d',  event)">30 hari terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '90d'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('90d',  event)">90 hari terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '1y'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('1y',   event)">1 tahun terakhir</a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item {{ $timeRange === 'today' ? 'active' : '' }}" href="#" onclick="updateTimeRange('today', event)">Today</a></li>
-              <li><a class="dropdown-item {{ $timeRange === 'week'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('week',  event)">This week</a></li>
+              <li><a class="dropdown-item {{ $timeRange === 'today' ? 'active' : '' }}" href="#" onclick="updateTimeRange('today', event)">Hari ini</a></li>
+              <li><a class="dropdown-item {{ $timeRange === 'week'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('week',  event)">Minggu ini</a></li>
             </ul>
           </div>
-          <button class="btn btn-outline-warning btn-sm" onclick="updateTimeRange('24h', event)" title="Reset to default (Last 24 hours)">
+          <button class="btn btn-outline-warning btn-sm" onclick="updateTimeRange('24h', event)" title="Reset ke default (24 jam terakhir)">
             <span class="mdi mdi-restore me-1"></span> Reset
           </button>
         </div>
@@ -160,11 +160,11 @@
   </div>
 
   {{-- ALERT GROUPS EVOLUTION --}}
-  <div class="grid-stack-item" gs-id="se-alert-groups" data-label="Alert Groups Evolution" gs-x="0" gs-y="3" gs-w="6" gs-h="8">
+  <div class="grid-stack-item" gs-id="se-alert-groups" data-label="Evolusi Grup Peringatan" gs-x="0" gs-y="3" gs-w="6" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Alert groups evolution</span>
+          <span class="fw-semibold small">Evolusi Grup Peringatan</span>
         </div>
         <div class="card-body">
           <div id="alertGroupsContainer" style="position:relative; height:100%;">
@@ -176,11 +176,11 @@
   </div>
 
   {{-- ALERTS BY SEVERITY --}}
-  <div class="grid-stack-item" gs-id="se-alerts" data-label="Alerts by Severity" gs-x="6" gs-y="3" gs-w="6" gs-h="8">
+  <div class="grid-stack-item" gs-id="se-alerts" data-label="Peringatan per Tingkat Keparahan" gs-x="6" gs-y="3" gs-w="6" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Alerts</span>
+          <span class="fw-semibold small">Peringatan</span>
         </div>
         <div class="card-body">
           <div id="alertsContainer" style="position:relative; height:100%;">
@@ -192,11 +192,11 @@
   </div>
 
   {{-- TOP 5 ALERTS --}}
-  <div class="grid-stack-item" gs-id="se-top-alerts" data-label="Top 5 Alerts" gs-x="0" gs-y="11" gs-w="4" gs-h="9">
+  <div class="grid-stack-item" gs-id="se-top-alerts" data-label="5 Peringatan Teratas" gs-x="0" gs-y="11" gs-w="4" gs-h="9">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Top 5 alerts</span>
+          <span class="fw-semibold small">5 Peringatan Teratas</span>
         </div>
         <div class="card-body d-flex align-items-center justify-content-center">
           <div id="top5AlertsContainer" style="position:relative; width:100%; height:100%;">
@@ -208,11 +208,11 @@
   </div>
 
   {{-- TOP 5 RULE GROUPS --}}
-  <div class="grid-stack-item" gs-id="se-top-rule-groups" data-label="Top 5 Rule Groups" gs-x="4" gs-y="11" gs-w="4" gs-h="9">
+  <div class="grid-stack-item" gs-id="se-top-rule-groups" data-label="5 Grup Aturan Teratas" gs-x="4" gs-y="11" gs-w="4" gs-h="9">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Top 5 rule groups</span>
+          <span class="fw-semibold small">5 Grup Aturan Teratas</span>
         </div>
         <div class="card-body d-flex align-items-center justify-content-center">
           <div id="top5RuleGroupsContainer" style="position:relative; width:100%; height:100%;">
@@ -224,11 +224,11 @@
   </div>
 
   {{-- TOP 5 PCI DSS --}}
-  <div class="grid-stack-item" gs-id="se-top-pcidss" data-label="Top 5 PCI DSS" gs-x="8" gs-y="11" gs-w="4" gs-h="9">
+  <div class="grid-stack-item" gs-id="se-top-pcidss" data-label="5 Persyaratan PCI DSS Teratas" gs-x="8" gs-y="11" gs-w="4" gs-h="9">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Top 5 PCI DSS Requirements</span>
+          <span class="fw-semibold small">5 Persyaratan PCI DSS Teratas</span>
         </div>
         <div class="card-body d-flex align-items-center justify-content-center">
           <div id="top5PCIDSSContainer" style="position:relative; width:100%; height:100%;">
@@ -240,23 +240,23 @@
   </div>
 
   {{-- ALERTS SUMMARY TABLE --}}
-  <div class="grid-stack-item" gs-id="se-alerts-table" data-label="Alerts Summary" gs-x="0" gs-y="20" gs-w="12" gs-h="10">
+  <div class="grid-stack-item" gs-id="se-alerts-table" data-label="Ringkasan Peringatan" gs-x="0" gs-y="20" gs-w="12" gs-h="10">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Alerts summary</span>
+          <span class="fw-semibold small">Ringkasan Peringatan</span>
         </div>
         <div class="card-body p-0">
           <div class="table-responsive">
             <table class="table table-sm table-hover table-striped mb-0" style="font-size:11px;">
               <thead class="table-light">
                 <tr>
-                  <th style="width:20%">Time <span class="mdi mdi-arrow-up-down"></span></th>
+                  <th style="width:20%">Waktu <span class="mdi mdi-arrow-up-down"></span></th>
                   <th style="width:15%">Rule ID</th>
-                  <th style="width:35%">Description</th>
+                  <th style="width:35%">Deskripsi</th>
                   <th style="width:10%">Level</th>
-                  <th style="width:10%">Count</th>
-                  <th style="width:10%">Group</th>
+                  <th style="width:10%">Jumlah</th>
+                  <th style="width:10%">Grup</th>
                 </tr>
               </thead>
               <tbody id="alerts-tbody">
@@ -306,7 +306,7 @@
         @endphp
         <div id="alerts-footer" class="card-footer d-flex justify-content-between align-items-center py-2 small flex-wrap gap-2">
           <div class="d-flex align-items-center gap-2">
-            <span class="text-muted">Rows per page:</span>
+            <span class="text-muted">Baris per halaman:</span>
             @foreach([10, 25, 50] as $pp)
               <a href="{{ $ppUrl($pp) }}"
                  class="btn btn-sm {{ $perPage === $pp ? 'btn-primary' : 'btn-outline-secondary' }} py-0 px-2">
@@ -315,7 +315,7 @@
             @endforeach
           </div>
           <div class="d-flex align-items-center gap-1">
-            <span class="text-muted me-2">{{ $from }}–{{ $to }} of {{ number_format($totalAlerts) }}</span>
+            <span class="text-muted me-2">{{ $from }}–{{ $to }} dari {{ number_format($totalAlerts) }}</span>
             <a href="{{ $pageUrl(1) }}"
                class="btn btn-sm btn-outline-secondary py-0 px-2 {{ $page <= 1 ? 'disabled' : '' }}"
                title="First">«</a>
@@ -341,19 +341,19 @@
   </div>
 
   {{-- GROUPS SUMMARY TABLE --}}
-  <div class="grid-stack-item" gs-id="se-groups-table" data-label="Groups Summary" gs-x="0" gs-y="30" gs-w="12" gs-h="8">
+  <div class="grid-stack-item" gs-id="se-groups-table" data-label="Ringkasan Grup" gs-x="0" gs-y="30" gs-w="12" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Groups summary</span>
+          <span class="fw-semibold small">Ringkasan Grup</span>
         </div>
         <div class="card-body p-0">
           <div class="table-responsive">
             <table class="table table-sm table-hover table-striped mb-0" style="font-size:11px;">
               <thead class="table-light">
                 <tr>
-                  <th style="width:70%">Group</th>
-                  <th style="width:30%">Count</th>
+                  <th style="width:70%">Grup</th>
+                  <th style="width:30%">Jumlah</th>
                 </tr>
               </thead>
               <tbody id="groups-tbody">
@@ -386,14 +386,14 @@
         @endphp
         <div id="groups-footer" class="card-footer d-flex justify-content-between align-items-center py-2 small flex-wrap gap-2">
           <div class="d-flex align-items-center gap-1">
-            <span class="text-muted me-1">Rows:</span>
+            <span class="text-muted me-1">Baris:</span>
             @foreach([10, 25, 50] as $pp)
               <a href="{{ $gPpUrl($pp) }}"
                  class="btn btn-sm py-0 px-2 {{ $groupsPerPage === $pp ? 'btn-primary' : 'btn-outline-secondary' }}">{{ $pp }}</a>
             @endforeach
           </div>
           <div class="d-flex align-items-center gap-1">
-            <span class="text-muted me-2">{{ $gFrom }}–{{ $gTo }} of {{ number_format($totalGroups) }}</span>
+            <span class="text-muted me-2">{{ $gFrom }}–{{ $gTo }} dari {{ number_format($totalGroups) }}</span>
             <a href="{{ $gPageUrl(1) }}"
                class="btn btn-sm btn-outline-secondary py-0 px-2 {{ $groupsPage <= 1 ? 'disabled' : '' }}"
                title="First">«</a>
@@ -427,9 +427,9 @@
 
 {{-- Edit toolbar --}}
 <div id="gs-edit-toolbar">
-  <button class="gs-tb-btn gs-tb-btn-save"   id="gs-save">  <i class="mdi mdi-content-save me-1"></i>Save</button>
+  <button class="gs-tb-btn gs-tb-btn-save"   id="gs-save">  <i class="mdi mdi-content-save me-1"></i>Simpan</button>
   <button class="gs-tb-btn gs-tb-btn-reset"  id="gs-reset"> <i class="mdi mdi-restore me-1"></i>Reset</button>
-  <button class="gs-tb-btn gs-tb-btn-cancel" id="gs-cancel"><i class="mdi mdi-close me-1"></i>Cancel</button>
+  <button class="gs-tb-btn gs-tb-btn-cancel" id="gs-cancel"><i class="mdi mdi-close me-1"></i>Batal</button>
 </div>
 
 @endif
@@ -454,22 +454,22 @@ const securityData = {
 };
 
 const timeRangeLabels = {
-  '15m':  'Last 15 minutes',
-  '30m':  'Last 30 minutes',
-  '1h':   'Last 1 hour',
-  '24h':  'Last 24 hours',
-  '7d':   'Last 7 days',
-  '30d':  'Last 30 days',
-  '90d':  'Last 90 days',
-  '1y':   'Last 1 year',
-  'today':'Today',
-  'week': 'This week'
+  '15m':  '15 menit terakhir',
+  '30m':  '30 menit terakhir',
+  '1h':   '1 jam terakhir',
+  '24h':  '24 jam terakhir',
+  '7d':   '7 hari terakhir',
+  '30d':  '30 hari terakhir',
+  '90d':  '90 hari terakhir',
+  '1y':   '1 tahun terakhir',
+  'today':'Hari ini',
+  'week': 'Minggu ini'
 };
 
 function updateTimeRange(timeRange, event) {
   if (event) event.preventDefault();
   currentTimeRange = timeRange;
-  document.getElementById('timeRangeLabel').textContent = timeRangeLabels[timeRange] || 'Select time range';
+  document.getElementById('timeRangeLabel').textContent = timeRangeLabels[timeRange] || 'Pilih rentang waktu';
 
   const menu = document.getElementById('timeRangeDropdown')
                        ?.closest('.dropdown')
@@ -484,7 +484,7 @@ function updateTimeRange(timeRange, event) {
   refreshData();
 }
 
-const seChartDataEndpoint = '{{ route("agent.se.chart-data", $agent->agent_id ?? "") }}';
+const seChartDataEndpoint = '{{ route("agent.se.chart-data", request()->route("id")) }}';
 
 async function refreshData() {
   // Update URL so page refresh re-loads with the selected time range
@@ -676,8 +676,8 @@ function renderPagination(footerId, total, page, perPage, loadFn) {
     </div>`;
 }
 
-const alertsEndpoint = '{{ route("agent.se.alerts", $agent->agent_id ?? "") }}';
-const groupsEndpoint = '{{ route("agent.se.groups", $agent->agent_id ?? "") }}';
+const alertsEndpoint = '{{ route("agent.se.alerts", request()->route("id")) }}';
+const groupsEndpoint = '{{ route("agent.se.groups", request()->route("id")) }}';
 
 async function loadAlerts(page, perPage) {
   const params = new URLSearchParams({ time_range: currentTimeRange, page, per_page: perPage });

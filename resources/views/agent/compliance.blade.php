@@ -17,10 +17,10 @@
   <div class="alert alert-danger d-flex align-items-center gap-3" role="alert">
     <i class="mdi mdi-alert-circle-outline display-4"></i>
     <div>
-      <h5 class="alert-heading mb-1">Agent Not Found</h5>
-      <p class="mb-0">Unable to load agent details. The agent may no longer exist or access has been denied.</p>
+      <h5 class="alert-heading mb-1">Agen Tidak Ditemukan</h5>
+      <p class="mb-0">Gagal memuat detail agen. Agen mungkin sudah tidak ada atau akses ditolak.</p>
       <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2">
-        <i class="mdi mdi-arrow-left me-1"></i> Back to Agents
+        <i class="mdi mdi-arrow-left me-1"></i> Kembali ke Agen
       </a>
     </div>
   </div>
@@ -33,17 +33,17 @@
     <ul class="nav flex-nowrap overflow-auto">
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.detail', $agent->agent_id) }}">
-          <span class="mdi mdi-home"></span> Details
+          <span class="mdi mdi-home"></span> Detail
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.security-events', $agent->agent_id) }}">
-          <span class="mdi mdi-format-list-bulleted"></span> Security events
+          <span class="mdi mdi-format-list-bulleted"></span> Event Keamanan
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.integrity-monitoring', $agent->agent_id) }}">
-          <span class="mdi mdi-shield"></span> Integrity monitoring
+          <span class="mdi mdi-shield"></span> Pemantauan Integritas
         </a>
       </li>
       <li class="nav-item">
@@ -53,7 +53,7 @@
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.vulnerabilities', $agent->agent_id) }}">
-          <span class="mdi mdi-bug"></span> Vulnerabilities
+          <span class="mdi mdi-bug"></span> Kerentanan
         </a>
       </li>
       <li class="nav-item">
@@ -63,7 +63,7 @@
       </li>
       <li class="nav-item dropdown">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small dropdown-toggle active" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <span class="mdi mdi-check-decagram"></span> {{ $typeLabels[$complianceType] ?? 'Compliance' }}
+          <span class="mdi mdi-check-decagram"></span> {{ $typeLabels[$complianceType] ?? 'Kepatuhan' }}
         </a>
         <ul class="dropdown-menu dropdown-menu-dark">
           <li><a class="dropdown-item {{ $complianceType === 'pci_dss'     ? 'active' : '' }}" href="{{ route('agent.compliance', $agent->agent_id) }}?compliance_type=pci_dss">PCI DSS</a></li>
@@ -76,13 +76,13 @@
 
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.inventory', $agent->agent_id) }}">
-          <span class="mdi mdi-database"></span> Inventory Data
+          <span class="mdi mdi-database"></span> Data Inventaris
         </a>
       </li>
     </ul>
     <div class="ms-auto d-flex gap-2 flex-shrink-0 py-1">
-      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Back to Agents List">
-        <span class="mdi mdi-arrow-left"></span> Back
+      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Kembali ke Daftar Agen">
+        <span class="mdi mdi-arrow-left"></span> Kembali
       </a>
     </div>
   </div>
@@ -103,34 +103,34 @@
 <div class="grid-stack" id="comp-grid">
 
   {{-- TIME RANGE (top right, small) --}}
-  <div class="grid-stack-item" gs-id="comp-controls" data-label="Time Range" gs-x="8" gs-y="0" gs-w="4" gs-h="8">
+  <div class="grid-stack-item" gs-id="comp-controls" data-label="Rentang Waktu" gs-x="8" gs-y="0" gs-w="4" gs-h="8">
     <div class="grid-stack-item-content" style="overflow:visible;">
       <div class="card gs-card" style="overflow:visible;">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Time Range</span>
+          <span class="fw-semibold small">Rentang Waktu</span>
         </div>
         <div class="card-body d-flex flex-column align-items-center justify-content-center gap-2" style="overflow:visible;">
           <div class="dropdown">
             <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="timeRangeDropdown"
               data-bs-toggle="dropdown" aria-expanded="false">
               <span class="mdi mdi-calendar-outline me-1"></span>
-              <span id="timeRangeLabel">{{ ['15m'=>'Last 15 minutes','30m'=>'Last 30 minutes','1h'=>'Last 1 hour','24h'=>'Last 24 hours','7d'=>'Last 7 days','30d'=>'Last 30 days','90d'=>'Last 90 days','1y'=>'Last 1 year','today'=>'Today','week'=>'This week'][$timeRange] ?? 'Last 24 hours' }}</span>
+              <span id="timeRangeLabel">{{ ['15m'=>'15 menit terakhir','30m'=>'30 menit terakhir','1h'=>'1 jam terakhir','24h'=>'24 jam terakhir','7d'=>'7 hari terakhir','30d'=>'30 hari terakhir','90d'=>'90 hari terakhir','1y'=>'1 tahun terakhir','today'=>'Hari ini','week'=>'Minggu ini'][$timeRange] ?? '24 jam terakhir' }}</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="timeRangeDropdown">
-              <li><a class="dropdown-item {{ $timeRange === '15m'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('15m',   event)">Last 15 minutes</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '30m'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('30m',   event)">Last 30 minutes</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '1h'    ? 'active' : '' }}" href="#" onclick="updateTimeRange('1h',    event)">Last 1 hour</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '24h'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('24h',   event)">Last 24 hours</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '7d'    ? 'active' : '' }}" href="#" onclick="updateTimeRange('7d',    event)">Last 7 days</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '30d'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('30d',   event)">Last 30 days</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '90d'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('90d',   event)">Last 90 days</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '1y'    ? 'active' : '' }}" href="#" onclick="updateTimeRange('1y',    event)">Last 1 year</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '15m'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('15m',   event)">15 menit terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '30m'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('30m',   event)">30 menit terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '1h'    ? 'active' : '' }}" href="#" onclick="updateTimeRange('1h',    event)">1 jam terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '24h'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('24h',   event)">24 jam terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '7d'    ? 'active' : '' }}" href="#" onclick="updateTimeRange('7d',    event)">7 hari terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '30d'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('30d',   event)">30 hari terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '90d'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('90d',   event)">90 hari terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '1y'    ? 'active' : '' }}" href="#" onclick="updateTimeRange('1y',    event)">1 tahun terakhir</a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item {{ $timeRange === 'today' ? 'active' : '' }}" href="#" onclick="updateTimeRange('today', event)">Today</a></li>
-              <li><a class="dropdown-item {{ $timeRange === 'week'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('week',  event)">This week</a></li>
+              <li><a class="dropdown-item {{ $timeRange === 'today' ? 'active' : '' }}" href="#" onclick="updateTimeRange('today', event)">Hari ini</a></li>
+              <li><a class="dropdown-item {{ $timeRange === 'week'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('week',  event)">Minggu ini</a></li>
             </ul>
           </div>
-          <button class="btn btn-outline-warning btn-sm" onclick="resetFilters()" title="Reset to default (Last 24 hours)">
+          <button class="btn btn-outline-warning btn-sm" onclick="resetFilters()" title="Reset ke default (24 jam terakhir)">
             <span class="mdi mdi-restore me-1"></span> Reset
           </button>
         </div>
@@ -141,11 +141,11 @@
   {{-- ROW 2: Three doughnuts --}}
 
   {{-- TOP 5 RULE GROUPS --}}
-  <div class="grid-stack-item" gs-id="comp-top-groups" data-label="Top 5 Rule Groups" gs-x="0" gs-y="0" gs-w="4" gs-h="8">
+  <div class="grid-stack-item" gs-id="comp-top-groups" data-label="5 Grup Aturan Teratas" gs-x="0" gs-y="0" gs-w="4" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Top 5 rule groups</span>
+          <span class="fw-semibold small">5 Grup Aturan Teratas</span>
         </div>
         <div class="card-body p-2 d-flex align-items-center justify-content-center">
           @if(count($topRuleGroups['labels'] ?? []) > 0)
@@ -165,11 +165,11 @@
   </div>
 
   {{-- TOP 5 RULES --}}
-  <div class="grid-stack-item" gs-id="comp-top-rules" data-label="Top 5 Rules" gs-x="4" gs-y="0" gs-w="4" gs-h="8">
+  <div class="grid-stack-item" gs-id="comp-top-rules" data-label="5 Aturan Teratas" gs-x="4" gs-y="0" gs-w="4" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Top 5 rules</span>
+          <span class="fw-semibold small">5 Aturan Teratas</span>
         </div>
         <div class="card-body p-2 d-flex align-items-center justify-content-center">
           @if(count($topRules['labels'] ?? []) > 0)
@@ -189,11 +189,11 @@
   </div>
 
   {{-- TOP 5 COMPLIANCE REQUIREMENTS --}}
-  <div class="grid-stack-item" gs-id="comp-top-requirements" data-label="Top 5 Requirements" gs-x="0" gs-y="8" gs-w="4" gs-h="8">
+  <div class="grid-stack-item" gs-id="comp-top-requirements" data-label="5 Persyaratan Teratas" gs-x="0" gs-y="8" gs-w="4" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Top 5 {{ $currentTypeLabel }} requirements</span>
+          <span class="fw-semibold small">5 Persyaratan {{ $currentTypeLabel }} Teratas</span>
         </div>
         <div class="card-body p-2 d-flex align-items-center justify-content-center">
           @if(count($top5Compliance) > 0)
@@ -215,11 +215,11 @@
   {{-- ROW 3: Bar chart + Rule level doughnut --}}
 
   {{-- REQUIREMENTS BAR CHART --}}
-  <div class="grid-stack-item" gs-id="comp-requirements-bar" data-label="Requirements Bar" gs-x="4" gs-y="8" gs-w="5" gs-h="8">
+  <div class="grid-stack-item" gs-id="comp-requirements-bar" data-label="Bar Persyaratan" gs-x="4" gs-y="8" gs-w="5" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">{{ $currentTypeLabel }} requirements</span>
+          <span class="fw-semibold small">Persyaratan {{ $currentTypeLabel }}</span>
         </div>
         <div class="card-body p-2">
           @if(count($allCompliance) > 0)
@@ -239,11 +239,11 @@
   </div>
 
   {{-- RULE LEVEL DISTRIBUTION --}}
-  <div class="grid-stack-item" gs-id="comp-rule-level" data-label="Rule Level Distribution" gs-x="9" gs-y="8" gs-w="3" gs-h="8">
+  <div class="grid-stack-item" gs-id="comp-rule-level" data-label="Distribusi Level Aturan" gs-x="9" gs-y="8" gs-w="3" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Rule level distribution</span>
+          <span class="fw-semibold small">Distribusi Level Aturan</span>
         </div>
         <div class="card-body p-2 d-flex align-items-center justify-content-center">
           @if(count($ruleLevelDist) > 0)
@@ -269,9 +269,9 @@
   <button id="gs-fab-main" title="Edit layout"><i class="mdi mdi-pencil" id="gs-fab-icon"></i></button>
 </div>
 <div id="gs-edit-toolbar">
-  <button id="gs-save"   class="gs-tb-btn gs-tb-btn-save">Save layout</button>
+  <button id="gs-save"   class="gs-tb-btn gs-tb-btn-save">Simpan</button>
   <button id="gs-reset"  class="gs-tb-btn gs-tb-btn-reset">Reset</button>
-  <button id="gs-cancel" class="gs-tb-btn gs-tb-btn-cancel">Cancel</button>
+  <button id="gs-cancel" class="gs-tb-btn gs-tb-btn-cancel">Batal</button>
 </div>
 
 @endif
@@ -423,16 +423,16 @@ document.addEventListener('DOMContentLoaded', initializeCharts);
 let currentTimeRange = '{{ $timeRange }}';
 
 const timeRangeLabels = {
-  '15m':  'Last 15 minutes',
-  '30m':  'Last 30 minutes',
-  '1h':   'Last 1 hour',
-  '24h':  'Last 24 hours',
-  '7d':   'Last 7 days',
-  '30d':  'Last 30 days',
-  '90d':  'Last 90 days',
-  '1y':   'Last 1 year',
-  'today':'Today',
-  'week': 'This week',
+  '15m':  '15 menit terakhir',
+  '30m':  '30 menit terakhir',
+  '1h':   '1 jam terakhir',
+  '24h':  '24 jam terakhir',
+  '7d':   '7 hari terakhir',
+  '30d':  '30 hari terakhir',
+  '90d':  '90 hari terakhir',
+  '1y':   '1 tahun terakhir',
+  'today':'Hari ini',
+  'week': 'Minggu ini',
 };
 
 function updateTimeRange(range, event) {

@@ -10,7 +10,7 @@
     <div class="card grid-margin">
       <div class="card-body">
         <div class="d-flex align-items-center justify-content-between mb-4">
-          <h4 class="card-title mb-0">Profile</h4>
+          <h4 class="card-title mb-0">Profil</h4>
           <button class="btn btn-sm btn-outline-warning" type="button" data-bs-toggle="collapse" data-bs-target="#changePasswordForm" aria-expanded="false">
             <i class="mdi mdi-lock-reset me-1"></i> Ganti Password
           </button>

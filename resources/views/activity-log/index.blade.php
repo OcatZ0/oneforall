@@ -72,7 +72,7 @@
           <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
             <h4 class="card-title mb-0">Log Aktivitas</h4>
             <div class="d-flex align-items-center gap-2">
-              <span class="text-muted small">Rows per page:</span>
+              <span class="text-muted small">Baris per halaman:</span>
               <form method="GET" action="{{ route('activity-log') }}" id="perPageForm">
                 @foreach(request()->query() as $key => $value)
                   @if($key !== 'per_page' && $key !== 'page')
@@ -185,9 +185,9 @@
 
 {{-- Edit toolbar --}}
 <div id="gs-edit-toolbar">
-  <button class="gs-tb-btn gs-tb-btn-save"   id="gs-save">  <i class="mdi mdi-content-save me-1"></i>Save</button>
+  <button class="gs-tb-btn gs-tb-btn-save"   id="gs-save">  <i class="mdi mdi-content-save me-1"></i>Simpan</button>
   <button class="gs-tb-btn gs-tb-btn-reset"  id="gs-reset"> <i class="mdi mdi-restore me-1"></i>Reset</button>
-  <button class="gs-tb-btn gs-tb-btn-cancel" id="gs-cancel"><i class="mdi mdi-close me-1"></i>Cancel</button>
+  <button class="gs-tb-btn gs-tb-btn-cancel" id="gs-cancel"><i class="mdi mdi-close me-1"></i>Batal</button>
 </div>
 
 @endsection

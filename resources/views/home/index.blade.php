@@ -12,12 +12,12 @@
 <div class="grid-stack" id="dashboard-grid">
 
   {{-- Active Agents --}}
-  <div class="grid-stack-item" gs-id="active-agents" data-label="Active Agents" gs-x="0" gs-y="0" gs-w="3" gs-h="4">
+  <div class="grid-stack-item" gs-id="active-agents" data-label="Agen Aktif" gs-x="0" gs-y="0" gs-w="3" gs-h="4">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between mb-3">
-            <p class="card-title mb-0">Active Agents</p>
+            <p class="card-title mb-0">Agen Aktif</p>
             <i class="mdi mdi-server-network text-success icon-lg"></i>
           </div>
           <h2 class="fw-bold mb-1">{{ $agentStats['active'] }}</h2>
@@ -28,12 +28,12 @@
   </div>
 
   {{-- Disconnected --}}
-  <div class="grid-stack-item" gs-id="disconnected" data-label="Disconnected" gs-x="3" gs-y="0" gs-w="3" gs-h="4">
+  <div class="grid-stack-item" gs-id="disconnected" data-label="Terputus" gs-x="3" gs-y="0" gs-w="3" gs-h="4">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between mb-3">
-            <p class="card-title mb-0">Disconnected</p>
+            <p class="card-title mb-0">Terputus</p>
             <i class="mdi mdi-server-off text-danger icon-lg"></i>
           </div>
           <h2 class="fw-bold mb-1">{{ $agentStats['disconnected'] }}</h2>
@@ -44,12 +44,12 @@
   </div>
 
   {{-- Pending --}}
-  <div class="grid-stack-item" gs-id="pending" data-label="Pending" gs-x="6" gs-y="0" gs-w="3" gs-h="4">
+  <div class="grid-stack-item" gs-id="pending" data-label="Menunggu" gs-x="6" gs-y="0" gs-w="3" gs-h="4">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between mb-3">
-            <p class="card-title mb-0">Pending</p>
+            <p class="card-title mb-0">Menunggu</p>
             <i class="mdi mdi-server text-warning icon-lg"></i>
           </div>
           <h2 class="fw-bold mb-1">{{ $agentStats['pending'] }}</h2>
@@ -60,12 +60,12 @@
   </div>
 
   {{-- Never Connected --}}
-  <div class="grid-stack-item" gs-id="never-connected" data-label="Never Connected" gs-x="9" gs-y="0" gs-w="3" gs-h="4">
+  <div class="grid-stack-item" gs-id="never-connected" data-label="Tidak Pernah Terhubung" gs-x="9" gs-y="0" gs-w="3" gs-h="4">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between mb-3">
-            <p class="card-title mb-0">Never Connected</p>
+            <p class="card-title mb-0">Tidak Pernah Terhubung</p>
             <i class="mdi mdi-server-minus text-secondary icon-lg"></i>
           </div>
           <h2 class="fw-bold mb-1">{{ $agentStats['never_connected'] }}</h2>
@@ -76,12 +76,12 @@
   </div>
 
   {{-- Total Agents --}}
-  <div class="grid-stack-item" gs-id="total-agents" data-label="Total Agents" gs-x="0" gs-y="4" gs-w="3" gs-h="5">
+  <div class="grid-stack-item" gs-id="total-agents" data-label="Total Agen" gs-x="0" gs-y="4" gs-w="3" gs-h="5">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between mb-3">
-            <p class="card-title mb-0">Total Agents</p>
+            <p class="card-title mb-0">Total Agen</p>
             <i class="mdi mdi-server-network text-primary icon-lg"></i>
           </div>
           <h2 class="fw-bold mb-1">{{ $agentStats['total'] }}</h2>
@@ -100,12 +100,12 @@
 
   @if($customerStats)
   {{-- Total Customers (admin only) --}}
-  <div class="grid-stack-item" gs-id="total-customers" data-label="Total Customers" gs-x="3" gs-y="4" gs-w="3" gs-h="5">
+  <div class="grid-stack-item" gs-id="total-customers" data-label="Total Pelanggan" gs-x="3" gs-y="4" gs-w="3" gs-h="5">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between mb-3">
-            <p class="card-title mb-0">Total Customers</p>
+            <p class="card-title mb-0">Total Pelanggan</p>
             <i class="mdi mdi-account-group text-info icon-lg"></i>
           </div>
           <h2 class="fw-bold mb-1">{{ $customerStats['total'] }}</h2>
@@ -139,13 +139,13 @@
         <div class="card-body">
           <p class="card-title mb-1">Komposisi Status Agent</p>
           <p class="text-muted mb-3">Dari total {{ $agentStats['total'] }} agent terdaftar</p>
-          <div class="d-flex justify-content-between mb-1"><span class="text-success">Active</span><span class="fw-bold">{{ $agentStats['active'] }} ({{ $activePct }}%)</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-success">Aktif</span><span class="fw-bold">{{ $agentStats['active'] }} ({{ $activePct }}%)</span></div>
           <div class="progress mb-2" style="height:8px"><div class="progress-bar bg-success" style="width:{{ $activePct }}%"></div></div>
-          <div class="d-flex justify-content-between mb-1"><span class="text-danger">Disconnected</span><span class="fw-bold">{{ $agentStats['disconnected'] }} ({{ $disconnectedPct }}%)</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-danger">Terputus</span><span class="fw-bold">{{ $agentStats['disconnected'] }} ({{ $disconnectedPct }}%)</span></div>
           <div class="progress mb-2" style="height:8px"><div class="progress-bar bg-danger" style="width:{{ $disconnectedPct }}%"></div></div>
-          <div class="d-flex justify-content-between mb-1"><span class="text-warning">Pending</span><span class="fw-bold">{{ $agentStats['pending'] }} ({{ $pendingPct }}%)</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-warning">Menunggu</span><span class="fw-bold">{{ $agentStats['pending'] }} ({{ $pendingPct }}%)</span></div>
           <div class="progress mb-2" style="height:8px"><div class="progress-bar bg-warning" style="width:{{ $pendingPct }}%"></div></div>
-          <div class="d-flex justify-content-between mb-1"><span class="text-secondary">Never Connected</span><span class="fw-bold">{{ $agentStats['never_connected'] }} ({{ $neverConnectedPct }}%)</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-secondary">Tidak Pernah Terhubung</span><span class="fw-bold">{{ $agentStats['never_connected'] }} ({{ $neverConnectedPct }}%)</span></div>
           <div class="progress" style="height:8px"><div class="progress-bar bg-secondary" style="width:{{ $neverConnectedPct }}%"></div></div>
         </div>
       </div>
@@ -158,7 +158,7 @@
       <div class="card gs-card">
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between mb-1">
-            <p class="card-title mb-0">Alert Trend (7 Hari)</p>
+            <p class="card-title mb-0">Tren Peringatan (7 Hari)</p>
             <span class="badge bg-success badge-pill">Live</span>
           </div>
           <p class="text-muted mb-3">Pergerakan alert harian seluruh agent</p>
@@ -180,14 +180,14 @@
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
-          <p class="card-title">Alerts by Rule Level</p>
-          <p class="text-muted mb-1">Level 1–5 = Low, 6–8 = Medium, 9–11 = High, 12–15 = Critical.</p>
+          <p class="card-title">Peringatan per Level Aturan</p>
+          <p class="text-muted mb-1">Level 1–5 = Rendah, 6–8 = Sedang, 9–11 = Tinggi, 12–15 = Kritis.</p>
           <canvas id="severity-chart"></canvas>
           <div class="d-flex justify-content-around mt-3">
-            <span class="badge bg-danger">Critical</span>
-            <span class="badge bg-warning text-dark">High</span>
-            <span class="badge bg-info text-dark">Medium</span>
-            <span class="badge bg-success">Low</span>
+            <span class="badge bg-danger">Kritis</span>
+            <span class="badge bg-warning text-white">Tinggi</span>
+            <span class="badge bg-info text-white">Sedang</span>
+            <span class="badge bg-success">Rendah</span>
           </div>
         </div>
       </div>
@@ -199,16 +199,16 @@
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
-          <p class="card-title">Total Security Alerts</p>
+          <p class="card-title">Total Peringatan Keamanan</p>
           <h2 class="fw-bold mb-1">{{ number_format($totalAlerts) }}</h2>
           <p class="text-muted mb-3">Dari seluruh agent</p>
-          <div class="d-flex justify-content-between mb-1"><span class="text-danger">Critical</span><span class="fw-bold">{{ number_format($alertSeverity['critical']) }}</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-danger">Kritis</span><span class="fw-bold">{{ number_format($alertSeverity['critical']) }}</span></div>
           <div class="progress mb-3" style="height:6px"><div class="progress-bar bg-danger" style="width:{{ $critical_pct }}%"></div></div>
-          <div class="d-flex justify-content-between mb-1"><span class="text-warning">High</span><span class="fw-bold">{{ number_format($alertSeverity['high']) }}</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-warning">Tinggi</span><span class="fw-bold">{{ number_format($alertSeverity['high']) }}</span></div>
           <div class="progress mb-3" style="height:6px"><div class="progress-bar bg-warning" style="width:{{ $high_pct }}%"></div></div>
-          <div class="d-flex justify-content-between mb-1"><span class="text-info">Medium</span><span class="fw-bold">{{ number_format($alertSeverity['medium']) }}</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-info">Sedang</span><span class="fw-bold">{{ number_format($alertSeverity['medium']) }}</span></div>
           <div class="progress mb-3" style="height:6px"><div class="progress-bar bg-info" style="width:{{ $medium_pct }}%"></div></div>
-          <div class="d-flex justify-content-between mb-1"><span class="text-success">Low</span><span class="fw-bold">{{ number_format($alertSeverity['low']) }}</span></div>
+          <div class="d-flex justify-content-between mb-1"><span class="text-success">Rendah</span><span class="fw-bold">{{ number_format($alertSeverity['low']) }}</span></div>
           <div class="progress" style="height:6px"><div class="progress-bar bg-success" style="width:{{ $low_pct }}%"></div></div>
         </div>
       </div>
@@ -220,7 +220,7 @@
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
-          <p class="card-title">OS Distribution</p>
+          <p class="card-title">Distribusi OS</p>
           <p class="text-muted mb-3">Sistem operasi dari seluruh agent</p>
           <canvas id="os-chart"></canvas>
         </div>
@@ -237,7 +237,7 @@
           <p class="text-muted mb-3">Data dari OpenSearch — aggregasi <code>rule.id</code></p>
           <div class="table-responsive">
             <table class="table table-striped mb-0">
-              <thead><tr><th>Rule ID</th><th>Description</th><th>Level</th><th>Count</th></tr></thead>
+              <thead><tr><th>Rule ID</th><th>Deskripsi</th><th>Level</th><th>Jumlah</th></tr></thead>
               <tbody>
                 @forelse($topRules as $rule)
                 <tr>
@@ -277,7 +277,7 @@
           </div>
           <div class="table-responsive">
             <table class="table table-striped mb-0">
-              <thead><tr><th>Agent ID</th><th>Agent Name</th><th>IP</th><th>OS</th><th>Total Alerts</th><th>Bar</th></tr></thead>
+              <thead><tr><th>ID Agen</th><th>Nama Agen</th><th>IP</th><th>OS</th><th>Total Peringatan</th><th>Proporsi</th></tr></thead>
               <tbody>
                 @php $maxAlerts = collect($topAgents)->max('alert_count') ?? 1; @endphp
                 @forelse($topAgents as $agent)
@@ -328,9 +328,9 @@
 
 {{-- Edit toolbar (fixed, centered bottom) --}}
 <div id="gs-edit-toolbar">
-  <button class="gs-tb-btn gs-tb-btn-save"   id="gs-save">  <i class="mdi mdi-content-save me-1"></i>Save</button>
+  <button class="gs-tb-btn gs-tb-btn-save"   id="gs-save">  <i class="mdi mdi-content-save me-1"></i>Simpan</button>
   <button class="gs-tb-btn gs-tb-btn-reset"  id="gs-reset"> <i class="mdi mdi-restore me-1"></i>Reset</button>
-  <button class="gs-tb-btn gs-tb-btn-cancel" id="gs-cancel"><i class="mdi mdi-close me-1"></i>Cancel</button>
+  <button class="gs-tb-btn gs-tb-btn-cancel" id="gs-cancel"><i class="mdi mdi-close me-1"></i>Batal</button>
 </div>
 
 @endsection

@@ -17,19 +17,19 @@
         <div class="card-body">
           <p class="card-title text-center">STATUS</p>
           <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
-            <span><span class="badge bg-success me-2">&nbsp;&nbsp;&nbsp;</span> Active</span>
+            <span><span class="badge bg-success me-2">&nbsp;&nbsp;&nbsp;</span> Aktif</span>
             <span class="fw-bold">{{ $stats['active'] }}</span>
           </div>
           <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
-            <span><span class="badge bg-danger me-2">&nbsp;&nbsp;&nbsp;</span> Disconnected</span>
+            <span><span class="badge bg-danger me-2">&nbsp;&nbsp;&nbsp;</span> Terputus</span>
             <span class="fw-bold">{{ $stats['disconnected'] }}</span>
           </div>
           <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
-            <span><span class="badge bg-warning text-dark me-2">&nbsp;&nbsp;&nbsp;</span> Pending</span>
+            <span><span class="badge bg-warning text-white me-2">&nbsp;&nbsp;&nbsp;</span> Menunggu</span>
             <span class="fw-bold">{{ $stats['pending'] }}</span>
           </div>
           <div class="d-flex justify-content-between align-items-center">
-            <span><span class="badge bg-secondary me-2">&nbsp;&nbsp;&nbsp;</span> Never Connected</span>
+            <span><span class="badge bg-secondary me-2">&nbsp;&nbsp;&nbsp;</span> Tidak Pernah Terhubung</span>
             <span class="fw-bold">{{ $stats['never_connected'] }}</span>
           </div>
         </div>
@@ -38,30 +38,30 @@
   </div>
 
   {{-- DETAILS --}}
-  <div class="grid-stack-item" gs-id="agent-details" data-label="Details" gs-x="3" gs-y="0" gs-w="3" gs-h="7">
+  <div class="grid-stack-item" gs-id="agent-details" data-label="Rincian" gs-x="3" gs-y="0" gs-w="3" gs-h="7">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
-          <p class="card-title text-center">DETAILS</p>
+          <p class="card-title text-center">RINCIAN</p>
           <div class="row text-center mb-3">
             <div class="col-6">
-              <p class="text-muted mb-1">Active</p>
+              <p class="text-muted mb-1">Aktif</p>
               <h4 class="text-success fw-bold">{{ $stats['active'] }}</h4>
             </div>
             <div class="col-6">
-              <p class="text-muted mb-1">Disconnected</p>
+              <p class="text-muted mb-1">Terputus</p>
               <h4 class="text-danger fw-bold">{{ $stats['disconnected'] }}</h4>
             </div>
             <div class="col-6">
-              <p class="text-muted mb-1">Pending</p>
+              <p class="text-muted mb-1">Menunggu</p>
               <h4 class="text-warning fw-bold">{{ $stats['pending'] }}</h4>
             </div>
             <div class="col-6">
-              <p class="text-muted mb-1">Never Connected</p>
+              <p class="text-muted mb-1">Tidak Pernah Terhubung</p>
               <h4 class="text-secondary fw-bold">{{ $stats['never_connected'] }}</h4>
             </div>
             <div class="col-12">
-              <p class="text-muted mb-1">Coverage</p>
+              <p class="text-muted mb-1">Cakupan</p>
               <h4 class="text-success fw-bold">{{ $stats['total'] > 0 ? round(($stats['active'] / $stats['total']) * 100) : 0 }}%</h4>
             </div>
           </div>
@@ -71,38 +71,38 @@
   </div>
 
   {{-- EVOLUTION --}}
-  <div class="grid-stack-item" gs-id="agent-evolution" data-label="Evolution" gs-x="6" gs-y="0" gs-w="6" gs-h="7">
+  <div class="grid-stack-item" gs-id="agent-evolution" data-label="Evolusi" gs-x="6" gs-y="0" gs-w="6" gs-h="7">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
           <div class="d-flex align-items-center justify-content-between mb-2">
-            <p class="card-title mb-0">EVOLUTION</p>
+            <p class="card-title mb-0">EVOLUSI</p>
             <div class="dropdown">
               <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="timeRangeDropdown"
                 data-toggle="dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
                 style="border: none; background: transparent; padding: 0; font-weight: normal;">
-                <span id="timeRangeLabel">Last 24 hours</span>
+                <span id="timeRangeLabel">24 Jam Terakhir</span>
               </button>
               <div class="dropdown-menu dropdown-menu-right" aria-labelledby="timeRangeDropdown" style="min-width: 150px;">
-                <a class="dropdown-item" href="#" onclick="updateChart('15m', event); return false;">Last 15 minutes</a>
-                <a class="dropdown-item" href="#" onclick="updateChart('30m', event); return false;">Last 30 minutes</a>
-                <a class="dropdown-item" href="#" onclick="updateChart('1h', event); return false;">Last 1 hour</a>
-                <a class="dropdown-item active" href="#" onclick="updateChart('24h', event); return false;">Last 24 hours</a>
-                <a class="dropdown-item" href="#" onclick="updateChart('7d', event); return false;">Last 7 days</a>
-                <a class="dropdown-item" href="#" onclick="updateChart('30d', event); return false;">Last 30 days</a>
-                <a class="dropdown-item" href="#" onclick="updateChart('90d', event); return false;">Last 90 days</a>
-                <a class="dropdown-item" href="#" onclick="updateChart('1y', event); return false;">Last 1 year</a>
+                <a class="dropdown-item" href="#" onclick="updateChart('15m', event); return false;">15 Menit Terakhir</a>
+                <a class="dropdown-item" href="#" onclick="updateChart('30m', event); return false;">30 Menit Terakhir</a>
+                <a class="dropdown-item" href="#" onclick="updateChart('1h', event); return false;">1 Jam Terakhir</a>
+                <a class="dropdown-item active" href="#" onclick="updateChart('24h', event); return false;">24 Jam Terakhir</a>
+                <a class="dropdown-item" href="#" onclick="updateChart('7d', event); return false;">7 Hari Terakhir</a>
+                <a class="dropdown-item" href="#" onclick="updateChart('30d', event); return false;">30 Hari Terakhir</a>
+                <a class="dropdown-item" href="#" onclick="updateChart('90d', event); return false;">90 Hari Terakhir</a>
+                <a class="dropdown-item" href="#" onclick="updateChart('1y', event); return false;">1 Tahun Terakhir</a>
                 <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="#" onclick="updateChart('today', event); return false;">Today</a>
-                <a class="dropdown-item" href="#" onclick="updateChart('week', event); return false;">This week</a>
+                <a class="dropdown-item" href="#" onclick="updateChart('today', event); return false;">Hari Ini</a>
+                <a class="dropdown-item" href="#" onclick="updateChart('week', event); return false;">Minggu Ini</a>
               </div>
             </div>
           </div>
-          <p class="mb-2"><span class="text-success me-1">●</span> <small>active</small></p>
+          <p class="mb-2"><span class="text-success me-1">●</span> <small>Aktif</small></p>
           <div id="evolution-chart-container" style="position:relative;">
             <canvas id="evolution-chart" height="100"></canvas>
           </div>
-          <p class="text-center mb-0 mt-1"><small class="text-muted" id="chartIntervalText">timestamp per 10 minutes</small></p>
+          <p class="text-center mb-0 mt-1"><small class="text-muted" id="chartIntervalText">timestamp per 10 menit</small></p>
         </div>
       </div>
     </div>
@@ -139,10 +139,10 @@
               </div>
               <select id="statusFilter" name="status" class="form-control form-select" style="width:180px">
                 <option value="">Semua Status</option>
-                <option value="active"          {{ request('status') === 'active'          ? 'selected' : '' }}>Active</option>
-                <option value="disconnected"    {{ request('status') === 'disconnected'    ? 'selected' : '' }}>Disconnected</option>
-                <option value="pending"         {{ request('status') === 'pending'         ? 'selected' : '' }}>Pending</option>
-                <option value="never_connected" {{ request('status') === 'never_connected' ? 'selected' : '' }}>Never Connected</option>
+                <option value="active"          {{ request('status') === 'active'          ? 'selected' : '' }}>Aktif</option>
+                <option value="disconnected"    {{ request('status') === 'disconnected'    ? 'selected' : '' }}>Terputus</option>
+                <option value="pending"         {{ request('status') === 'pending'         ? 'selected' : '' }}>Menunggu</option>
+                <option value="never_connected" {{ request('status') === 'never_connected' ? 'selected' : '' }}>Tidak Pernah Terhubung</option>
               </select>
               <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-secondary">
                 <i class="mdi mdi-refresh me-1"></i>Reset
@@ -158,9 +158,9 @@
                   <th>ID</th>
                   <th>Nama Agent</th>
                   <th>IP Address</th>
-                  <th>Operating System</th>
-                  <th>Version</th>
-                  <th>Assigned To</th>
+                  <th>Sistem Operasi</th>
+                  <th>Versi</th>
+                  <th>Ditugaskan Ke</th>
                   <th>Cluster Node</th>
                   <th>Status</th>
                 </tr>
@@ -181,7 +181,7 @@
                     @if($agent->user)
                       <span class="badge bg-primary">{{ $agent->user->username }}</span>
                     @else
-                      <span class="text-muted fst-italic">Unassigned</span>
+                      <span class="text-muted fst-italic">Tidak Ditugaskan</span>
                     @endif
                   </td>
                   <td><small class="text-muted">{{ $agent->cluster_node }}</small></td>
@@ -208,7 +208,7 @@
           @if($agents->count() > 0)
           <div class="d-flex align-items-center justify-content-between mt-3">
             <div class="d-flex align-items-center">
-              <span class="text-muted me-2">Rows per page:</span>
+              <span class="text-muted me-2">Baris per halaman:</span>
               <div class="d-flex gap-1">
                 @foreach([10, 25, 50] as $pp)
                 <button onclick="loadAgents(1, {{ $pp }})"
@@ -264,10 +264,10 @@
 
       <div class="modal-footer border-0 px-4 pt-0 pb-4 gap-2">
         <button type="button" class="btn btn-outline-secondary btn-sm"
-                data-bs-dismiss="modal">Close</button>
+                data-bs-dismiss="modal">Tutup</button>
         <button type="button" class="btn btn-sm" id="syncModalReload"
                 style="background:#4B49AC;color:#fff;" onclick="location.reload()">
-          <i class="mdi mdi-refresh me-1"></i>Reload Page
+          <i class="mdi mdi-refresh me-1"></i>Muat Ulang
         </button>
       </div>
 
@@ -284,9 +284,9 @@
 
 {{-- Edit toolbar --}}
 <div id="gs-edit-toolbar">
-  <button class="gs-tb-btn gs-tb-btn-save"   id="gs-save">  <i class="mdi mdi-content-save me-1"></i>Save</button>
+  <button class="gs-tb-btn gs-tb-btn-save"   id="gs-save">  <i class="mdi mdi-content-save me-1"></i>Simpan</button>
   <button class="gs-tb-btn gs-tb-btn-reset"  id="gs-reset"> <i class="mdi mdi-restore me-1"></i>Reset</button>
-  <button class="gs-tb-btn gs-tb-btn-cancel" id="gs-cancel"><i class="mdi mdi-close me-1"></i>Cancel</button>
+  <button class="gs-tb-btn gs-tb-btn-cancel" id="gs-cancel"><i class="mdi mdi-close me-1"></i>Batal</button>
 </div>
 
 @endsection
@@ -298,29 +298,29 @@
 let evolutionChartInstance = null;
 
 const timeRangeLabels = {
-  '15m': 'Last 15 minutes',
-  '30m': 'Last 30 minutes',
-  '1h':  'Last 1 hour',
-  '24h': 'Last 24 hours',
-  '7d':  'Last 7 days',
-  '30d': 'Last 30 days',
-  '90d': 'Last 90 days',
-  '1y':  'Last 1 year',
-  'today': 'Today',
-  'week':  'This week'
+  '15m': '15 Menit Terakhir',
+  '30m': '30 Menit Terakhir',
+  '1h':  '1 Jam Terakhir',
+  '24h': '24 Jam Terakhir',
+  '7d':  '7 Hari Terakhir',
+  '30d': '30 Hari Terakhir',
+  '90d': '90 Hari Terakhir',
+  '1y':  '1 Tahun Terakhir',
+  'today': 'Hari Ini',
+  'week':  'Minggu Ini'
 };
 
 const intervalTexts = {
-  '15m':  'timestamp per 1 minute',
-  '30m':  'timestamp per 1 minute',
-  '1h':   'timestamp per 2 minutes',
-  '24h':  'timestamp per 10 minutes',
-  '7d':   'timestamp per 1 hour',
-  '30d':  'timestamp per 6 hours',
-  '90d':  'timestamp per 12 hours',
-  '1y':   'timestamp per 1 day',
-  'today':'timestamp per 30 minutes',
-  'week': 'timestamp per 1 hour'
+  '15m':  'timestamp per 1 menit',
+  '30m':  'timestamp per 1 menit',
+  '1h':   'timestamp per 2 menit',
+  '24h':  'timestamp per 10 menit',
+  '7d':   'timestamp per 1 jam',
+  '30d':  'timestamp per 6 jam',
+  '90d':  'timestamp per 12 jam',
+  '1y':   'timestamp per 1 hari',
+  'today':'timestamp per 30 menit',
+  'week': 'timestamp per 1 jam'
 };
 
 function initChart(labels, dataPoints) {
@@ -350,7 +350,7 @@ function initChart(labels, dataPoints) {
       data: {
         labels: labels,
         datasets: [{
-          label: 'active',
+          label: 'Aktif',
           data: dataPoints,
           borderColor: '#82D616',
           borderWidth: 2,
@@ -373,7 +373,7 @@ function initChart(labels, dataPoints) {
             enabled: true,
             callbacks: {
               title: ctx => ctx[0].label,
-              label: ctx => `Active agents: ${ctx.raw}`
+              label: ctx => `Agen aktif: ${ctx.raw}`
             }
           }
         },
@@ -401,8 +401,8 @@ function initChart(labels, dataPoints) {
 }
 
 function updateChart(timeRange, event) {
-  document.getElementById('timeRangeLabel').textContent = timeRangeLabels[timeRange] || 'Select time range';
-  document.getElementById('chartIntervalText').textContent = intervalTexts[timeRange] || 'loading...';
+  document.getElementById('timeRangeLabel').textContent = timeRangeLabels[timeRange] || 'Pilih rentang waktu';
+  document.getElementById('chartIntervalText').textContent = intervalTexts[timeRange] || 'memuat...';
 
   const container = document.getElementById('evolution-chart-container');
   if (container) container.style.opacity = '0.5';
@@ -436,8 +436,8 @@ function showSyncModal(success, data, message) {
   if (success) {
     iconWrap.style.background = 'rgba(39,174,96,.12)';
     icon.className = 'mdi mdi-check-circle fs-3 text-success';
-    title.textContent    = 'Sync Completed';
-    subtitle.textContent = 'Agent data successfully updated from Wazuh';
+    title.textContent    = 'Sinkronisasi Selesai';
+    subtitle.textContent = 'Data agen berhasil diperbarui dari Wazuh';
     reloadBtn.style.display = '';
 
     const hasErrors = data.errors > 0;
@@ -446,43 +446,43 @@ function showSyncModal(success, data, message) {
         <div class="col-6">
           <div class="rounded p-3 text-center" style="background:#f0fdf4;">
             <div class="fw-bold fs-5 text-success">${data.synced_new}</div>
-            <div class="text-muted small">New agents</div>
+            <div class="text-muted small">Agen baru</div>
           </div>
         </div>
         <div class="col-6">
           <div class="rounded p-3 text-center" style="background:#eff6ff;">
             <div class="fw-bold fs-5" style="color:#4B49AC">${data.updated_existing}</div>
-            <div class="text-muted small">Updated</div>
+            <div class="text-muted small">Diperbarui</div>
           </div>
         </div>
         <div class="col-6">
           <div class="rounded p-3 text-center" style="background:#fef2f2;">
             <div class="fw-bold fs-5 text-danger">${data.deleted_obsolete}</div>
-            <div class="text-muted small">Deleted</div>
+            <div class="text-muted small">Dihapus</div>
           </div>
         </div>
         <div class="col-6">
           <div class="rounded p-3 text-center" style="background:#f8f9fa;">
             <div class="fw-bold fs-5 text-secondary">${data.total_processed}</div>
-            <div class="text-muted small">Total processed</div>
+            <div class="text-muted small">Total diproses</div>
           </div>
         </div>
       </div>
       ${hasErrors ? `
       <div class="alert alert-warning py-2 mb-0 d-flex align-items-center gap-2" role="alert">
         <i class="mdi mdi-alert-outline"></i>
-        <span class="small">${data.errors} agent(s) encountered errors during sync.</span>
+        <span class="small">${data.errors} agen mengalami kesalahan saat sinkronisasi.</span>
       </div>` : ''}`;
   } else {
     iconWrap.style.background = 'rgba(220,53,69,.1)';
     icon.className = 'mdi mdi-alert-circle fs-3 text-danger';
-    title.textContent    = 'Sync Failed';
-    subtitle.textContent = 'An error occurred during the sync process';
+    title.textContent    = 'Sinkronisasi Gagal';
+    subtitle.textContent = 'Terjadi kesalahan saat proses sinkronisasi';
     reloadBtn.style.display = 'none';
     body.innerHTML = `
       <div class="alert alert-danger py-2 mb-0 d-flex align-items-center gap-2" role="alert">
         <i class="mdi mdi-alert-circle-outline"></i>
-        <span class="small">${message || 'Unknown error'}</span>
+        <span class="small">${message || 'Kesalahan tidak diketahui'}</span>
       </div>`;
   }
 
@@ -496,7 +496,7 @@ function syncAgentsFromWazuh() {
   syncBtn.classList.remove('btn-success');
   syncBtn.classList.add('btn-secondary');
   const originalText = syncBtnText.textContent;
-  syncBtnText.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Syncing...';
+  syncBtnText.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Menyinkronkan...';
 
   fetch('{{ route("agent.sync") }}', {
     method: 'POST',

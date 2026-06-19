@@ -29,10 +29,10 @@
   <div class="alert alert-danger d-flex align-items-center gap-3" role="alert">
     <i class="mdi mdi-alert-circle-outline display-4"></i>
     <div>
-      <h5 class="alert-heading mb-1">Agent Not Found</h5>
-      <p class="mb-0">Unable to load agent details. The agent may no longer exist or access has been denied.</p>
+      <h5 class="alert-heading mb-1">Agen Tidak Ditemukan</h5>
+      <p class="mb-0">Gagal memuat detail agen. Agen mungkin sudah tidak ada atau akses ditolak.</p>
       <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2">
-        <i class="mdi mdi-arrow-left me-1"></i> Back to Agents
+        <i class="mdi mdi-arrow-left me-1"></i> Kembali ke Agen
       </a>
     </div>
   </div>
@@ -45,17 +45,17 @@
     <ul class="nav flex-nowrap overflow-auto">
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.detail', $agent->agent_id) }}">
-          <span class="mdi mdi-home"></span> Details
+          <span class="mdi mdi-home"></span> Detail
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.security-events', $agent->agent_id) }}">
-          <span class="mdi mdi-format-list-bulleted"></span> Security events
+          <span class="mdi mdi-format-list-bulleted"></span> Event Keamanan
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.integrity-monitoring', $agent->agent_id) }}">
-          <span class="mdi mdi-shield"></span> Integrity monitoring
+          <span class="mdi mdi-shield"></span> Pemantauan Integritas
         </a>
       </li>
       <li class="nav-item">
@@ -65,7 +65,7 @@
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.vulnerabilities', $agent->agent_id) }}">
-          <span class="mdi mdi-bug"></span> Vulnerabilities
+          <span class="mdi mdi-bug"></span> Kerentanan
         </a>
       </li>
       <li class="nav-item">
@@ -75,7 +75,7 @@
       </li>
       <li class="nav-item dropdown">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <span class="mdi mdi-check-decagram"></span> Compliance
+          <span class="mdi mdi-check-decagram"></span> Kepatuhan
         </a>
         <ul class="dropdown-menu dropdown-menu-dark">
           <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->agent_id) }}?compliance_type=pci_dss">PCI DSS</a></li>
@@ -88,13 +88,13 @@
 
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.inventory', $agent->agent_id) }}">
-          <span class="mdi mdi-database"></span> Inventory Data
+          <span class="mdi mdi-database"></span> Data Inventaris
         </a>
       </li>
     </ul>
     <div class="ms-auto d-flex gap-2 flex-shrink-0 py-1">
-      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Back to Agents List">
-        <span class="mdi mdi-arrow-left"></span> Back
+      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Kembali ke Daftar Agen">
+        <span class="mdi mdi-arrow-left"></span> Kembali
       </a>
     </div>
   </div>
@@ -106,11 +106,11 @@
   {{-- ROW 1: Alerts evolution | Time range + Top tactics --}}
 
   {{-- ALERTS EVOLUTION --}}
-  <div class="grid-stack-item" gs-id="mitre-evolution" data-label="Alerts Evolution" gs-x="0" gs-y="0" gs-w="9" gs-h="8">
+  <div class="grid-stack-item" gs-id="mitre-evolution" data-label="Evolusi Peringatan" gs-x="0" gs-y="0" gs-w="9" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Alerts evolution over time</span>
+          <span class="fw-semibold small">Evolusi Peringatan dari Waktu ke Waktu</span>
         </div>
         <div class="card-body p-2">
           @if(count($evolution['datasets'] ?? []) > 0)
@@ -130,34 +130,34 @@
   </div>
 
   {{-- TIME RANGE --}}
-  <div class="grid-stack-item" gs-id="mitre-timerange" data-label="Time Range" gs-x="9" gs-y="0" gs-w="3" gs-h="3">
+  <div class="grid-stack-item" gs-id="mitre-timerange" data-label="Rentang Waktu" gs-x="9" gs-y="0" gs-w="3" gs-h="3">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Time Range</span>
+          <span class="fw-semibold small">Rentang Waktu</span>
         </div>
         <div class="card-body d-flex flex-column align-items-center justify-content-center gap-2">
           <div class="dropdown">
             <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="timeRangeDropdown"
               data-bs-toggle="dropdown" aria-expanded="false">
               <span class="mdi mdi-calendar-outline me-1"></span>
-              <span id="timeRangeLabel">{{ ['15m'=>'Last 15 minutes','30m'=>'Last 30 minutes','1h'=>'Last 1 hour','24h'=>'Last 24 hours','7d'=>'Last 7 days','30d'=>'Last 30 days','90d'=>'Last 90 days','1y'=>'Last 1 year','today'=>'Today','week'=>'This week'][$timeRange] ?? 'Last 24 hours' }}</span>
+              <span id="timeRangeLabel">{{ ['15m'=>'15 menit terakhir','30m'=>'30 menit terakhir','1h'=>'1 jam terakhir','24h'=>'24 jam terakhir','7d'=>'7 hari terakhir','30d'=>'30 hari terakhir','90d'=>'90 hari terakhir','1y'=>'1 tahun terakhir','today'=>'Hari ini','week'=>'Minggu ini'][$timeRange] ?? '24 jam terakhir' }}</span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="timeRangeDropdown">
-              <li><a class="dropdown-item {{ $timeRange === '15m'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('15m',  event)">Last 15 minutes</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '30m'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('30m',  event)">Last 30 minutes</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '1h'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('1h',   event)">Last 1 hour</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '24h'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('24h',  event)">Last 24 hours</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '7d'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('7d',   event)">Last 7 days</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '30d'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('30d',  event)">Last 30 days</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '90d'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('90d',  event)">Last 90 days</a></li>
-              <li><a class="dropdown-item {{ $timeRange === '1y'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('1y',   event)">Last 1 year</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '15m'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('15m',  event)">15 menit terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '30m'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('30m',  event)">30 menit terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '1h'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('1h',   event)">1 jam terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '24h'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('24h',  event)">24 jam terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '7d'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('7d',   event)">7 hari terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '30d'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('30d',  event)">30 hari terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '90d'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('90d',  event)">90 hari terakhir</a></li>
+              <li><a class="dropdown-item {{ $timeRange === '1y'   ? 'active' : '' }}" href="#" onclick="updateTimeRange('1y',   event)">1 tahun terakhir</a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item {{ $timeRange === 'today' ? 'active' : '' }}" href="#" onclick="updateTimeRange('today', event)">Today</a></li>
-              <li><a class="dropdown-item {{ $timeRange === 'week'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('week',  event)">This week</a></li>
+              <li><a class="dropdown-item {{ $timeRange === 'today' ? 'active' : '' }}" href="#" onclick="updateTimeRange('today', event)">Hari ini</a></li>
+              <li><a class="dropdown-item {{ $timeRange === 'week'  ? 'active' : '' }}" href="#" onclick="updateTimeRange('week',  event)">Minggu ini</a></li>
             </ul>
           </div>
-          <button class="btn btn-outline-warning btn-sm" onclick="updateTimeRange('24h', event)" title="Reset to default (Last 24 hours)">
+          <button class="btn btn-outline-warning btn-sm" onclick="updateTimeRange('24h', event)" title="Reset ke default (24 jam terakhir)">
             <span class="mdi mdi-restore me-1"></span> Reset
           </button>
         </div>
@@ -166,11 +166,11 @@
   </div>
 
   {{-- TOP TACTICS PIE --}}
-  <div class="grid-stack-item" gs-id="mitre-top-tactics" data-label="Top Tactics" gs-x="9" gs-y="3" gs-w="3" gs-h="5">
+  <div class="grid-stack-item" gs-id="mitre-top-tactics" data-label="Taktik Teratas" gs-x="9" gs-y="3" gs-w="3" gs-h="5">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Top tactics</span>
+          <span class="fw-semibold small">Taktik Teratas</span>
         </div>
         <div class="card-body p-2 d-flex align-items-center justify-content-center">
           @if(count($tactics) > 0)
@@ -192,11 +192,11 @@
   {{-- ROW 2: Rule level by attack + MITRE attacks by tactic + Rule level by tactic --}}
 
   {{-- RULE LEVEL BY ATTACK --}}
-  <div class="grid-stack-item" gs-id="mitre-level-by-attack" data-label="Rule Level by Attack" gs-x="0" gs-y="8" gs-w="4" gs-h="8">
+  <div class="grid-stack-item" gs-id="mitre-level-by-attack" data-label="Level Aturan per Serangan" gs-x="0" gs-y="8" gs-w="4" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Rule level by attack</span>
+          <span class="fw-semibold small">Level Aturan per Serangan</span>
         </div>
         <div class="card-body p-2 d-flex align-items-center justify-content-center">
           @if(count($techniques) > 0 || count($ruleLevelCounts) > 0)
@@ -216,11 +216,11 @@
   </div>
 
   {{-- MITRE ATTACKS BY TACTIC (stacked bar) --}}
-  <div class="grid-stack-item" gs-id="mitre-attacks-by-tactic" data-label="MITRE Attacks by Tactic" gs-x="4" gs-y="8" gs-w="4" gs-h="8">
+  <div class="grid-stack-item" gs-id="mitre-attacks-by-tactic" data-label="Serangan MITRE per Taktik" gs-x="4" gs-y="8" gs-w="4" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">MITRE attacks by tactic</span>
+          <span class="fw-semibold small">Serangan MITRE per Taktik</span>
         </div>
         <div class="card-body p-2">
           @if(count($attacksByTactic['tactics'] ?? []) > 0)
@@ -240,11 +240,11 @@
   </div>
 
   {{-- RULE LEVEL BY TACTIC --}}
-  <div class="grid-stack-item" gs-id="mitre-level-by-tactic" data-label="Rule Level by Tactic" gs-x="8" gs-y="8" gs-w="4" gs-h="8">
+  <div class="grid-stack-item" gs-id="mitre-level-by-tactic" data-label="Level Aturan per Taktik" gs-x="8" gs-y="8" gs-w="4" gs-h="8">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">Rule level by tactic</span>
+          <span class="fw-semibold small">Level Aturan per Taktik</span>
         </div>
         <div class="card-body p-2 d-flex align-items-center justify-content-center">
           @if(count($tactics) > 0 || count($ruleLevelCounts) > 0)
@@ -264,24 +264,24 @@
   </div>
 
   {{-- ROW 3: ALERTS TABLE --}}
-  <div class="grid-stack-item" gs-id="mitre-alerts" data-label="MITRE Alerts" gs-x="0" gs-y="16" gs-w="12" gs-h="10">
+  <div class="grid-stack-item" gs-id="mitre-alerts" data-label="Peringatan MITRE ATT&CK" gs-x="0" gs-y="16" gs-w="12" gs-h="10">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">MITRE ATT&amp;CK alerts ({{ number_format($totalAlerts) }})</span>
+          <span class="fw-semibold small">Peringatan MITRE ATT&amp;CK ({{ number_format($totalAlerts) }})</span>
         </div>
         <div class="card-body p-0">
           <div class="table-responsive">
             <table class="table table-sm table-hover table-striped mb-0" style="font-size:11px;">
               <thead class="table-light">
                 <tr>
-                  <th style="width:17%">Timestamp</th>
+                  <th style="width:17%">Waktu</th>
                   <th style="width:6%">Rule ID</th>
                   <th style="width:5%" class="text-center">Level</th>
-                  <th style="width:29%">Description</th>
-                  <th style="width:13%">Tactic</th>
-                  <th style="width:16%">Technique</th>
-                  <th style="width:14%">Technique ID</th>
+                  <th style="width:29%">Deskripsi</th>
+                  <th style="width:13%">Taktik</th>
+                  <th style="width:16%">Teknik</th>
+                  <th style="width:14%">ID Teknik</th>
                 </tr>
               </thead>
               <tbody id="mitre-alerts-tbody">
@@ -332,9 +332,9 @@
   <button id="gs-fab-main" title="Edit layout"><i class="mdi mdi-pencil" id="gs-fab-icon"></i></button>
 </div>
 <div id="gs-edit-toolbar">
-  <button id="gs-save"   class="gs-tb-btn gs-tb-btn-save">Save layout</button>
+  <button id="gs-save"   class="gs-tb-btn gs-tb-btn-save">Simpan</button>
   <button id="gs-reset"  class="gs-tb-btn gs-tb-btn-reset">Reset</button>
-  <button id="gs-cancel" class="gs-tb-btn gs-tb-btn-cancel">Cancel</button>
+  <button id="gs-cancel" class="gs-tb-btn gs-tb-btn-cancel">Batal</button>
 </div>
 
 @endif
@@ -541,7 +541,7 @@ function renderPagination(footerId, total, page, perPage, loadFn) {
     </div>`;
 }
 
-const mitreAlertsEndpoint = '{{ route("agent.mitre.alerts", $agent->agent_id ?? "") }}';
+const mitreAlertsEndpoint = '{{ route("agent.mitre.alerts", request()->route("id")) }}';
 
 async function loadMitreAlerts(page, perPage) {
   const params = new URLSearchParams({ time_range: currentTimeRange, page, per_page: perPage });
@@ -584,23 +584,23 @@ document.addEventListener('DOMContentLoaded', () => {
 let currentTimeRange = '{{ $timeRange ?? "24h" }}';
 
 const timeRangeLabels = {
-  '15m':  'Last 15 minutes',
-  '30m':  'Last 30 minutes',
-  '1h':   'Last 1 hour',
-  '24h':  'Last 24 hours',
-  '7d':   'Last 7 days',
-  '30d':  'Last 30 days',
-  '90d':  'Last 90 days',
-  '1y':   'Last 1 year',
-  'today':'Today',
-  'week': 'This week'
+  '15m':  '15 menit terakhir',
+  '30m':  '30 menit terakhir',
+  '1h':   '1 jam terakhir',
+  '24h':  '24 jam terakhir',
+  '7d':   '7 hari terakhir',
+  '30d':  '30 hari terakhir',
+  '90d':  '90 hari terakhir',
+  '1y':   '1 tahun terakhir',
+  'today':'Hari ini',
+  'week': 'Minggu ini'
 };
 
 function updateTimeRange(timeRange, event) {
   if (event) event.preventDefault();
   currentTimeRange = timeRange;
   const lbl = document.getElementById('timeRangeLabel');
-  if (lbl) lbl.textContent = timeRangeLabels[timeRange] || 'Select time range';
+  if (lbl) lbl.textContent = timeRangeLabels[timeRange] || 'Pilih rentang waktu';
 
   const menu = document.getElementById('timeRangeDropdown')?.closest('.dropdown')?.querySelector('.dropdown-menu');
   if (menu) {

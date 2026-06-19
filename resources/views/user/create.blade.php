@@ -16,6 +16,13 @@
           </a>
         </div>
 
+        @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+          <i class="mdi mdi-alert-circle me-1"></i>{{ session('error') }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        @endif
+
         <form action="{{ route('user.store') }}" method="POST">
           @csrf
 
@@ -95,9 +102,9 @@
                           </div>
                           <div style="flex-shrink: 0;">
                             @if($agent['assigned'])
-                              <span class="badge bg-secondary">Assigned to: <strong>{{ $agent['assigned_to'] }}</strong></span>
+                              <span class="badge bg-secondary">Ditugaskan ke: <strong>{{ $agent['assigned_to'] }}</strong></span>
                             @else
-                              <span class="badge bg-success">Available</span>
+                              <span class="badge bg-success">Tersedia</span>
                             @endif
                           </div>
                         </div>

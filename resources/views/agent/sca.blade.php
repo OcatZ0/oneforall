@@ -21,10 +21,10 @@
   <div class="alert alert-danger d-flex align-items-center gap-3" role="alert">
     <i class="mdi mdi-alert-circle-outline display-4"></i>
     <div>
-      <h5 class="alert-heading mb-1">Agent Not Found</h5>
-      <p class="mb-0">Unable to load agent details. The agent may no longer exist or access has been denied.</p>
+      <h5 class="alert-heading mb-1">Agen Tidak Ditemukan</h5>
+      <p class="mb-0">Gagal memuat detail agen. Agen mungkin sudah tidak ada atau akses ditolak.</p>
       <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2">
-        <i class="mdi mdi-arrow-left me-1"></i> Back to Agents
+        <i class="mdi mdi-arrow-left me-1"></i> Kembali ke Agen
       </a>
     </div>
   </div>
@@ -37,17 +37,17 @@
     <ul class="nav flex-nowrap overflow-auto">
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.detail', $agent->agent_id) }}">
-          <span class="mdi mdi-home"></span> Details
+          <span class="mdi mdi-home"></span> Detail
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.security-events', $agent->agent_id) }}">
-          <span class="mdi mdi-format-list-bulleted"></span> Security events
+          <span class="mdi mdi-format-list-bulleted"></span> Event Keamanan
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.integrity-monitoring', $agent->agent_id) }}">
-          <span class="mdi mdi-shield"></span> Integrity monitoring
+          <span class="mdi mdi-shield"></span> Pemantauan Integritas
         </a>
       </li>
       <li class="nav-item">
@@ -57,7 +57,7 @@
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.vulnerabilities', $agent->agent_id) }}">
-          <span class="mdi mdi-bug"></span> Vulnerabilities
+          <span class="mdi mdi-bug"></span> Kerentanan
         </a>
       </li>
       <li class="nav-item">
@@ -67,7 +67,7 @@
       </li>
       <li class="nav-item dropdown">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <span class="mdi mdi-check-decagram"></span> Compliance
+          <span class="mdi mdi-check-decagram"></span> Kepatuhan
         </a>
         <ul class="dropdown-menu dropdown-menu-dark">
           <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->agent_id) }}?compliance_type=pci_dss">PCI DSS</a></li>
@@ -80,13 +80,13 @@
 
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.inventory', $agent->agent_id) }}">
-          <span class="mdi mdi-database"></span> Inventory Data
+          <span class="mdi mdi-database"></span> Data Inventaris
         </a>
       </li>
     </ul>
     <div class="ms-auto d-flex gap-2 flex-shrink-0 py-1">
-      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Back to Agents List">
-        <span class="mdi mdi-arrow-left"></span> Back
+      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Kembali ke Daftar Agen">
+        <span class="mdi mdi-arrow-left"></span> Kembali
       </a>
     </div>
   </div>
@@ -96,31 +96,31 @@
 <div class="grid-stack" id="sca-grid">
 
   {{-- METRICS --}}
-  <div class="grid-stack-item" gs-id="sca-metrics" data-label="Metrics" gs-x="0" gs-y="0" gs-w="12" gs-h="3">
+  <div class="grid-stack-item" gs-id="sca-metrics" data-label="Metrik" gs-x="0" gs-y="0" gs-w="12" gs-h="3">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
           <div class="row g-2 h-100 align-items-center">
             <div class="col-3 text-center">
-              <div class="text-muted fw-semibold small mb-2">Policies scanned</div>
+              <div class="text-muted fw-semibold small mb-2">Kebijakan dipindai</div>
               <div class="display-6 fw-bold text-primary">{{ count($policies) }}</div>
             </div>
             <div class="col-3 text-center">
-              <div class="text-muted fw-semibold small mb-2">Average score</div>
+              <div class="text-muted fw-semibold small mb-2">Skor rata-rata</div>
               <div class="display-6 fw-bold {{ $avgScore >= 75 ? 'text-success' : ($avgScore >= 50 ? 'text-warning' : 'text-danger') }}">
                 {{ $avgScore }}%
               </div>
             </div>
             <div class="col-2 text-center">
-              <div class="text-muted fw-semibold small mb-2">Total passed</div>
+              <div class="text-muted fw-semibold small mb-2">Total lulus</div>
               <div class="display-6 fw-bold text-success">{{ number_format($totalPass) }}</div>
             </div>
             <div class="col-2 text-center">
-              <div class="text-muted fw-semibold small mb-2">Total failed</div>
+              <div class="text-muted fw-semibold small mb-2">Total gagal</div>
               <div class="display-6 fw-bold text-danger">{{ number_format($totalFail) }}</div>
             </div>
             <div class="col-2 text-center">
-              <div class="text-muted fw-semibold small mb-2">Not applicable</div>
+              <div class="text-muted fw-semibold small mb-2">Tidak berlaku</div>
               <div class="display-6 fw-bold text-secondary">{{ number_format($totalNA) }}</div>
             </div>
           </div>
@@ -130,11 +130,11 @@
   </div>
 
   {{-- POLICIES TABLE --}}
-  <div class="grid-stack-item" gs-id="sca-policies" data-label="SCA Policies" gs-x="0" gs-y="3" gs-w="7" gs-h="10">
+  <div class="grid-stack-item" gs-id="sca-policies" data-label="Kebijakan SCA" gs-x="0" gs-y="3" gs-w="7" gs-h="10">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2">
-          <span class="fw-semibold small">SCA policies</span>
+          <span class="fw-semibold small">Kebijakan SCA</span>
         </div>
         <div class="card-body p-0">
           @if(count($policies) > 0)
@@ -142,11 +142,11 @@
             <table class="table table-sm table-hover mb-0" style="font-size:11px;">
               <thead class="table-light">
                 <tr>
-                  <th style="width:45%">Policy</th>
-                  <th style="width:15%" class="text-center">Score</th>
-                  <th style="width:12%" class="text-center">Pass</th>
-                  <th style="width:12%" class="text-center">Fail</th>
-                  <th style="width:16%">Last scan</th>
+                  <th style="width:45%">Kebijakan</th>
+                  <th style="width:15%" class="text-center">Skor</th>
+                  <th style="width:12%" class="text-center">Lulus</th>
+                  <th style="width:12%" class="text-center">Gagal</th>
+                  <th style="width:16%">Pemindaian terakhir</th>
                 </tr>
               </thead>
               <tbody>
@@ -198,16 +198,16 @@
   </div>
 
   {{-- SCORE CHART for selected policy --}}
-  <div class="grid-stack-item" gs-id="sca-score-chart" data-label="Policy Score" gs-x="7" gs-y="3" gs-w="5" gs-h="10">
+  <div class="grid-stack-item" gs-id="sca-score-chart" data-label="Skor Kebijakan" gs-x="7" gs-y="3" gs-w="5" gs-h="10">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2 d-flex align-items-center justify-content-between">
           <span class="fw-semibold small">
-            {{ $selectedPolicy ? Str::limit($selectedPolicy['name'], 35) : 'Policy score' }}
+            {{ $selectedPolicy ? Str::limit($selectedPolicy['name'], 35) : 'Skor kebijakan' }}
           </span>
           @if($selectedPolicy)
           <span class="badge
-            {{ ($selectedPolicy['score'] ?? 0) >= 75 ? 'bg-success' : (($selectedPolicy['score'] ?? 0) >= 50 ? 'bg-warning text-dark' : 'bg-danger') }}">
+            {{ ($selectedPolicy['score'] ?? 0) >= 75 ? 'bg-success' : (($selectedPolicy['score'] ?? 0) >= 50 ? 'bg-warning text-white' : 'bg-danger') }}">
             {{ $selectedPolicy['score'] ?? 0 }}%
           </span>
           @endif
@@ -218,8 +218,8 @@
             <canvas id="scaScoreChart"></canvas>
           </div>
           <div class="d-flex gap-3 mt-2 small">
-            <span><span class="mdi mdi-circle text-success"></span> Passed: <strong>{{ $selectedPolicy['pass'] ?? 0 }}</strong></span>
-            <span><span class="mdi mdi-circle text-danger"></span> Failed: <strong>{{ $selectedPolicy['fail'] ?? 0 }}</strong></span>
+            <span><span class="mdi mdi-circle text-success"></span> Lulus: <strong>{{ $selectedPolicy['pass'] ?? 0 }}</strong></span>
+            <span><span class="mdi mdi-circle text-danger"></span> Gagal: <strong>{{ $selectedPolicy['fail'] ?? 0 }}</strong></span>
             <span><span class="mdi mdi-circle text-secondary"></span> N/A: <strong>{{ $selectedPolicy['not_applicable'] ?? 0 }}</strong></span>
           </div>
           @if(isset($selectedPolicy['description']))
@@ -238,12 +238,12 @@
   </div>
 
   {{-- SCA CHECKS TABLE --}}
-  <div class="grid-stack-item" gs-id="sca-checks" data-label="SCA Checks" gs-x="0" gs-y="13" gs-w="12" gs-h="12">
+  <div class="grid-stack-item" gs-id="sca-checks" data-label="Pemeriksaan SCA" gs-x="0" gs-y="13" gs-w="12" gs-h="12">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-header py-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
           <div class="d-flex align-items-center gap-2">
-            <span class="fw-semibold small">SCA checks</span>
+            <span class="fw-semibold small">Pemeriksaan SCA</span>
             @if($selectedPolicy)
             <span class="badge bg-secondary small">{{ $selectedPolicy['name'] ?? $policyId }}</span>
             @endif
@@ -254,11 +254,11 @@
           @endphp
           <div id="sca-result-filter" class="btn-group btn-group-sm" role="group">
             <a href="?{{ http_build_query(array_merge($filterBase, ['result' => ''])) }}"
-               class="btn {{ !$resultFilter ? 'btn-primary' : 'btn-outline-secondary' }}">All</a>
+               class="btn {{ !$resultFilter ? 'btn-primary' : 'btn-outline-secondary' }}">Semua</a>
             <a href="?{{ http_build_query(array_merge($filterBase, ['result' => 'passed'])) }}"
-               class="btn {{ $resultFilter === 'passed' ? 'btn-success' : 'btn-outline-secondary' }}">Passed</a>
+               class="btn {{ $resultFilter === 'passed' ? 'btn-success' : 'btn-outline-secondary' }}">Lulus</a>
             <a href="?{{ http_build_query(array_merge($filterBase, ['result' => 'failed'])) }}"
-               class="btn {{ $resultFilter === 'failed' ? 'btn-danger' : 'btn-outline-secondary' }}">Failed</a>
+               class="btn {{ $resultFilter === 'failed' ? 'btn-danger' : 'btn-outline-secondary' }}">Gagal</a>
             <a href="?{{ http_build_query(array_merge($filterBase, ['result' => 'not_applicable'])) }}"
                class="btn {{ $resultFilter === 'not_applicable' ? 'btn-secondary' : 'btn-outline-secondary' }}">N/A</a>
           </div>
@@ -269,9 +269,9 @@
               <thead class="table-light">
                 <tr>
                   <th style="width:5%">#</th>
-                  <th style="width:45%">Title</th>
-                  <th style="width:10%">Result</th>
-                  <th style="width:40%">Reason / Remediation</th>
+                  <th style="width:45%">Judul</th>
+                  <th style="width:10%">Hasil</th>
+                  <th style="width:40%">Alasan / Remediasi</th>
                 </tr>
               </thead>
               <tbody id="sca-tbody">
@@ -323,14 +323,14 @@
         @endphp
         <div id="sca-footer" class="card-footer d-flex justify-content-between align-items-center py-2 small flex-wrap gap-2">
           <div class="d-flex align-items-center gap-1">
-            <span class="text-muted me-1">Rows:</span>
+            <span class="text-muted me-1">Baris:</span>
             @foreach([10, 25, 50] as $pp)
               <a href="{{ $ppUrl($pp) }}"
                  class="btn btn-sm py-0 px-2 {{ $perPage === $pp ? 'btn-primary' : 'btn-outline-secondary' }}">{{ $pp }}</a>
             @endforeach
           </div>
           <div class="d-flex align-items-center gap-1">
-            <span class="text-muted me-2">{{ $from }}–{{ $to }} of {{ number_format($totalChecks) }}</span>
+            <span class="text-muted me-2">{{ $from }}–{{ $to }} dari {{ number_format($totalChecks) }}</span>
             <a href="{{ $pageUrl(1) }}"
                class="btn btn-sm btn-outline-secondary py-0 px-2 {{ $page <= 1 ? 'disabled' : '' }}"
                title="First">«</a>
@@ -364,9 +364,9 @@
 
 {{-- Edit toolbar --}}
 <div id="gs-edit-toolbar">
-  <button id="gs-save"   class="gs-tb-btn gs-tb-btn-save">Save layout</button>
+  <button id="gs-save"   class="gs-tb-btn gs-tb-btn-save">Simpan</button>
   <button id="gs-reset"  class="gs-tb-btn gs-tb-btn-reset">Reset</button>
-  <button id="gs-cancel" class="gs-tb-btn gs-tb-btn-cancel">Cancel</button>
+  <button id="gs-cancel" class="gs-tb-btn gs-tb-btn-cancel">Batal</button>
 </div>
 
 @endif
@@ -398,7 +398,7 @@ function initializeCharts() {
         scaScoreChartInstance = new Chart(ctx, {
           type: 'doughnut',
           data: {
-            labels: ['Passed', 'Failed', 'Not applicable'],
+            labels: ['Lulus', 'Gagal', 'Tidak berlaku'],
             datasets: [{
               data: [pass, fail, na],
               backgroundColor: ['#20c997', '#dc3545', '#adb5bd'],
@@ -445,7 +445,7 @@ function renderPagination(footerId, total, page, perPage, loadFn) {
     </div>`;
 }
 
-const scaEndpoint = '{{ route("agent.sca.checks", $agent->agent_id ?? "") }}';
+const scaEndpoint = '{{ route("agent.sca.checks", request()->route("id")) }}';
 let currentPolicyId    = '{{ $policyId ?? "" }}';
 let currentResultFilter = '{{ $resultFilter ?? "" }}';
 

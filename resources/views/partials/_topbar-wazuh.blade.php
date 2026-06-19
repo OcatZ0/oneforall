@@ -9,14 +9,14 @@
           </div>
         @php
             $breadcrumbPageLabels = [
-                'agent.detail'               => 'Details',
-                'agent.security-events'      => 'Security Events',
-                'agent.integrity-monitoring' => 'Integrity Monitoring',
+                'agent.detail'               => 'Detail',
+                'agent.security-events'      => 'Event Keamanan',
+                'agent.integrity-monitoring' => 'Pemantauan Integritas',
                 'agent.sca'                  => 'SCA',
-                'agent.vulnerabilities'      => 'Vulnerabilities',
+                'agent.vulnerabilities'      => 'Kerentanan',
                 'agent.mitre-attack'         => 'MITRE ATT&CK',
-                'agent.compliance'           => 'Compliance',
-                'agent.inventory'           => 'Inventory Data',
+                'agent.compliance'           => 'Kepatuhan',
+                'agent.inventory'           => 'Data Inventaris',
             ];
             $currentRoute     = Route::currentRouteName();
             $currentPageLabel = $breadcrumbPageLabels[$currentRoute] ?? null;
@@ -82,8 +82,8 @@
                     </div>
                   </div>
                   <div class="preview-item-content">
-                    <h6 class="preview-subject fw-normal">Logout</h6>
-                    <p class="fw-light small-text mb-0 text-muted">Keluar</p>
+                    <h6 class="preview-subject fw-normal">Keluar</h6>
+                    <p class="fw-light small-text mb-0 text-muted">Akhiri sesi</p>
                   </div>
                 </a>
 

@@ -28,7 +28,7 @@
         <li class="nav-item"><a class="nav-link" href="#benefits">Keunggulan</a></li>
         <li class="nav-item ms-lg-3">
           <a href="/auth/login" class="btn-primary-custom" style="padding:10px 22px;font-size:0.83rem;">
-            Mulai Sekarangs <i class="bi bi-arrow-right"></i>
+            Mulai Sekarang <i class="bi bi-arrow-right"></i>
           </a>
         </li>
       </ul>
@@ -108,7 +108,7 @@
               <i class="bi bi-shield-exclamation" style="color:var(--clr-danger);font-size:1.1rem;"></i>
             </div>
             <div>
-              <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--clr-muted);margin-bottom:2px;font-weight:600;letter-spacing:1px;">THREAT DETECTED</div>
+              <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--clr-muted);margin-bottom:2px;font-weight:600;letter-spacing:1px;">ANCAMAN TERDETEKSI</div>
               <div style="font-weight:700;font-size:0.9rem;color:var(--clr-text);">Brute Force Attack</div>
             </div>
           </div>
@@ -116,7 +116,7 @@
           {{-- Floating badge: Status --}}
           <div style="position:absolute;top:-14px;right:-18px;background:var(--clr-card);border:1px solid var(--clr-border);border-radius:var(--radius-md);padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,41,93,0.12);z-index:2;">
             <div class="dot"></div>
-            <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--clr-success);font-weight:600;">All Systems Operational</span>
+            <span style="font-family:var(--font-mono);font-size:0.72rem;color:var(--clr-success);font-weight:600;">Semua Sistem Berjalan Normal</span>
           </div>
         </div>
       </div>
@@ -380,7 +380,7 @@
     <hr class="hr-custom">
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pt-3">
       <p style="color:var(--clr-muted);font-size:0.8rem;margin:0;">
-        © 2026 OneForAll — Wazuh Monitor System. All rights reserved.
+        © 2026 OneForAll — Wazuh Monitor System. Hak cipta dilindungi.
       </p>
     </div>
   </div>

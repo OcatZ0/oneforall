@@ -1,7 +1,7 @@
 <nav class="sidebar sidebar-offcanvas" id="sidebar">
       <ul class="nav">
         <li class="nav-item sidebar-category">
-          <p>Navigation</p>
+          <p>Navigasi</p>
           <span></span>
         </li>
         <li class="nav-item {{ Route::is('home', 'dashboard') ? 'active' : '' }}">

@@ -3,7 +3,7 @@
     <span class="title">{{ $title }} <span id="{{ $tableId }}-count" class="text-muted fw-normal small"></span></span>
   </div>
   <div class="search-row">
-    <input type="text" id="{{ $tableId }}-search" class="form-control form-control-sm" placeholder="Search...">
+    <input type="text" id="{{ $tableId }}-search" class="form-control form-control-sm" placeholder="Cari...">
   </div>
   <div class="table-responsive">
     <table class="table table-hover mb-0" id="{{ $tableId }}">
@@ -15,7 +15,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr><td colspan="{{ count($columns) }}" class="inv-loading"><span class="mdi mdi-loading mdi-spin me-1"></span>Loading...</td></tr>
+        <tr><td colspan="{{ count($columns) }}" class="inv-loading"><span class="mdi mdi-loading mdi-spin me-1"></span>Memuat...</td></tr>
       </tbody>
     </table>
   </div>

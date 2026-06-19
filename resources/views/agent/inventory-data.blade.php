@@ -51,9 +51,9 @@
   <div class="alert alert-danger d-flex align-items-center gap-3">
     <i class="mdi mdi-alert-circle-outline display-4"></i>
     <div>
-      <h5 class="alert-heading mb-1">Agent Not Found</h5>
-      <p class="mb-0">Unable to load agent details.</p>
-      <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2"><i class="mdi mdi-arrow-left me-1"></i> Back to Agents</a>
+      <h5 class="alert-heading mb-1">Agen Tidak Ditemukan</h5>
+      <p class="mb-0">Gagal memuat detail agen.</p>
+      <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2"><i class="mdi mdi-arrow-left me-1"></i> Kembali ke Agen</a>
     </div>
   </div>
 </div>
@@ -65,17 +65,17 @@
     <ul class="nav flex-nowrap overflow-auto">
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.detail', $agent->agent_id) }}">
-          <span class="mdi mdi-home"></span> Details
+          <span class="mdi mdi-home"></span> Detail
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.security-events', $agent->agent_id) }}">
-          <span class="mdi mdi-format-list-bulleted"></span> Security events
+          <span class="mdi mdi-format-list-bulleted"></span> Event Keamanan
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.integrity-monitoring', $agent->agent_id) }}">
-          <span class="mdi mdi-shield"></span> Integrity monitoring
+          <span class="mdi mdi-shield"></span> Pemantauan Integritas
         </a>
       </li>
       <li class="nav-item">
@@ -85,7 +85,7 @@
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.vulnerabilities', $agent->agent_id) }}">
-          <span class="mdi mdi-bug"></span> Vulnerabilities
+          <span class="mdi mdi-bug"></span> Kerentanan
         </a>
       </li>
       <li class="nav-item">
@@ -95,7 +95,7 @@
       </li>
       <li class="nav-item dropdown">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <span class="mdi mdi-check-decagram"></span> Compliance
+          <span class="mdi mdi-check-decagram"></span> Kepatuhan
         </a>
         <ul class="dropdown-menu dropdown-menu-dark">
           <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->agent_id) }}?compliance_type=pci_dss">PCI DSS</a></li>
@@ -107,13 +107,13 @@
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small active" href="{{ route('agent.inventory', $agent->agent_id) }}">
-          <span class="mdi mdi-database"></span> Inventory Data
+          <span class="mdi mdi-database"></span> Data Inventaris
         </a>
       </li>
     </ul>
     <div class="ms-auto d-flex gap-2 flex-shrink-0 py-1">
-      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Back to Agents List">
-        <span class="mdi mdi-arrow-left"></span> Back
+      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Kembali ke Daftar Agen">
+        <span class="mdi mdi-arrow-left"></span> Kembali
       </a>
     </div>
   </div>
@@ -140,60 +140,60 @@
 <div class="grid-stack" id="inv-grid">
 
   {{-- DEVICE SPECS --}}
-  <div class="grid-stack-item" gs-id="inv-specs" data-label="Device Specs" gs-x="0" gs-y="0" gs-w="12" gs-h="4">
+  <div class="grid-stack-item" gs-id="inv-specs" data-label="Spesifikasi Perangkat" gs-x="0" gs-y="0" gs-w="12" gs-h="4">
     <div class="grid-stack-item-content">
       <div class="card inv-table-card">
         <div class="card-header">
-          <span class="title">Device Specs</span>
+          <span class="title">Spesifikasi Perangkat</span>
         </div>
         <div class="card-body d-flex flex-wrap gap-4 align-items-center">
-          <div class="spec-item"><span class="spec-label">Cores</span><span class="spec-value">{{ $cores }}</span></div>
-          <div class="spec-item"><span class="spec-label">Memory</span><span class="spec-value">{{ $ramMb }}</span></div>
-          <div class="spec-item"><span class="spec-label">Architecture</span><span class="spec-value">{{ $arch }}</span></div>
-          <div class="spec-item"><span class="spec-label">Operating System</span><span class="spec-value">{{ $osName }}</span></div>
+          <div class="spec-item"><span class="spec-label">Inti</span><span class="spec-value">{{ $cores }}</span></div>
+          <div class="spec-item"><span class="spec-label">Memori</span><span class="spec-value">{{ $ramMb }}</span></div>
+          <div class="spec-item"><span class="spec-label">Arsitektur</span><span class="spec-value">{{ $arch }}</span></div>
+          <div class="spec-item"><span class="spec-label">Sistem Operasi</span><span class="spec-value">{{ $osName }}</span></div>
           <div class="spec-item"><span class="spec-label">CPU</span><span class="spec-value">{{ $cpu }}</span></div>
-          <div class="spec-item"><span class="spec-label">Host Name</span><span class="spec-value">{{ $hostname }}</span></div>
-          <div class="spec-item"><span class="spec-label">Board Serial</span><span class="spec-value">{{ $board }}</span></div>
-          <div class="spec-item"><span class="spec-label">Last Scan</span><span class="spec-value">{{ $lastScanFmt }}</span></div>
+          <div class="spec-item"><span class="spec-label">Nama Host</span><span class="spec-value">{{ $hostname }}</span></div>
+          <div class="spec-item"><span class="spec-label">Serial Board</span><span class="spec-value">{{ $board }}</span></div>
+          <div class="spec-item"><span class="spec-label">Pemindaian Terakhir</span><span class="spec-value">{{ $lastScanFmt }}</span></div>
         </div>
       </div>
     </div>
   </div>
 
   {{-- NETWORK INTERFACES --}}
-  <div class="grid-stack-item" gs-id="inv-netiface" data-label="Network Interfaces" gs-x="0" gs-y="4" gs-w="6" gs-h="9">
+  <div class="grid-stack-item" gs-id="inv-netiface" data-label="Antarmuka Jaringan" gs-x="0" gs-y="4" gs-w="6" gs-h="9">
     <div class="grid-stack-item-content">
       @include('agent._inv-table', [
         'tableId'  => 'tbl-netiface',
         'type'     => 'netiface',
-        'title'    => 'Network interfaces',
-        'columns'  => ['Name','MAC','State','MTU','Type'],
+        'title'    => 'Antarmuka jaringan',
+        'columns'  => ['Nama','MAC','Status','MTU','Tipe'],
         'fields'   => ['name','mac','state','mtu','type'],
       ])
     </div>
   </div>
 
   {{-- NETWORK PORTS --}}
-  <div class="grid-stack-item" gs-id="inv-ports" data-label="Network Ports" gs-x="6" gs-y="4" gs-w="6" gs-h="9">
+  <div class="grid-stack-item" gs-id="inv-ports" data-label="Port Jaringan" gs-x="6" gs-y="4" gs-w="6" gs-h="9">
     <div class="grid-stack-item-content">
       @include('agent._inv-table', [
         'tableId'  => 'tbl-ports',
         'type'     => 'ports',
-        'title'    => 'Network ports',
-        'columns'  => ['Local port','Local IP','Process','State','Protocol'],
+        'title'    => 'Port jaringan',
+        'columns'  => ['Port lokal','IP lokal','Proses','Status','Protokol'],
         'fields'   => ['local_port','local_ip','process','state','protocol'],
       ])
     </div>
   </div>
 
   {{-- NETWORK SETTINGS --}}
-  <div class="grid-stack-item" gs-id="inv-netaddr" data-label="Network Settings" gs-x="0" gs-y="13" gs-w="{{ $isWindows ? 8 : 12 }}" gs-h="9">
+  <div class="grid-stack-item" gs-id="inv-netaddr" data-label="Pengaturan Jaringan" gs-x="0" gs-y="13" gs-w="{{ $isWindows ? 8 : 12 }}" gs-h="9">
     <div class="grid-stack-item-content">
       @include('agent._inv-table', [
         'tableId'  => 'tbl-netaddr',
         'type'     => 'netaddr',
-        'title'    => 'Network settings',
-        'columns'  => ['Interface','Address','Netmask','Protocol','Broadcast'],
+        'title'    => 'Pengaturan jaringan',
+        'columns'  => ['Antarmuka','Alamat','Netmask','Protokol','Broadcast'],
         'fields'   => ['iface','address','netmask','proto','broadcast'],
       ])
     </div>
@@ -206,8 +206,8 @@
       @include('agent._inv-table', [
         'tableId'  => 'tbl-hotfixes',
         'type'     => 'hotfixes',
-        'title'    => 'Windows updates',
-        'columns'  => ['Update code'],
+        'title'    => 'Pembaruan Windows',
+        'columns'  => ['Kode pembaruan'],
         'fields'   => ['hotfix'],
       ])
     </div>
@@ -215,26 +215,26 @@
   @endif
 
   {{-- PACKAGES --}}
-  <div class="grid-stack-item" gs-id="inv-packages" data-label="Packages" gs-x="0" gs-y="22" gs-w="12" gs-h="10">
+  <div class="grid-stack-item" gs-id="inv-packages" data-label="Paket" gs-x="0" gs-y="22" gs-w="12" gs-h="10">
     <div class="grid-stack-item-content">
       @include('agent._inv-table', [
         'tableId'  => 'tbl-packages',
         'type'     => 'packages',
-        'title'    => 'Packages',
-        'columns'  => ['Name','Architecture','Version','Vendor'],
+        'title'    => 'Paket',
+        'columns'  => ['Nama','Arsitektur','Versi','Vendor'],
         'fields'   => ['name','architecture','version','vendor'],
       ])
     </div>
   </div>
 
   {{-- PROCESSES --}}
-  <div class="grid-stack-item" gs-id="inv-processes" data-label="Processes" gs-x="0" gs-y="32" gs-w="12" gs-h="10">
+  <div class="grid-stack-item" gs-id="inv-processes" data-label="Proses" gs-x="0" gs-y="32" gs-w="12" gs-h="10">
     <div class="grid-stack-item-content">
       @include('agent._inv-table', [
         'tableId'  => 'tbl-processes',
         'type'     => 'processes',
-        'title'    => 'Processes',
-        'columns'  => ['Name','PID','Parent PID','VM size','Priority','NLWP','Command'],
+        'title'    => 'Proses',
+        'columns'  => ['Nama','PID','PID induk','Ukuran VM','Prioritas','NLWP','Perintah'],
         'fields'   => ['name','pid','ppid','vm_size','priority','nlwp','cmd'],
       ])
     </div>
@@ -251,9 +251,9 @@
 
 {{-- Edit toolbar --}}
 <div id="gs-edit-toolbar">
-  <button class="gs-tb-btn gs-tb-btn-save"   id="gs-save">  <i class="mdi mdi-content-save me-1"></i>Save</button>
+  <button class="gs-tb-btn gs-tb-btn-save"   id="gs-save">  <i class="mdi mdi-content-save me-1"></i>Simpan</button>
   <button class="gs-tb-btn gs-tb-btn-reset"  id="gs-reset"> <i class="mdi mdi-restore me-1"></i>Reset</button>
-  <button class="gs-tb-btn gs-tb-btn-cancel" id="gs-cancel"><i class="mdi mdi-close me-1"></i>Cancel</button>
+  <button class="gs-tb-btn gs-tb-btn-cancel" id="gs-cancel"><i class="mdi mdi-close me-1"></i>Batal</button>
 </div>
 
 @endif
@@ -277,7 +277,7 @@ function loadTable(tableId, type) {
   const tbody = document.querySelector(`#${tableId} tbody`);
   if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="20" class="inv-loading"><span class="mdi mdi-loading mdi-spin me-1"></span>Loading...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="20" class="inv-loading"><span class="mdi mdi-loading mdi-spin me-1"></span>Memuat...</td></tr>';
 
   const params = new URLSearchParams({ page: s.page, per_page: s.perPage, search: s.search || '' });
   fetch(`${invEndpoint(type)}?${params}`)
@@ -287,14 +287,14 @@ function loadTable(tableId, type) {
       renderFooter(tableId, type, data.total, data.page, data.perPage);
     })
     .catch(() => {
-      tbody.innerHTML = '<tr><td colspan="20" class="inv-empty text-danger">Failed to load data.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="20" class="inv-empty text-danger">Gagal memuat data.</td></tr>';
     });
 }
 
 function renderRows(tableId, type, rows) {
   const tbody = document.querySelector(`#${tableId} tbody`);
   if (!rows || rows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="20" class="inv-empty">No data available.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="20" class="inv-empty">Tidak ada data.</td></tr>';
     return;
   }
 
@@ -340,7 +340,7 @@ function renderFooter(tableId, type, total, page, perPage) {
 
   footer.innerHTML = `
     <div class="d-flex align-items-center gap-1">
-      <span>Rows per page:</span>
+      <span>Baris per halaman:</span>
       <select class="per-page-select" onchange="changePerPage('${tableId}','${type}',this.value)">
         ${[10,25,50].map(n => `<option value="${n}" ${n==perPage?'selected':''}>${n}</option>`).join('')}
       </select>
