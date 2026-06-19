@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -20,10 +21,13 @@ class WazuhService
 
     public function getToken(): ?string
     {
+        $cached = Cache::get('wazuh_api_token');
+        if ($cached) return $cached;
+
         try {
             $response = Http::withoutVerifying()
-                ->connectTimeout(2)
-                ->timeout(2)
+                ->connectTimeout(3)
+                ->timeout(3)
                 ->withBasicAuth($this->_user, $this->_password)
                 ->post("{$this->_host}/security/user/authenticate");
 
@@ -32,7 +36,9 @@ class WazuhService
                 return null;
             }
 
-            return $response->json('data.token');
+            $token = $response->json('data.token');
+            if ($token) Cache::put('wazuh_api_token', $token, 800);
+            return $token;
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::warning('Wazuh API connection timeout: ' . $e->getMessage());
             return null;
@@ -48,8 +54,8 @@ class WazuhService
 
         try {
             $summary = Http::withoutVerifying()
-                ->connectTimeout(2)
-                ->timeout(2)
+                ->connectTimeout(3)
+                ->timeout(3)
                 ->withToken($token)
                 ->get("{$this->_host}/agents/summary/status")
                 ->json('data.connection');
@@ -123,7 +129,7 @@ class WazuhService
     {
         try {
             $response = Http::withoutVerifying()
-                ->connectTimeout(3)->timeout(5)
+                ->connectTimeout(3)->timeout(3)
                 ->withToken($token)
                 ->get("{$this->_host}/sca/{$agentId}");
 
@@ -145,7 +151,7 @@ class WazuhService
             }
 
             $response = Http::withoutVerifying()
-                ->connectTimeout(3)->timeout(5)
+                ->connectTimeout(3)->timeout(3)
                 ->withToken($token)
                 ->get("{$this->_host}/sca/{$agentId}/checks/{$policyId}", $params);
 
@@ -169,7 +175,7 @@ class WazuhService
             if ($severity) $params['severity'] = $severity;
 
             $response = Http::withoutVerifying()
-                ->connectTimeout(3)->timeout(5)
+                ->connectTimeout(3)->timeout(3)
                 ->withToken($token)
                 ->get("{$this->_host}/vulnerability/{$agentId}", $params);
 
@@ -187,7 +193,7 @@ class WazuhService
     {
         try {
             $response = Http::withoutVerifying()
-                ->connectTimeout(3)->timeout(5)
+                ->connectTimeout(3)->timeout(3)
                 ->withToken($token)
                 ->get("{$this->_host}/vulnerability/{$agentId}/last_scan");
 
@@ -208,8 +214,8 @@ class WazuhService
             if (!$token) return [];
 
             $response = Http::withoutVerifying()
-                ->connectTimeout(2)
-                ->timeout(2)
+                ->connectTimeout(3)
+                ->timeout(3)
                 ->withToken($token)
                 ->get("{$this->_host}/agents", [
                     'limit'  => 500,
@@ -230,7 +236,7 @@ class WazuhService
     public function getInventoryHardware(string $token, string $agentId): ?array
     {
         try {
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)
                 ->withToken($token)->get("{$this->_host}/syscollector/{$agentId}/hardware");
             if ($response->successful()) {
                 $items = $response->json('data.affected_items');
@@ -245,7 +251,7 @@ class WazuhService
     public function getInventoryOS(string $token, string $agentId): ?array
     {
         try {
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)
                 ->withToken($token)->get("{$this->_host}/syscollector/{$agentId}/os");
             if ($response->successful()) {
                 $items = $response->json('data.affected_items');
@@ -293,7 +299,7 @@ class WazuhService
             $params = ['limit' => $limit, 'offset' => $offset];
             if ($search) $params['search'] = $search;
 
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(10)
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)
                 ->withToken($token)->get("{$this->_host}/syscollector/{$agentId}/{$endpoint}", $params);
 
             if ($response->successful()) {

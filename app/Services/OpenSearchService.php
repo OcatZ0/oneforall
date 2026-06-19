@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 
@@ -29,7 +30,7 @@ class OpenSearchService
 
     public function getAlertTrendLast7Days($agentIds = null, $isAdmin = true)
     {
-        if (!$isAdmin && empty($agentIds)) {
+        if (empty($agentIds)) {
             return [];
         }
 
@@ -60,13 +61,13 @@ class OpenSearchService
             ]
         ];
 
-        if (!$isAdmin && is_array($agentIds) && !empty($agentIds)) {
+        if (!empty($agentIds)) {
             $query['query']['bool']['filter'][] = ['terms' => ['agent.id' => $agentIds]];
         }
 
         try {
             $response = Http::withoutVerifying()
-                ->connectTimeout(2)->timeout(2)
+                ->connectTimeout(3)->timeout(3)
                 ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
                 ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
 
@@ -88,7 +89,7 @@ class OpenSearchService
     {
         $empty = ['critical' => 0, 'high' => 0, 'medium' => 0, 'low' => 0];
 
-        if (!$isAdmin && empty($agentIds)) {
+        if (empty($agentIds)) {
             return $empty;
         }
 
@@ -107,13 +108,13 @@ class OpenSearchService
             ]
         ];
 
-        if (!$isAdmin && is_array($agentIds) && !empty($agentIds)) {
+        if (!empty($agentIds)) {
             $query['query']['bool']['filter'][] = ['terms' => ['agent.id' => $agentIds]];
         }
 
         try {
             $response = Http::withoutVerifying()
-                ->connectTimeout(2)->timeout(2)
+                ->connectTimeout(3)->timeout(3)
                 ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
                 ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
 
@@ -134,7 +135,7 @@ class OpenSearchService
 
     public function getAgentEvolutionByTimeRange($timeRange = '24h', $agentIds = null, $baseTime = null, $isAdmin = true)
     {
-        if (!$isAdmin && empty($agentIds)) {
+        if (empty($agentIds)) {
             return ['labels' => [], 'data' => []];
         }
 
@@ -222,7 +223,7 @@ class OpenSearchService
             }
 
             $response = Http::withoutVerifying()
-                ->connectTimeout(5)->timeout(10)
+                ->connectTimeout(3)->timeout(3)
                 ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
                 ->post("{$this->_opensearchHost}/wazuh-monitoring-*/_search", $query);
 
@@ -278,35 +279,37 @@ class OpenSearchService
     public function getOsDistribution($agentIds = null, $isAdmin = true)
     {
         try {
-            if (!$isAdmin && empty($agentIds)) return [];
+            if (empty($agentIds)) return [];
 
-            if (is_array($agentIds) && !empty($agentIds)) {
-                $agentIds = array_map('strval', $agentIds);
+            $agentIds = array_map('strval', (array) $agentIds);
+
+            $token = Cache::get('wazuh_api_token');
+            if (!$token) {
+                $tokenResponse = Http::withoutVerifying()
+                    ->connectTimeout(3)->timeout(3)
+                    ->withBasicAuth($this->_wazuhUser, $this->_wazuhPassword)
+                    ->post("{$this->_wazuhHost}/security/user/authenticate");
+                if (!$tokenResponse->successful()) return [];
+                $token = $tokenResponse->json('data.token');
+                if ($token) Cache::put('wazuh_api_token', $token, 800);
             }
-
-            $tokenResponse = Http::withoutVerifying()
-                ->connectTimeout(2)->timeout(2)
-                ->withBasicAuth($this->_wazuhUser, $this->_wazuhPassword)
-                ->post("{$this->_wazuhHost}/security/user/authenticate");
-
-            if (!$tokenResponse->successful()) return [];
-
-            $token = $tokenResponse->json('data.token');
+            if (!$token) return [];
 
             $agentsResponse = Http::withoutVerifying()
-                ->connectTimeout(2)->timeout(2)
+                ->connectTimeout(3)->timeout(3)
                 ->withToken($token)
-                ->get("{$this->_wazuhHost}/agents", ['limit' => 500, 'select' => 'id,name,os.name']);
+                ->get("{$this->_wazuhHost}/agents", [
+                    'limit'       => 500,
+                    'select'      => 'id,name,os.name',
+                    'agents_list' => implode(',', $agentIds),
+                ]);
 
             if (!$agentsResponse->successful()) return [];
 
-            $agents = $agentsResponse->json('data.affected_items') ?? [];
-
-            if (!$isAdmin && is_array($agentIds) && !empty($agentIds)) {
-                $agents = array_filter($agents, fn($a) => in_array((string)($a['id'] ?? null), $agentIds, true) && ($a['id'] ?? null) !== '000');
-            } else {
-                $agents = array_filter($agents, fn($a) => ($a['id'] ?? null) !== '000');
-            }
+            $agents = array_filter(
+                $agentsResponse->json('data.affected_items') ?? [],
+                fn($a) => ($a['id'] ?? null) !== '000'
+            );
 
             $osDistribution = [];
             foreach ($agents as $agent) {
@@ -326,7 +329,7 @@ class OpenSearchService
 
     public function getTopTriggeredRules($limit = 5, $agentIds = null, $isAdmin = true)
     {
-        if (!$isAdmin && empty($agentIds)) return [];
+        if (empty($agentIds)) return [];
 
         if (is_array($agentIds) && !empty($agentIds)) {
             $agentIds = array_map('strval', $agentIds);
@@ -351,13 +354,13 @@ class OpenSearchService
             ]
         ];
 
-        if (!$isAdmin && is_array($agentIds) && !empty($agentIds)) {
+        if (!empty($agentIds)) {
             $query['query']['bool']['filter'][] = ['terms' => ['agent.id' => $agentIds]];
         }
 
         try {
             $response = Http::withoutVerifying()
-                ->connectTimeout(2)->timeout(2)
+                ->connectTimeout(3)->timeout(3)
                 ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
                 ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
 
@@ -379,7 +382,7 @@ class OpenSearchService
 
     public function getTopAgentsByAlerts($limit = 5, $agentIds = null, $isAdmin = true)
     {
-        if (!$isAdmin && empty($agentIds)) return [];
+        if (empty($agentIds)) return [];
 
         if (is_array($agentIds) && !empty($agentIds)) {
             $agentIds = array_map('strval', $agentIds);
@@ -405,13 +408,13 @@ class OpenSearchService
             ]
         ];
 
-        if (!$isAdmin && is_array($agentIds) && !empty($agentIds)) {
+        if (!empty($agentIds)) {
             $query['query']['bool']['filter'][] = ['terms' => ['agent.id' => $agentIds]];
         }
 
         try {
             $response = Http::withoutVerifying()
-                ->connectTimeout(2)->timeout(2)
+                ->connectTimeout(3)->timeout(3)
                 ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
                 ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
 
@@ -447,7 +450,7 @@ class OpenSearchService
 
         try {
             $response = Http::withoutVerifying()
-                ->connectTimeout(3)->timeout(5)
+                ->connectTimeout(3)->timeout(3)
                 ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
                 ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
 
@@ -493,7 +496,7 @@ class OpenSearchService
 
         try {
             $response = Http::withoutVerifying()
-                ->connectTimeout(3)->timeout(5)
+                ->connectTimeout(3)->timeout(3)
                 ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
                 ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
 
@@ -529,7 +532,7 @@ class OpenSearchService
 
         try {
             $response = Http::withoutVerifying()
-                ->connectTimeout(3)->timeout(5)
+                ->connectTimeout(3)->timeout(3)
                 ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
                 ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
 
@@ -581,7 +584,7 @@ class OpenSearchService
 
         try {
             $response = Http::withoutVerifying()
-                ->connectTimeout(3)->timeout(5)
+                ->connectTimeout(3)->timeout(3)
                 ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
                 ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
 
@@ -622,7 +625,7 @@ class OpenSearchService
 
         try {
             $response = Http::withoutVerifying()
-                ->connectTimeout(3)->timeout(5)
+                ->connectTimeout(3)->timeout(3)
                 ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
                 ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
 
@@ -645,19 +648,19 @@ class OpenSearchService
         try {
             $base = ['size' => 0, 'query' => ['bool' => ['must' => [['term' => ['agent.id' => $agentId]]], 'filter' => [['range' => ['timestamp' => ['gte' => $timeRange]]]]]]];
 
-            $r = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $base);
+            $r = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $base);
             if ($r->successful()) $metrics['total'] = $r->json('hits.total.value') ?? 0;
 
             $q = $base; $q['query']['bool']['filter'][] = ['range' => ['rule.level' => ['gte' => 12]]];
-            $r = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $q);
+            $r = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $q);
             if ($r->successful()) $metrics['level12'] = $r->json('hits.total.value') ?? 0;
 
             $q = $base; $q['query']['bool']['filter'][] = ['bool' => ['should' => [['match' => ['rule.groups' => 'authentication_failed']], ['match' => ['rule.groups' => 'authentication_failures']], ['match' => ['rule.groups' => 'win_authentication_failed']]], 'minimum_should_match' => 1]];
-            $r = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $q);
+            $r = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $q);
             if ($r->successful()) $metrics['auth_failure'] = $r->json('hits.total.value') ?? 0;
 
             $q = $base; $q['query']['bool']['filter'][] = ['match' => ['rule.groups' => 'authentication_success']];
-            $r = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $q);
+            $r = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $q);
             if ($r->successful()) $metrics['auth_success'] = $r->json('hits.total.value') ?? 0;
 
         } catch (\Exception $e) {
@@ -678,7 +681,7 @@ class OpenSearchService
                 'query' => ['bool' => ['must' => [['term' => ['agent.id' => $agentId]]], 'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]]]],
             ];
 
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) return $this->parseGroupsEvolution($response->json());
         } catch (\Exception $e) {
             \Log::warning('Failed to fetch alert groups evolution: ' . $e->getMessage());
@@ -702,7 +705,7 @@ class OpenSearchService
                 'query' => ['bool' => ['must' => [['term' => ['agent.id' => $agentId]]], 'filter' => $filters]],
             ];
 
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $buckets = $response->json('aggregations.top_alerts.buckets') ?? [];
                 return ['labels' => array_map(fn($b) => substr($b['key'], 0, 50), $buckets), 'data' => array_map(fn($b) => $b['doc_count'], $buckets)];
@@ -729,7 +732,7 @@ class OpenSearchService
                 'query' => ['bool' => ['must' => [['term' => ['agent.id' => $agentId]]], 'filter' => $filters]],
             ];
 
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $buckets = $response->json('aggregations.top_groups.buckets') ?? [];
                 return ['labels' => array_map(fn($b) => $b['key'], $buckets), 'data' => array_map(fn($b) => $b['doc_count'], $buckets)];
@@ -752,7 +755,7 @@ class OpenSearchService
                 'query' => ['bool' => ['must' => [['term' => ['agent.id' => $agentId]]], 'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]]]],
             ];
 
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $buckets = $response->json('aggregations.top_pci_dss.buckets') ?? [];
                 return ['labels' => array_map(fn($b) => $b['key'], $buckets), 'data' => array_map(fn($b) => $b['doc_count'], $buckets)];
@@ -778,7 +781,7 @@ class OpenSearchService
                 'query'             => ['bool' => ['must' => [['term' => ['agent.id' => $agentId]]], 'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]]]],
             ];
 
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $total = $response->json('hits.total.value') ?? 0;
                 $data  = array_map(function ($hit) {
@@ -814,7 +817,7 @@ class OpenSearchService
                 'query' => ['bool' => ['must' => [['term' => ['agent.id' => $agentId]]], 'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]]]],
             ];
 
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $buckets = $response->json('aggregations.groups.buckets') ?? [];
                 $total   = count($buckets);
@@ -841,7 +844,7 @@ class OpenSearchService
                     'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]],
                 ]],
             ];
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $buckets = $response->json('aggregations.events.buckets') ?? [];
                 $result  = ['total' => 0, 'added' => 0, 'modified' => 0, 'deleted' => 0];
@@ -872,7 +875,7 @@ class OpenSearchService
                     'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]],
                 ]],
             ];
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $buckets  = $response->json('aggregations.evolution.buckets') ?? [];
                 $labels   = [];
@@ -911,7 +914,7 @@ class OpenSearchService
                     'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]],
                 ]],
             ];
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $buckets = $response->json('aggregations.top_rules.buckets') ?? [];
                 return ['labels' => array_map(fn($b) => substr($b['key'], 0, 50), $buckets), 'data' => array_map(fn($b) => $b['doc_count'], $buckets)];
@@ -938,7 +941,7 @@ class OpenSearchService
                     'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]],
                 ]],
             ];
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $buckets = $response->json('aggregations.top_files.buckets') ?? [];
                 return array_map(fn($b) => ['path' => $b['key'], 'count' => $b['doc_count']], $buckets);
@@ -964,7 +967,7 @@ class OpenSearchService
                     'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]],
                 ]],
             ];
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $total = $response->json('hits.total.value') ?? 0;
                 $data  = array_map(function ($hit) {
@@ -998,7 +1001,7 @@ class OpenSearchService
                 'query' => ['bool' => ['must' => [['term' => ['agent.id' => $agentId]]], 'filter' => [['range' => ['timestamp' => ['gte' => "now-{$config['duration']}"]]]]]],
             ];
 
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) return $this->parseAlertsEvolution($response->json());
         } catch (\Exception $e) {
             \Log::warning('Failed to fetch alerts evolution by level: ' . $e->getMessage());
@@ -1031,7 +1034,7 @@ class OpenSearchService
         ];
 
         try {
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $buckets = $response->json('aggregations.techniques.buckets') ?? [];
                 return array_map(fn($b) => ['technique' => $b['key'] ?? 'Unknown', 'count' => $b['doc_count'] ?? 0], $buckets);
@@ -1067,7 +1070,7 @@ class OpenSearchService
                 ],
             ];
 
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $total = $response->json('hits.total.value') ?? 0;
                 $data  = array_map(function ($hit) {
@@ -1124,7 +1127,7 @@ class OpenSearchService
         ];
 
         try {
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $buckets    = $response->json('aggregations.evolution.buckets') ?? [];
                 $labels     = [];
@@ -1182,7 +1185,7 @@ class OpenSearchService
         ];
 
         try {
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $tacticBuckets = $response->json('aggregations.tactics.buckets') ?? [];
                 $tactics       = [];
@@ -1232,7 +1235,7 @@ class OpenSearchService
         ];
 
         try {
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $buckets = $response->json('aggregations.levels.buckets') ?? [];
                 return array_map(fn($b) => ['level' => $b['key'], 'count' => $b['doc_count']], $buckets);
@@ -1265,7 +1268,7 @@ class OpenSearchService
         ];
 
         try {
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $buckets = $response->json('aggregations.tactics.buckets') ?? [];
                 return array_map(fn($b) => ['tactic' => $b['key'] ?? 'Unknown', 'count' => $b['doc_count'] ?? 0], $buckets);
@@ -1301,7 +1304,7 @@ class OpenSearchService
         ];
 
         try {
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)
                 ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
                 ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
 
@@ -1329,7 +1332,7 @@ class OpenSearchService
                     'filter' => [['range' => ['timestamp' => ['gte' => $from, 'lte' => 'now']]]],
                 ]],
             ];
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $buckets = $response->json('aggregations.alerts_over_time.buckets') ?? [];
                 return [
@@ -1356,7 +1359,7 @@ class OpenSearchService
                     'filter' => [['range' => ['timestamp' => ['gte' => $from, 'lte' => 'now']]]],
                 ]],
             ];
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) {
                 $buckets = $response->json('aggregations.rule_distribution.buckets') ?? [];
                 return [
@@ -1386,7 +1389,7 @@ class OpenSearchService
                     'filter' => [['range' => ['timestamp' => ['gte' => $from, 'lte' => 'now']]]],
                 ]],
             ];
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(5)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
             if ($response->successful()) return $this->parseGroupsEvolution($response->json());
         } catch (\Exception $e) {
             \Log::warning('Failed to fetch policy control type evolution: ' . $e->getMessage());
