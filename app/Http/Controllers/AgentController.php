@@ -641,7 +641,9 @@ class AgentController extends Controller
                 }
             }
 
-            $deleted = WazuhAgent::whereNotIn('agent_id', $syncedIds)->delete();
+            $deleted = !empty($syncedIds)
+                ? WazuhAgent::whereNotIn('agent_id', $syncedIds)->delete()
+                : 0;
         });
 
         $total     = count($allWazuhAgents);
