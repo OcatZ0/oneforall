@@ -9,14 +9,14 @@
           </div>
         @php
             $breadcrumbPageLabels = [
-                'agent.detail'               => 'Detail',
-                'agent.security-events'      => 'Event Keamanan',
-                'agent.integrity-monitoring' => 'Pemantauan Integritas',
+                'agent.detail'               => 'Details',
+                'agent.security-events'      => 'Security Events',
+                'agent.integrity-monitoring' => 'Integrity Monitoring',
                 'agent.sca'                  => 'SCA',
-                'agent.vulnerabilities'      => 'Kerentanan',
+                'agent.vulnerabilities'      => 'Vulnerabilities',
                 'agent.mitre-attack'         => 'MITRE ATT&CK',
-                'agent.compliance'           => 'Kepatuhan',
-                'agent.inventory'           => 'Data Inventaris',
+                'agent.compliance'           => 'Compliance',
+                'agent.inventory'           => 'Inventory Data',
             ];
             $currentRoute     = Route::currentRouteName();
             $currentPageLabel = $breadcrumbPageLabels[$currentRoute] ?? null;
