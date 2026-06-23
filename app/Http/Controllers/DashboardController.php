@@ -37,12 +37,12 @@ class DashboardController extends Controller
 
             $accessibleAgentIds = $this->getAccessibleAgentIds();
 
-            $alertTrend     = $this->_openSearch->getAlertTrendLast7Days($accessibleAgentIds, $isAdmin);
-            $alertSeverity  = $this->_openSearch->getAlertSeverityDistribution($accessibleAgentIds, $isAdmin);
-            $totalAlerts    = $this->_openSearch->getTotalAlertCount($accessibleAgentIds, $isAdmin);
-            $osDistribution = $this->_openSearch->getOsDistribution($accessibleAgentIds, $isAdmin);
-            $topRules       = $this->_openSearch->getTopTriggeredRules(5, $accessibleAgentIds, $isAdmin);
-            $topAgents      = $this->_openSearch->getTopAgentsByAlerts(5, $accessibleAgentIds, $isAdmin);
+            $alertTrend     = $this->_openSearch->getAlertTrendLast7Days($accessibleAgentIds);
+            $alertSeverity  = $this->_openSearch->getAlertSeverityDistribution($accessibleAgentIds);
+            $totalAlerts    = $this->_openSearch->getTotalAlertCount($accessibleAgentIds);
+            $osDistribution = $this->_openSearch->getOsDistribution($accessibleAgentIds);
+            $topRules       = $this->_openSearch->getTopTriggeredRules(5, $accessibleAgentIds);
+            $topAgents      = $this->_openSearch->getTopAgentsByAlerts(5, $accessibleAgentIds);
             $customerStats  = $isAdmin ? $this->getCustomerStats() : null;
             $savedLayout    = DashboardLayout::where('user_id', $userId)->where('page', 'home')->value('layout');
 
@@ -81,25 +81,29 @@ class DashboardController extends Controller
         return ApiResponse::success();
     }
 
+    private function getCurrentAgentCounts(?string $token, array $dbAgentIds): array
+    {
+        $counts = ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0];
+        if (empty($dbAgentIds) || !$token) return $counts;
+
+        $data = $this->_wazuhService->getAgents($token, 0, count($dbAgentIds), null, null, $dbAgentIds);
+        foreach ($data['agents'] as $agent) {
+            if (($agent['id'] ?? '') === AgentStatus::Master->value) continue;
+            $counts['total']++;
+            $status = $agent['status'] ?? 'unknown';
+            if (isset($counts[$status])) $counts[$status]++;
+        }
+
+        return $counts;
+    }
+
     private function getAgentStatsWithChange(?string $token, bool $isAdmin, $userId): array
     {
         $empty = ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0, 'change' => 0, 'changePercent' => 0, 'currentMonthNew' => 0, 'previousMonthNew' => 0];
+        if (!$token) return $empty;
 
         try {
-            if (!$token) return $empty;
-
-            $dbAgentIds = $this->getAccessibleAgentIds();
-
-            $agentStats = ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0];
-            if (!empty($dbAgentIds)) {
-                $data = $this->_wazuhService->getAgents($token, 0, count($dbAgentIds), null, null, $dbAgentIds);
-                foreach ($data['agents'] as $agent) {
-                    if (($agent['id'] ?? '') === AgentStatus::Master->value) continue;
-                    $agentStats['total']++;
-                    $status = $agent['status'] ?? 'unknown';
-                    if (isset($agentStats[$status])) $agentStats[$status]++;
-                }
-            }
+            $agentStats = $this->getCurrentAgentCounts($token, $this->getAccessibleAgentIds());
 
             $previousMonthEnd   = Carbon::now()->subMonth()->endOfMonth();
             $totalPreviousMonth = $isAdmin

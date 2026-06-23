@@ -187,7 +187,7 @@ class WazuhService
 
     public function getVulnerabilityCounts(string $token, string $agentId): array
     {
-        $severities = ['Critical', 'High', 'Medium', 'Low'];
+        $severities = config('dashboard.severity_levels', ['Critical', 'High', 'Medium', 'Low']);
 
         try {
             $responses = Http::pool(fn ($pool) => array_map(
@@ -312,6 +312,27 @@ class WazuhService
     public function getInventoryProcesses(string $token, string $agentId, int $limit = 10, int $offset = 0, ?string $search = null): array
     {
         return $this->_getSyscollector($token, $agentId, 'processes', $limit, $offset, $search);
+    }
+
+    public function getAgentOsList(string $token, array $agentIds): array
+    {
+        try {
+            $response = $this->http()
+                ->withToken($token)
+                ->get("{$this->_host}/agents", [
+                    'limit'       => 500,
+                    'select'      => 'id,name,os.name',
+                    'agents_list' => implode(',', $agentIds),
+                ]);
+
+            if ($response->successful()) {
+                return $response->json('data.affected_items') ?? [];
+            }
+        } catch (\Exception $e) {
+            Log::warning('Failed to fetch agent OS list: ' . $e->getMessage());
+        }
+
+        return [];
     }
 
     private function _getSyscollector(string $token, string $agentId, string $endpoint, int $limit, int $offset, ?string $search): array

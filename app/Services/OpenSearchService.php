@@ -22,7 +22,7 @@ class OpenSearchService
         $this->_wazuhService       = $_wazuhService;
     }
 
-    public function getAlertTrendLast7Days($agentIds = null, $isAdmin = true)
+    public function getAlertTrendLast7Days($agentIds = null)
     {
         if (empty($agentIds)) {
             return [];
@@ -78,7 +78,7 @@ class OpenSearchService
         return [0, 0, 0, 0, 0, 0, 0];
     }
 
-    public function getAlertSeverityDistribution($agentIds = null, $isAdmin = true)
+    public function getAlertSeverityDistribution($agentIds = null)
     {
         $empty = ['critical' => 0, 'high' => 0, 'medium' => 0, 'low' => 0];
 
@@ -120,12 +120,12 @@ class OpenSearchService
         return $empty;
     }
 
-    public function getTotalAlertCount($agentIds = null, $isAdmin = true)
+    public function getTotalAlertCount($agentIds = null): int
     {
-        return array_sum($this->getAlertSeverityDistribution($agentIds, $isAdmin));
+        return array_sum($this->getAlertSeverityDistribution($agentIds));
     }
 
-    public function getAgentEvolutionByTimeRange($timeRange = '24h', $agentIds = null, $baseTime = null, $isAdmin = true)
+    public function getAgentEvolutionByTimeRange($timeRange = '24h', $agentIds = null, $baseTime = null)
     {
         if (empty($agentIds)) {
             return ['labels' => [], 'data' => []];
@@ -157,7 +157,7 @@ class OpenSearchService
 
         try {
             $now      = $baseTime ?? Carbon::now();
-            $timezone = 'Asia/Jakarta';
+            $timezone = config('app.timezone');
             $endDate  = $now->copy()->toIso8601String();
 
             if ($timeRange === 'today') {
@@ -200,7 +200,7 @@ class OpenSearchService
                     'bool' => [
                         'must'   => [['match_all' => (object)[]]],
                         'filter' => [
-                            ['bool' => ['should' => [['term' => ['manager.keyword' => env('WAZUH_MANAGER_NAME', 'ofa')]]]]],
+                            ['bool' => ['should' => [['term' => ['manager.keyword' => config('wazuh.manager_name')]]]]],
                             ['range' => ['timestamp' => ['gte' => $startDate, 'lte' => $endDate, 'format' => 'strict_date_optional_time']]]
                         ],
                         'should'   => [],
@@ -229,7 +229,7 @@ class OpenSearchService
             ];
 
             foreach ($timeBuckets as $tb) {
-                $bucketTime = Carbon::createFromTimestampMs($tb['key'])->setTimezone('Asia/Jakarta');
+                $bucketTime = Carbon::createFromTimestampMs($tb['key'])->setTimezone(config('app.timezone'));
                 $result['labels'][] = match($timeRange) {
                     '15m', '30m', '1h'  => $bucketTime->format('H:i'),
                     '24h', 'today'      => $bucketTime->format('M d H:i'),
@@ -267,7 +267,7 @@ class OpenSearchService
         }
     }
 
-    public function getOsDistribution($agentIds = null, $isAdmin = true)
+    public function getOsDistribution($agentIds = null)
     {
         try {
             if (empty($agentIds)) return [];
@@ -277,18 +277,8 @@ class OpenSearchService
             $token = $this->_wazuhService->getToken();
             if (!$token) return [];
 
-            $agentsResponse = $this->http()
-                ->withToken($token)
-                ->get(config('wazuh.host') . '/agents', [
-                    'limit'       => 500,
-                    'select'      => 'id,name,os.name',
-                    'agents_list' => implode(',', $agentIds),
-                ]);
-
-            if (!$agentsResponse->successful()) return [];
-
             $agents = array_filter(
-                $agentsResponse->json('data.affected_items') ?? [],
+                $this->_wazuhService->getAgentOsList($token, $agentIds),
                 fn($a) => ($a['id'] ?? null) !== \App\Enums\AgentStatus::Master->value
             );
 
@@ -308,7 +298,7 @@ class OpenSearchService
         }
     }
 
-    public function getTopTriggeredRules($limit = 5, $agentIds = null, $isAdmin = true)
+    public function getTopTriggeredRules($limit = 5, $agentIds = null)
     {
         if (empty($agentIds)) return [];
 
@@ -360,7 +350,7 @@ class OpenSearchService
         return [];
     }
 
-    public function getTopAgentsByAlerts($limit = 5, $agentIds = null, $isAdmin = true)
+    public function getTopAgentsByAlerts($limit = 5, $agentIds = null)
     {
         if (empty($agentIds)) return [];
 
@@ -534,7 +524,7 @@ class OpenSearchService
 
     public function getAgentCompliance($agentId, $complianceType = 'gdpr', $timeRange = '30d')
     {
-        $managerName = env('WAZUH_MANAGER_NAME', 'ofa');
+        $managerName = config('wazuh.manager_name');
 
         $from = match($timeRange) {
             'today' => 'now/d',
@@ -586,7 +576,7 @@ class OpenSearchService
 
         $query = [
             'size' => 0,
-            'aggs' => ['events_by_time' => ['date_histogram' => ['field' => 'timestamp', 'fixed_interval' => $timeConfig['interval'], 'time_zone' => 'Asia/Jakarta', 'min_doc_count' => 0]]],
+            'aggs' => ['events_by_time' => ['date_histogram' => ['field' => 'timestamp', 'fixed_interval' => $timeConfig['interval'], 'time_zone' => config('app.timezone'), 'min_doc_count' => 0]]],
             'query' => [
                 'bool' => [
                     'must'   => [['term' => ['agent.id' => $agentId]]],
@@ -986,7 +976,7 @@ class OpenSearchService
 
     public function getMitreTechniques($agentId, $timeRange = '24h')
     {
-        $managerName = env('WAZUH_MANAGER_NAME', 'ofa');
+        $managerName = config('wazuh.manager_name');
         $config      = $this->getTimeRangeConfig($timeRange);
 
         $query = [
@@ -1022,7 +1012,7 @@ class OpenSearchService
 
     public function getMitreAlerts($agentId, $timeRange = '24h', $limit = 10, $offset = 0)
     {
-        $managerName = env('WAZUH_MANAGER_NAME', 'ofa');
+        $managerName = config('wazuh.manager_name');
         $config      = $this->getTimeRangeConfig($timeRange);
 
         try {
@@ -1077,7 +1067,7 @@ class OpenSearchService
 
     public function getMitreEvolution($agentId, $timeRange = '24h')
     {
-        $managerName = env('WAZUH_MANAGER_NAME', 'ofa');
+        $managerName = config('wazuh.manager_name');
         $config      = $this->getTimeRangeConfig($timeRange);
 
         $query = [
@@ -1135,7 +1125,7 @@ class OpenSearchService
 
     public function getMitreAttacksByTactic($agentId, $timeRange = '24h')
     {
-        $managerName = env('WAZUH_MANAGER_NAME', 'ofa');
+        $managerName = config('wazuh.manager_name');
         $config      = $this->getTimeRangeConfig($timeRange);
 
         $query = [
@@ -1190,7 +1180,7 @@ class OpenSearchService
 
     public function getMitreRuleLevelCounts($agentId, $timeRange = '24h')
     {
-        $managerName = env('WAZUH_MANAGER_NAME', 'ofa');
+        $managerName = config('wazuh.manager_name');
         $config      = $this->getTimeRangeConfig($timeRange);
 
         $query = [
@@ -1222,7 +1212,7 @@ class OpenSearchService
 
     public function getMitreTactics($agentId, $timeRange = '24h')
     {
-        $managerName = env('WAZUH_MANAGER_NAME', 'ofa');
+        $managerName = config('wazuh.manager_name');
         $config      = $this->getTimeRangeConfig($timeRange);
 
         $query = [

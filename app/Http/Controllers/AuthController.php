@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ForgotPasswordRequest;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\ResetPasswordRequest;
 use App\Mail\ResetPasswordMail;
 use App\Models\PasswordResetToken;
 use App\Models\User;
@@ -19,14 +22,10 @@ class AuthController extends Controller
         return view('auth.login');
     }
 
-    public function store(Request $request)
+    public function store(LoginRequest $request)
     {
-        $credentials = $request->validate([
-            'email'    => 'required|string',
-            'password' => 'required|string',
-        ]);
+        $credentials = $request->validated();
 
-        // Find user by email or username
         $user = User::where('email', $credentials['email'])
                     ->orWhere('username', $credentials['email'])
                     ->first();
@@ -60,11 +59,9 @@ class AuthController extends Controller
         return view('auth.forgot-password');
     }
 
-    public function sendPasswordReset(Request $request)
+    public function sendPasswordReset(ForgotPasswordRequest $request)
     {
-        $request->validate(['email' => 'required|email']);
-
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->validated()['email'])->first();
 
         if ($user) {
             $token = Str::random(64);
@@ -74,7 +71,7 @@ class AuthController extends Controller
                 ['token' => Hash::make($token), 'created_at' => now()]
             );
 
-            $resetUrl = url(route('password.reset', ['token' => $token, 'email' => $request->email], false));
+            $resetUrl = url(route('password.reset', ['token' => $token, 'email' => $request->validated()['email']], false));
 
             Mail::to($request->email)->send(new ResetPasswordMail($resetUrl, $user->username));
         }
@@ -90,16 +87,11 @@ class AuthController extends Controller
         ]);
     }
 
-    public function resetPassword(Request $request)
+    public function resetPassword(ResetPasswordRequest $request)
     {
-        $request->validate([
-            'token'                 => 'required',
-            'email'                 => 'required|email',
-            'password'              => 'required|min:8|confirmed',
-            'password_confirmation' => 'required',
-        ]);
+        $validated = $request->validated();
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $validated['email'])->first();
 
         if (!$user) {
             return back()->withErrors(['email' => 'Email tidak ditemukan.']);
@@ -107,7 +99,7 @@ class AuthController extends Controller
 
         $record = PasswordResetToken::where('user_id', $user->id)->first();
 
-        if (!$record || !Hash::check($request->token, $record->token)) {
+        if (!$record || !Hash::check($validated['token'], $record->token)) {
             return back()->withErrors(['email' => 'Token reset tidak valid.']);
         }
 
@@ -116,7 +108,7 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Token reset sudah kedaluwarsa. Silakan minta ulang.']);
         }
 
-        $user->password = Hash::make($request->password);
+        $user->password = Hash::make($validated['password']);
         $user->save();
 
         PasswordResetToken::where('user_id', $user->id)->delete();

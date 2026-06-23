@@ -112,6 +112,13 @@ class UserController extends Controller
             }
         }
 
+        if ($validated['role'] !== 'admin' && $user->role === 'admin') {
+            $adminCount = User::where('role', 'admin')->count();
+            if ($adminCount <= 1) {
+                return redirect()->back()->withInput()->with('error', 'Cannot demote the last admin account.');
+            }
+        }
+
         $user->update([
             'username' => $validated['username'],
             'email'    => $validated['email'],
@@ -138,6 +145,10 @@ class UserController extends Controller
 
         if ($user->id === auth()->user()->id) {
             return ApiResponse::error('Tidak dapat menghapus akun sendiri.', 403);
+        }
+
+        if ($user->role === 'admin' && User::where('role', 'admin')->count() <= 1) {
+            return ApiResponse::error('Cannot delete the last admin account.', 403);
         }
 
         $user->agents()->update(['user_id' => null]);

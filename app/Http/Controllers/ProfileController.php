@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ChangePasswordRequest;
 use App\Models\WazuhAgent;
 use App\Models\LogActivity;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
@@ -14,9 +14,8 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
-        // Admin sees all agents, customers see only their own
         if ($user->role === 'admin') {
-            $agents = WazuhAgent::all();
+            $agents = WazuhAgent::orderBy('name')->limit(100)->get();
         } else {
             $agents = WazuhAgent::where('user_id', $user->id)->get();
         }
@@ -34,20 +33,15 @@ class ProfileController extends Controller
         return view('profile.index', compact('user', 'agents', 'logs', 'search'));
     }
 
-    public function changePassword(Request $request)
+    public function changePassword(ChangePasswordRequest $request)
     {
-        $request->validate([
-            'current_password'      => 'required',
-            'new_password'          => 'required|min:8|confirmed',
-        ]);
-
         $user = Auth::user();
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (!Hash::check($request->validated()['current_password'], $user->password)) {
             return back()->withErrors(['current_password' => 'Password saat ini tidak sesuai.']);
         }
 
-        $user->password = Hash::make($request->new_password);
+        $user->password = Hash::make($request->validated()['new_password']);
         $user->save();
 
         LogActivity::create([

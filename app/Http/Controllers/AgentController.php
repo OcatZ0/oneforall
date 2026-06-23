@@ -8,6 +8,7 @@ use App\Models\WazuhAgent;
 use App\Services\OpenSearchService;
 use App\Services\WazuhService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AgentController extends Controller
@@ -34,7 +35,6 @@ class AgentController extends Controller
     {
         try {
             $user    = auth()->user();
-            $isAdmin = ($user->role ?? null) === 'admin';
             $token   = $this->_wazuhService->getToken();
             $perPage = request('per_page', 10);
             $page    = max(request('page', 1), 1);
@@ -50,9 +50,9 @@ class AgentController extends Controller
             }
 
             $wazuhData  = $this->_wazuhService->getAgents($token ?? '', $offset, $perPage, request('search'), request('status'), $dbAgentIds);
-            $agentsList = collect($wazuhData['agents'])
-                ->reject(fn($a) => ($a['id'] ?? '') === AgentStatus::Master->value)
-                ->map(fn($a) => $this->enrichAgentData($this->mapWazuhAgent($a)));
+            $rawAgents  = collect($wazuhData['agents'])->reject(fn($a) => ($a['id'] ?? '') === AgentStatus::Master->value);
+            $agentMap   = $this->buildAgentMap($rawAgents->pluck('id')->filter()->all());
+            $agentsList = $rawAgents->map(fn($a) => $this->enrichAgentData($this->mapWazuhAgent($a), $agentMap));
 
             $agents = new \Illuminate\Pagination\LengthAwarePaginator(
                 items: $agentsList->values(),
@@ -64,7 +64,7 @@ class AgentController extends Controller
 
             $sessionKey = 'agent_evolution_base_time_' . floor(date('n'));
             $baseTime   = session($sessionKey) ?? tap(Carbon::now(), fn($t) => session([$sessionKey => $t]));
-            $evolution  = $this->getAgentEvolution('24h', $dbAgentIds, $isAdmin, $baseTime);
+            $evolution  = $this->getAgentEvolution('24h', $dbAgentIds, $baseTime);
             $evolutionLabels    = json_encode($evolution['labels'] ?? []);
             $evolutionData      = json_encode($evolution['data']['active'] ?? $evolution['data'] ?? []);
 
@@ -81,11 +81,10 @@ class AgentController extends Controller
     {
         try {
             $timeRange  = request('time_range', '24h');
-            $isAdmin    = (auth()->user()->role ?? null) === 'admin';
             $dbAgentIds = $this->getAccessibleAgentIds();
             $sessionKey = 'agent_evolution_base_time_' . floor(date('n'));
             $baseTime   = session($sessionKey) ?? tap(Carbon::now(), fn($t) => session([$sessionKey => $t]));
-            $evolution  = $this->getAgentEvolution($timeRange, $dbAgentIds, $isAdmin, $baseTime);
+            $evolution  = $this->getAgentEvolution($timeRange, $dbAgentIds, $baseTime);
 
             return ApiResponse::success(['labels' => $evolution['labels'] ?? [], 'data' => $evolution['data'] ?? []]);
         } catch (\Exception $e) {
@@ -518,8 +517,6 @@ class AgentController extends Controller
     public function search()
     {
         try {
-            $user    = auth()->user();
-            $isAdmin = ($user->role ?? null) === 'admin';
             ['perPage' => $perPage, 'page' => $page, 'offset' => $offset] = $this->paginateRequest();
 
             $token      = $this->_wazuhService->getToken();
@@ -530,10 +527,9 @@ class AgentController extends Controller
             }
 
             $wazuhData  = $this->_wazuhService->getAgents($token ?? '', $offset, $perPage, request('search'), request('status'), $dbAgentIds);
-            $agentsList = collect($wazuhData['agents'])
-                ->reject(fn($a) => ($a['id'] ?? '') === AgentStatus::Master->value)
-                ->map(fn($a) => $this->enrichAgentData($this->mapWazuhAgent($a)))
-                ->values();
+            $rawAgents  = collect($wazuhData['agents'])->reject(fn($a) => ($a['id'] ?? '') === AgentStatus::Master->value);
+            $agentMap   = $this->buildAgentMap($rawAgents->pluck('id')->filter()->all());
+            $agentsList = $rawAgents->map(fn($a) => $this->enrichAgentData($this->mapWazuhAgent($a), $agentMap))->values();
 
             $total      = $wazuhData['total'];
             $totalPages = $total > 0 ? (int) ceil($total / $perPage) : 1;
@@ -564,13 +560,19 @@ class AgentController extends Controller
         }
     }
 
-    private function enrichAgentData(object $agent): object
+    private function buildAgentMap(array $agentIds): array
+    {
+        if (empty($agentIds)) return [];
+        return WazuhAgent::with('user')->whereIn('agent_id', $agentIds)->get()->keyBy('agent_id')->all();
+    }
+
+    private function enrichAgentData(object $agent, array $dbAgentMap = []): object
     {
         $agentId = $agent->agent_id ?? null;
-        if ($agentId) {
-            $dbAgent = WazuhAgent::where('agent_id', $agentId)->with('user')->first();
-            if ($dbAgent) $agent->user = $dbAgent->user;
-        }
+        if (!$agentId) return $agent;
+
+        $dbAgent = $dbAgentMap[$agentId] ?? WazuhAgent::where('agent_id', $agentId)->with('user')->first();
+        if ($dbAgent) $agent->user = $dbAgent->user;
         return $agent;
     }
 
@@ -603,49 +605,51 @@ class AgentController extends Controller
         $token = $this->_wazuhService->getToken();
         if (!$token) return ['success' => false, 'message' => 'Failed to authenticate with Wazuh API'];
 
-        $synced = $updated = $errors = $processed = $total = 0;
-        $offset    = 0;
-        $limit     = 100;
-        $syncedIds = [];
+        // Phase 1: Fetch all agent data from Wazuh API (outside transaction)
+        $allWazuhAgents = [];
+        $offset = 0;
+        $limit  = 100;
 
         do {
             $data   = $this->_wazuhService->getAgents($token, $offset, $limit);
-            $agents = $data['agents'] ?? [];
-            $total  = $data['total'] ?? 0;
+            $batch  = $data['agents'] ?? [];
+            if (empty($batch)) break;
+            array_push($allWazuhAgents, ...$batch);
+            $offset += $limit;
+        } while (count($allWazuhAgents) < ($data['total'] ?? 0));
 
-            if (empty($agents)) break;
+        // Phase 2: All DB writes in a single transaction
+        $synced = $updated = $deleted = 0;
 
-            foreach ($agents as $wa) {
+        DB::transaction(function () use ($allWazuhAgents, &$synced, &$updated, &$deleted) {
+            $syncedIds = [];
+
+            foreach ($allWazuhAgents as $wa) {
                 $agentId = $wa['id'] ?? null;
                 if (!$agentId || $agentId === AgentStatus::Master->value) continue;
 
-                try {
-                    $agentData   = ['agent_id' => $agentId, 'name' => $wa['name'] ?? 'Unknown'];
-                    $existing    = WazuhAgent::where('agent_id', $agentId)->first();
-                    $syncedIds[] = $agentId;
+                $agentData   = ['agent_id' => $agentId, 'name' => $wa['name'] ?? 'Unknown'];
+                $syncedIds[] = $agentId;
+                $existing    = WazuhAgent::where('agent_id', $agentId)->first();
 
-                    if ($existing) {
-                        if ($existing->name !== $agentData['name']) $existing->update($agentData);
-                        $updated++;
-                    } else {
-                        WazuhAgent::create(array_merge($agentData, ['description' => '', 'created_at' => Carbon::now()]));
-                        $synced++;
-                    }
-                    $processed++;
-                } catch (\Exception $e) {
-                    $errors++;
-                    Log::error('Error syncing agent', ['agent_id' => $agentId, 'error' => $e->getMessage()]);
+                if ($existing) {
+                    if ($existing->name !== $agentData['name']) $existing->update($agentData);
+                    $updated++;
+                } else {
+                    WazuhAgent::create(array_merge($agentData, ['description' => '', 'created_at' => Carbon::now()]));
+                    $synced++;
                 }
             }
 
-            $offset += $limit;
-        } while ($processed < $total && count($agents) > 0);
+            $deleted = WazuhAgent::whereNotIn('agent_id', $syncedIds)->delete();
+        });
 
-        $deleted = WazuhAgent::whereNotIn('agent_id', $syncedIds)->delete();
+        $total     = count($allWazuhAgents);
+        $processed = $synced + $updated;
 
-        Log::info('Agent sync completed', compact('synced', 'updated', 'deleted', 'errors', 'processed', 'total'));
+        Log::info('Agent sync completed', compact('synced', 'updated', 'deleted', 'processed', 'total'));
 
-        return ['success' => true, 'synced_new' => $synced, 'updated_existing' => $updated, 'deleted_obsolete' => $deleted, 'total_processed' => $processed, 'errors' => $errors, 'total_in_wazuh' => $total];
+        return ['success' => true, 'synced_new' => $synced, 'updated_existing' => $updated, 'deleted_obsolete' => $deleted, 'total_processed' => $processed, 'errors' => 0, 'total_in_wazuh' => $total];
     }
 
     private function buildFilteredStats(?string $token, array $dbAgentIds): array
@@ -669,10 +673,10 @@ class AgentController extends Controller
         return $stats;
     }
 
-    private function getAgentEvolution(string $timeRange = '24h', ?array $agentIds = null, bool $isAdmin = true, ?Carbon $baseTime = null): array
+    private function getAgentEvolution(string $timeRange = '24h', ?array $agentIds = null, ?Carbon $baseTime = null): array
     {
         try {
-            return $this->_openSearch->getAgentEvolutionByTimeRange($timeRange, $agentIds, $baseTime, $isAdmin);
+            return $this->_openSearch->getAgentEvolutionByTimeRange($timeRange, $agentIds, $baseTime);
         } catch (\Exception $e) {
             Log::error('Failed to fetch agent evolution data', ['error' => $e->getMessage()]);
             return ['labels' => [], 'data' => []];

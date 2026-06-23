@@ -15,7 +15,9 @@ class ActivityLogController extends Controller
             $userId   = request('user_id');
             $dateFrom = request('date_from');
             $dateTo   = request('date_to');
-            $perPage  = in_array((int) request('per_page', 25), [25, 50, 100]) ? (int) request('per_page', 25) : 25;
+            $options  = config('dashboard.activity_log.per_page_options', [25, 50, 100]);
+            $default  = config('dashboard.activity_log.default_per_page', 25);
+            $perPage  = in_array((int) request('per_page', $default), $options) ? (int) request('per_page', $default) : $default;
 
             $query = LogActivity::with('user')->orderBy('created_at', 'desc');
 
