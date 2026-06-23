@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AgentStatus;
+use App\Helpers\ApiResponse;
 use App\Models\WazuhAgent;
 use App\Models\DashboardLayout;
 use App\Models\User;
@@ -16,10 +18,10 @@ class DashboardController extends Controller
     private WazuhService $_wazuhService;
     private OpenSearchService $_openSearch;
 
-    public function __construct()
+    public function __construct(WazuhService $_wazuhService, OpenSearchService $_openSearch)
     {
-        $this->_wazuhService = new WazuhService();
-        $this->_openSearch   = new OpenSearchService();
+        $this->_wazuhService = $_wazuhService;
+        $this->_openSearch   = $_openSearch;
     }
 
     public function index()
@@ -76,7 +78,7 @@ class DashboardController extends Controller
             ['layout'  => $validated['layout']]
         );
 
-        return response()->json(['success' => true]);
+        return ApiResponse::success();
     }
 
     private function getAgentStatsWithChange(?string $token, bool $isAdmin, $userId): array
@@ -92,7 +94,7 @@ class DashboardController extends Controller
             if (!empty($dbAgentIds)) {
                 $data = $this->_wazuhService->getAgents($token, 0, count($dbAgentIds), null, null, $dbAgentIds);
                 foreach ($data['agents'] as $agent) {
-                    if (($agent['id'] ?? '') === '000') continue;
+                    if (($agent['id'] ?? '') === AgentStatus::Master->value) continue;
                     $agentStats['total']++;
                     $status = $agent['status'] ?? 'unknown';
                     if (isset($agentStats[$status])) $agentStats[$status]++;

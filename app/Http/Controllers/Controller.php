@@ -6,6 +6,18 @@ use App\Models\WazuhAgent;
 
 abstract class Controller
 {
+    protected function paginateRequest(int $defaultPerPage = null): array
+    {
+        $options = config('dashboard.pagination.per_page_options', [10, 25, 50]);
+        $default = $defaultPerPage ?? config('dashboard.pagination.default_per_page', 10);
+        $perPage = in_array((int) request('per_page', $default), $options)
+            ? (int) request('per_page', $default)
+            : $default;
+        $page   = max((int) request('page', 1), 1);
+        $offset = ($page - 1) * $perPage;
+        return compact('perPage', 'page', 'offset');
+    }
+
     protected function getAccessibleAgentIds(): array
     {
         $user = auth()->user();

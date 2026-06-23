@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AgentStatus;
+use App\Helpers\ApiResponse;
 use App\Models\WazuhAgent;
-use App\Models\DashboardLayout;
 use App\Services\OpenSearchService;
 use App\Services\WazuhService;
 use Carbon\Carbon;
@@ -14,10 +15,24 @@ class AgentController extends Controller
     private WazuhService $_wazuhService;
     private OpenSearchService $_openSearch;
 
-    public function __construct()
+    public function __construct(WazuhService $_wazuhService, OpenSearchService $_openSearch)
     {
-        $this->_wazuhService = new WazuhService();
-        $this->_openSearch   = new OpenSearchService();
+        $this->_wazuhService = $_wazuhService;
+        $this->_openSearch   = $_openSearch;
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    private function validatedTimeRange(?string $timeRange = null): string
+    {
+        return in_array($timeRange, config('dashboard.time_ranges')) ? $timeRange : '24h';
+    }
+
+    private function getLayout(string $page): ?string
+    {
+        return \App\Models\DashboardLayout::where('user_id', auth()->id())
+                                           ->where('page', $page)
+                                           ->value('layout');
     }
 
     // ── Public actions ────────────────────────────────────────────────────────
@@ -37,13 +52,13 @@ class AgentController extends Controller
 
             if (empty($dbAgentIds)) {
                 $agents      = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage, $page, ['path' => route('agent'), 'query' => request()->query()]);
-                $savedLayout = DashboardLayout::where('user_id', $user->id)->where('page', 'agent')->value('layout');
+                $savedLayout = $this->getLayout('agent');
                 return view('agent.index', ['agents' => $agents, 'stats' => $stats, 'evolutionLabels' => '[]', 'evolutionData' => '[]', 'savedLayout' => $savedLayout]);
             }
 
             $wazuhData  = $this->_wazuhService->getAgents($token ?? '', $offset, $perPage, request('search'), request('status'), $dbAgentIds);
             $agentsList = collect($wazuhData['agents'])
-                ->reject(fn($a) => ($a['id'] ?? '') === '000')
+                ->reject(fn($a) => ($a['id'] ?? '') === AgentStatus::Master->value)
                 ->map(fn($a) => $this->enrichAgentData($this->mapWazuhAgent($a)));
 
             $agents = new \Illuminate\Pagination\LengthAwarePaginator(
@@ -60,9 +75,7 @@ class AgentController extends Controller
             $evolutionLabels    = json_encode($evolution['labels'] ?? []);
             $evolutionData      = json_encode($evolution['data']['active'] ?? $evolution['data'] ?? []);
 
-            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
-                                          ->where('page','agent')
-                                          ->value('layout');
+            $savedLayout = $this->getLayout('agent');
 
             return view('agent.index', compact('agents', 'stats', 'evolutionLabels', 'evolutionData', 'savedLayout'));
         } catch (\Exception $e) {
@@ -81,10 +94,10 @@ class AgentController extends Controller
             $baseTime   = session($sessionKey) ?? tap(Carbon::now(), fn($t) => session([$sessionKey => $t]));
             $evolution  = $this->getAgentEvolution($timeRange, $dbAgentIds, $isAdmin, $baseTime);
 
-            return response()->json(['success' => true, 'labels' => $evolution['labels'] ?? [], 'data' => $evolution['data'] ?? []]);
+            return ApiResponse::success(['labels' => $evolution['labels'] ?? [], 'data' => $evolution['data'] ?? []]);
         } catch (\Exception $e) {
             Log::error('Get chart data error', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Failed to fetch chart data'], 500);
+            return ApiResponse::error('Failed to fetch chart data', 500);
         }
     }
 
@@ -92,15 +105,10 @@ class AgentController extends Controller
     {
         try {
             $agentId = (string) $id;
-            if (!$this->userHasAccessToAgent($agentId)) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
-            }
-
             $timeRange      = request('time_range', '24h');
             $complianceType = request('compliance_type', 'gdpr');
 
-            return response()->json([
-                'success'                     => true,
+            return ApiResponse::success([
                 'events_evolution'            => $this->_openSearch->getEventsCountEvolution($agentId, $timeRange),
                 'compliance_data'             => $this->_openSearch->getAgentCompliance($agentId, $complianceType, $timeRange),
                 'events_compliance_evolution' => $this->_openSearch->getEventsCountEvolutionByCompliance($agentId, $complianceType, $timeRange),
@@ -108,17 +116,13 @@ class AgentController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Get detail chart data error', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Failed to fetch chart data'], 500);
+            return ApiResponse::error('Failed to fetch chart data', 500);
         }
     }
 
     public function detail($id)
     {
         try {
-            if (!$this->userHasAccessToAgent($id)) {
-                return view('agent.detail', ['agent' => null, 'error' => 'You do not have permission to view this agent']);
-            }
-
             $token = $this->_wazuhService->getToken();
             if (!$token) {
                 return view('agent.detail', ['agent' => null, 'error' => 'Unable to authenticate with Wazuh API']);
@@ -131,9 +135,7 @@ class AgentController extends Controller
 
             $agent = $this->enrichAgentData($this->mapWazuhAgent($wa, true));
 
-            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
-                                          ->where('page','agent-detail')
-                                          ->value('layout');
+            $savedLayout = $this->getLayout('agent-detail');
 
             return view('agent.detail', array_merge(compact('agent', 'savedLayout'), $this->buildDetailData($agent->agent_id)));
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
@@ -148,26 +150,18 @@ class AgentController extends Controller
     public function securityEvents($id)
     {
         try {
-            if (!$this->userHasAccessToAgent($id)) {
-                return view('agent.security-events', ['agent' => null, 'error' => 'You do not have permission to view this agent']);
-            }
-
             $agent = $this->resolveAgent($id);
             if (!$agent) {
                 return view('agent.security-events', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
             }
 
             $timeRange    = request('time_range', '24h');
-            $perPage      = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
-            $page         = max((int) request('page', 1), 1);
-            $offset       = ($page - 1) * $perPage;
+            ['perPage' => $perPage, 'page' => $page, 'offset' => $offset] = $this->paginateRequest();
             $groupsPerPage = in_array((int) request('groups_per_page', 10), [10, 25, 50]) ? (int) request('groups_per_page', 10) : 10;
             $groupsPage    = max((int) request('groups_page', 1), 1);
             $groupsOffset  = ($groupsPage - 1) * $groupsPerPage;
 
-            $savedLayout  = DashboardLayout::where('user_id', auth()->user()->id)
-                                           ->where('page','security-events')
-                                           ->value('layout');
+            $savedLayout  = $this->getLayout('security-events');
 
             $alertsResult = $this->_openSearch->getRecentAlerts($id, $timeRange, $perPage, $offset);
             $groupsResult = $this->_openSearch->getGroupsSummary($id, $timeRange, $groupsPerPage, $groupsOffset);
@@ -192,40 +186,36 @@ class AgentController extends Controller
 
     public function getSeAlerts($id)
     {
-        if (!$this->userHasAccessToAgent($id)) return response()->json(['error' => 'Forbidden'], 403);
         $timeRange = request('time_range', '24h');
         $perPage   = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
         $page      = max((int) request('page', 1), 1);
         $result    = $this->_openSearch->getRecentAlerts($id, $timeRange, $perPage, ($page - 1) * $perPage);
-        return response()->json(['data' => $result['data'], 'total' => $result['total'], 'page' => $page, 'perPage' => $perPage]);
+        return ApiResponse::paginated($result['data'], $result['total'], $page, $perPage);
     }
 
     public function getSeGroups($id)
     {
-        if (!$this->userHasAccessToAgent($id)) return response()->json(['error' => 'Forbidden'], 403);
         $timeRange = request('time_range', '24h');
         $perPage   = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
         $page      = max((int) request('page', 1), 1);
         $result    = $this->_openSearch->getGroupsSummary($id, $timeRange, $perPage, ($page - 1) * $perPage);
-        return response()->json(['data' => $result['data'], 'total' => $result['total'], 'page' => $page, 'perPage' => $perPage]);
+        return ApiResponse::paginated($result['data'], $result['total'], $page, $perPage);
     }
 
     public function getIntegrityEvents($id)
     {
-        if (!$this->userHasAccessToAgent($id)) return response()->json(['error' => 'Forbidden'], 403);
         $timeRange = request('time_range', '24h');
         $perPage   = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
         $page      = max((int) request('page', 1), 1);
         $result    = $this->_openSearch->getFimEventsPaginated($id, $timeRange, $perPage, ($page - 1) * $perPage);
-        return response()->json(['data' => $result['data'], 'total' => $result['total'], 'page' => $page, 'perPage' => $perPage]);
+        return ApiResponse::paginated($result['data'], $result['total'], $page, $perPage);
     }
 
     public function getSeChartData($id)
     {
-        if (!$this->userHasAccessToAgent($id)) return response()->json(['error' => 'Forbidden'], 403);
         $timeRange = request('time_range', '24h');
         try {
-            return response()->json([
+            return ApiResponse::success([
                 'metrics'                => $this->_openSearch->getSecurityEventsMetrics($id, 'now-' . $timeRange),
                 'alertGroupsEvolution'   => $this->_openSearch->getAlertGroupsEvolution($id, $timeRange),
                 'alertsEvolutionByLevel' => $this->_openSearch->getAlertsEvolutionByLevel($id, $timeRange),
@@ -235,16 +225,15 @@ class AgentController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('SE chart data error: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to load data'], 500);
+            return ApiResponse::error('Failed to load data', 500);
         }
     }
 
     public function getFimChartData($id)
     {
-        if (!$this->userHasAccessToAgent($id)) return response()->json(['error' => 'Forbidden'], 403);
         $timeRange = request('time_range', '24h');
         try {
-            return response()->json([
+            return ApiResponse::success([
                 'fimSummary'     => $this->_openSearch->getFimSummary($id, $timeRange),
                 'fimEvolution'   => $this->_openSearch->getFimEvolution($id, $timeRange),
                 'fimTopRules'    => $this->_openSearch->getFimTopRules($id, $timeRange, 5),
@@ -254,25 +243,23 @@ class AgentController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('FIM chart data error: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to load data'], 500);
+            return ApiResponse::error('Failed to load data', 500);
         }
     }
 
     public function getScaChecksJson($id)
     {
-        if (!$this->userHasAccessToAgent($id)) return response()->json(['error' => 'Forbidden'], 403);
         try {
             $token          = $this->_wazuhService->getToken();
             $policies       = $token ? $this->_wazuhService->getSCAPolicies($token, $id) : [];
             $policyId       = request('policy_id', $policies[0]['policy_id'] ?? null);
             $selectedPolicy = collect($policies)->firstWhere('policy_id', $policyId);
             $resultFilter   = in_array(request('result'), ['passed', 'failed', 'not_applicable']) ? request('result') : null;
-            $perPage        = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
-            $page           = max((int) request('page', 1), 1);
+            ['perPage' => $perPage, 'page' => $page] = $this->paginateRequest();
             $checksResult   = ($token && $policyId)
                 ? $this->_wazuhService->getSCAChecks($token, $id, $policyId, $perPage, ($page - 1) * $perPage, $resultFilter)
                 : ['data' => [], 'total' => 0];
-            return response()->json([
+            return ApiResponse::success([
                 'checks'         => $checksResult['data'],
                 'total'          => $checksResult['total'],
                 'page'           => $page,
@@ -282,29 +269,22 @@ class AgentController extends Controller
                 'resultFilter'   => $resultFilter,
             ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to load SCA checks'], 500);
+            return ApiResponse::error('Failed to load SCA checks', 500);
         }
     }
 
     public function integrityMonitoring($id)
     {
         try {
-            if (!$this->userHasAccessToAgent($id)) {
-                return view('agent.integrity-monitoring', ['agent' => null, 'error' => 'You do not have permission to view this agent']);
-            }
             $agent = $this->resolveAgent($id);
             if (!$agent) {
                 return view('agent.integrity-monitoring', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
             }
 
             $timeRange = request('time_range', '24h');
-            $perPage   = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
-            $page      = max((int) request('page', 1), 1);
-            $offset    = ($page - 1) * $perPage;
+            ['perPage' => $perPage, 'page' => $page, 'offset' => $offset] = $this->paginateRequest();
 
-            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
-                                          ->where('page','integrity-monitoring')
-                                          ->value('layout');
+            $savedLayout = $this->getLayout('integrity-monitoring');
 
             $eventsResult = $this->_openSearch->getFimEventsPaginated($id, $timeRange, $perPage, $offset);
 
@@ -327,9 +307,6 @@ class AgentController extends Controller
     public function sca($id)
     {
         try {
-            if (!$this->userHasAccessToAgent($id)) {
-                return view('agent.sca', ['agent' => null, 'error' => 'You do not have permission to view this agent']);
-            }
             $agent = $this->resolveAgent($id);
             if (!$agent) {
                 return view('agent.sca', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
@@ -341,9 +318,7 @@ class AgentController extends Controller
             $policyId       = request('policy_id', $policies[0]['policy_id'] ?? null);
             $selectedPolicy = collect($policies)->firstWhere('policy_id', $policyId);
             $resultFilter   = in_array(request('result'), ['passed', 'failed', 'not_applicable']) ? request('result') : null;
-            $perPage        = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
-            $page           = max((int) request('page', 1), 1);
-            $offset         = ($page - 1) * $perPage;
+            ['perPage' => $perPage, 'page' => $page, 'offset' => $offset] = $this->paginateRequest();
 
             $checksResult = ($token && $policyId)
                 ? $this->_wazuhService->getSCAChecks($token, $id, $policyId, $perPage, $offset, $resultFilter)
@@ -356,9 +331,7 @@ class AgentController extends Controller
                 ? (int) round(array_sum(array_column($policies, 'score')) / count($policies))
                 : 0;
 
-            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
-                                          ->where('page','sca')
-                                          ->value('layout');
+            $savedLayout = $this->getLayout('sca');
 
             return view('agent.sca', array_merge(
                 compact('agent', 'policies', 'selectedPolicy', 'policyId', 'resultFilter', 'page', 'perPage', 'savedLayout'),
@@ -380,9 +353,6 @@ class AgentController extends Controller
     public function vulnerabilities($id)
     {
         try {
-            if (!$this->userHasAccessToAgent($id)) {
-                return view('agent.vulnerabilities', ['agent' => null, 'error' => 'You do not have permission to view this agent']);
-            }
             $agent = $this->resolveAgent($id);
             if (!$agent) {
                 return view('agent.vulnerabilities', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
@@ -390,9 +360,7 @@ class AgentController extends Controller
 
             $token    = $this->_wazuhService->getToken();
             $severity = in_array(request('severity'), ['Critical', 'High', 'Medium', 'Low']) ? request('severity') : null;
-            $perPage  = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
-            $page     = max((int) request('page', 1), 1);
-            $offset   = ($page - 1) * $perPage;
+            ['perPage' => $perPage, 'page' => $page, 'offset' => $offset] = $this->paginateRequest();
 
             $vulnResult = $token
                 ? $this->_wazuhService->getVulnerabilities($token, $id, $perPage, $offset, $severity)
@@ -411,9 +379,7 @@ class AgentController extends Controller
 
             $lastScan = $token ? $this->_wazuhService->getVulnerabilitiesLastScan($token, $id) : null;
 
-            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
-                                          ->where('page','vulnerabilities')
-                                          ->value('layout');
+            $savedLayout = $this->getLayout('vulnerabilities');
 
             return view('agent.vulnerabilities', compact('agent', 'page', 'perPage', 'severity', 'severityCounts', 'summaryBatch', 'lastScan', 'savedLayout') + [
                 'vulnerabilities' => $vulnResult['data'],
@@ -427,37 +393,26 @@ class AgentController extends Controller
 
     public function getMitreAlertsJson($id)
     {
-        if (!$this->userHasAccessToAgent($id)) return response()->json(['error' => 'Forbidden'], 403);
-        $validRanges = ['15m','30m','1h','24h','7d','30d','90d','1y','today','week'];
-        $timeRange   = in_array(request('time_range'), $validRanges) ? request('time_range') : '24h';
-        $perPage     = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
-        $page        = max((int) request('page', 1), 1);
+        $timeRange = $this->validatedTimeRange(request('time_range'));
+        ['perPage' => $perPage, 'page' => $page] = $this->paginateRequest();
         $result      = $this->_openSearch->getMitreAlerts($id, $timeRange, $perPage, ($page - 1) * $perPage);
-        return response()->json(['data' => $result['data'], 'total' => $result['total'], 'page' => $page, 'perPage' => $perPage]);
+        return ApiResponse::paginated($result['data'], $result['total'], $page, $perPage);
     }
 
     public function mitreAttack($id)
     {
         try {
-            if (!$this->userHasAccessToAgent($id)) {
-                return view('agent.mitre-attack', ['agent' => null, 'error' => 'You do not have permission to view this agent']);
-            }
             $agent = $this->resolveAgent($id);
             if (!$agent) {
                 return view('agent.mitre-attack', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
             }
 
-            $validRanges = ['15m','30m','1h','24h','7d','30d','90d','1y','today','week'];
-            $timeRange = in_array(request('time_range'), $validRanges) ? request('time_range') : '24h';
-            $perPage   = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
-            $page      = max((int) request('page', 1), 1);
-            $offset    = ($page - 1) * $perPage;
+            $timeRange = $this->validatedTimeRange(request('time_range'));
+            ['perPage' => $perPage, 'page' => $page, 'offset' => $offset] = $this->paginateRequest();
 
             $alertsResult = $this->_openSearch->getMitreAlerts($id, $timeRange, $perPage, $offset);
 
-            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
-                                          ->where('page','mitre-attack')
-                                          ->value('layout');
+            $savedLayout = $this->getLayout('mitre-attack');
 
             return view('agent.mitre-attack', compact('agent', 'timeRange', 'page', 'perPage', 'savedLayout') + [
                 'tactics'          => $this->_openSearch->getMitreTactics($id, $timeRange),
@@ -477,24 +432,17 @@ class AgentController extends Controller
     public function compliance($id)
     {
         try {
-            if (!$this->userHasAccessToAgent($id)) {
-                return view('agent.compliance', ['agent' => null, 'error' => 'You do not have permission to view this agent']);
-            }
             $agent = $this->resolveAgent($id);
             if (!$agent) {
                 return view('agent.compliance', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
             }
 
-            $validTypes  = ['pci_dss', 'gdpr', 'hipaa', 'nist_800_53', 'tsc'];
-            $validRanges = ['15m','30m','1h','24h','7d','30d','90d','1y','today','week'];
-            $complianceType = in_array(request('compliance_type'), $validTypes)  ? request('compliance_type')  : 'gdpr';
-            $timeRange      = in_array(request('time_range'),      $validRanges) ? request('time_range')      : '24h';
+            $complianceType = in_array(request('compliance_type'), config('dashboard.compliance_types')) ? request('compliance_type') : 'gdpr';
+            $timeRange      = $this->validatedTimeRange(request('time_range'));
 
             $allCompliance = $this->_openSearch->getAgentCompliance($id, $complianceType, $timeRange);
 
-            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
-                                          ->where('page','compliance')
-                                          ->value('layout');
+            $savedLayout = $this->getLayout('compliance');
 
             return view('agent.compliance', compact('agent', 'complianceType', 'timeRange', 'allCompliance', 'savedLayout') + [
                 'topRuleGroups'  => $this->_openSearch->getTopRuleGroups($id, $timeRange, 5, $complianceType),
@@ -511,9 +459,6 @@ class AgentController extends Controller
     public function inventoryData($id)
     {
         try {
-            if (!$this->userHasAccessToAgent($id)) {
-                return view('agent.inventory-data', ['agent' => null, 'error' => 'You do not have permission to view this agent']);
-            }
             $agent = $this->resolveAgent($id);
             if (!$agent) {
                 return view('agent.inventory-data', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
@@ -523,9 +468,7 @@ class AgentController extends Controller
             $hardware = $token ? $this->_wazuhService->getInventoryHardware($token, $id) : null;
             $osInfo   = $token ? $this->_wazuhService->getInventoryOS($token, $id)       : null;
 
-            $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
-                                          ->where('page', 'inventory-data')
-                                          ->value('layout');
+            $savedLayout = $this->getLayout('inventory-data');
 
             return view('agent.inventory-data', compact('agent', 'hardware', 'osInfo', 'savedLayout'));
         } catch (\Exception $e) {
@@ -536,23 +479,17 @@ class AgentController extends Controller
 
     public function getInventoryJson($id, $type)
     {
-        if (!$this->userHasAccessToAgent($id)) {
-            return response()->json(['error' => 'Forbidden'], 403);
-        }
-
         $allowed = ['netiface', 'ports', 'netaddr', 'hotfixes', 'packages', 'processes'];
         if (!in_array($type, $allowed)) {
-            return response()->json(['error' => 'Invalid type'], 400);
+            return ApiResponse::error('Invalid type', 400);
         }
 
         $token = $this->_wazuhService->getToken();
         if (!$token) {
-            return response()->json(['error' => 'Unable to authenticate with Wazuh'], 503);
+            return ApiResponse::error('Unable to authenticate with Wazuh', 503);
         }
 
-        $perPage = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
-        $page    = max((int) request('page', 1), 1);
-        $offset  = ($page - 1) * $perPage;
+        ['perPage' => $perPage, 'page' => $page, 'offset' => $offset] = $this->paginateRequest();
         $search  = request('search') ?: null;
 
         $result = match($type) {
@@ -564,35 +501,27 @@ class AgentController extends Controller
             'processes' => $this->_wazuhService->getInventoryProcesses($token, $id, $perPage, $offset, $search),
         };
 
-        return response()->json([
-            'data'    => $result['data'],
-            'total'   => $result['total'],
-            'page'    => $page,
-            'perPage' => $perPage,
-        ]);
+        return ApiResponse::paginated($result['data'], $result['total'], $page, $perPage);
     }
 
     public function syncAgentsFromWazuh()
     {
         try {
             if (!auth()->check()) {
-                return response()->json(['success' => false, 'message' => 'Unauthorized: Please login first'], 401);
+                return ApiResponse::error('Unauthorized: Please login first', 401);
             }
             if (auth()->user()->role !== 'admin') {
-                return response()->json(['success' => false, 'message' => 'Unauthorized: Only admins can sync agents'], 403);
+                return ApiResponse::error('Unauthorized: Only admins can sync agents', 403);
             }
 
             $result = $this->syncFromWazuh();
 
-            return response()->json(
-                $result['success']
-                    ? ['success' => true, 'message' => 'Agent sync completed successfully', 'data' => $result]
-                    : ['success' => false, 'message' => $result['message'] ?? 'Sync failed'],
-                $result['success'] ? 200 : 500
-            );
+            return $result['success']
+                ? ApiResponse::success($result, 'Agent sync completed successfully')
+                : ApiResponse::error($result['message'] ?? 'Sync failed', 500);
         } catch (\Exception $e) {
             Log::error('Agent sync error', ['error' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Sync failed: ' . $e->getMessage()], 500);
+            return ApiResponse::error('Sync failed: ' . $e->getMessage(), 500);
         }
     }
 
@@ -601,20 +530,18 @@ class AgentController extends Controller
         try {
             $user    = auth()->user();
             $isAdmin = ($user->role ?? null) === 'admin';
-            $perPage = in_array((int) request('per_page', 10), [10, 25, 50]) ? (int) request('per_page', 10) : 10;
-            $page    = max((int) request('page', 1), 1);
-            $offset  = ($page - 1) * $perPage;
+            ['perPage' => $perPage, 'page' => $page, 'offset' => $offset] = $this->paginateRequest();
 
             $token      = $this->_wazuhService->getToken();
             $dbAgentIds = $this->getAccessibleAgentIds();
 
             if (empty($dbAgentIds)) {
-                return response()->json(['agents' => [], 'total' => 0, 'page' => $page, 'perPage' => $perPage, 'totalPages' => 1, 'from' => 0, 'to' => 0]);
+                return ApiResponse::success(['agents' => [], 'total' => 0, 'page' => $page, 'perPage' => $perPage, 'totalPages' => 1, 'from' => 0, 'to' => 0]);
             }
 
             $wazuhData  = $this->_wazuhService->getAgents($token ?? '', $offset, $perPage, request('search'), request('status'), $dbAgentIds);
             $agentsList = collect($wazuhData['agents'])
-                ->reject(fn($a) => ($a['id'] ?? '') === '000')
+                ->reject(fn($a) => ($a['id'] ?? '') === AgentStatus::Master->value)
                 ->map(fn($a) => $this->enrichAgentData($this->mapWazuhAgent($a)))
                 ->values();
 
@@ -623,7 +550,7 @@ class AgentController extends Controller
             $from       = $total > 0 ? $offset + 1 : 0;
             $to         = min($offset + $perPage, $total);
 
-            return response()->json([
+            return ApiResponse::success([
                 'agents'     => $agentsList->map(fn($a) => [
                     'agent_id'     => $a->agent_id,
                     'name'         => $a->name,
@@ -643,7 +570,7 @@ class AgentController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Agent search error', ['error' => $e->getMessage()]);
-            return response()->json(['error' => 'Failed to search agents'], 500);
+            return ApiResponse::error('Failed to search agents', 500);
         }
     }
 
@@ -760,7 +687,7 @@ class AgentController extends Controller
 
             foreach ($agents as $wa) {
                 $agentId = $wa['id'] ?? null;
-                if (!$agentId || $agentId === '000') continue;
+                if (!$agentId || $agentId === AgentStatus::Master->value) continue;
 
                 try {
                     $agentData   = ['agent_id' => $agentId, 'name' => $wa['name'] ?? 'Unknown'];
@@ -800,7 +727,7 @@ class AgentController extends Controller
         try {
             $data = $this->_wazuhService->getAgents($token, 0, count($dbAgentIds), null, null, $dbAgentIds);
             foreach ($data['agents'] as $a) {
-                if (($a['id'] ?? '') === '000') continue;
+                if (($a['id'] ?? '') === AgentStatus::Master->value) continue;
                 $stats['total']++;
                 $status = $a['status'] ?? 'unknown';
                 if (isset($stats[$status])) $stats[$status]++;

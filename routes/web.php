@@ -32,25 +32,29 @@ Route::middleware('auth')->group(function () {
     // Agent routes - available for both admin and customer
     Route::get('/agent', [AgentController::class, 'index'])->name('agent');
     Route::get('/agent/search', [AgentController::class, 'search'])->name('agent.search');
-    Route::get('/agent/{id}/detail', [AgentController::class, 'detail'])->name('agent.detail');
-    Route::get('/agent/{id}/security-events', [AgentController::class, 'securityEvents'])->name('agent.security-events');
-    Route::get('/agent/{id}/integrity-monitoring', [AgentController::class, 'integrityMonitoring'])->name('agent.integrity-monitoring');
-    Route::get('/agent/{id}/sca', [AgentController::class, 'sca'])->name('agent.sca');
-    Route::get('/agent/{id}/vulnerabilities', [AgentController::class, 'vulnerabilities'])->name('agent.vulnerabilities');
-    Route::get('/agent/{id}/mitre-attack', [AgentController::class, 'mitreAttack'])->name('agent.mitre-attack');
-    Route::get('/agent/{id}/security-events/alerts', [AgentController::class, 'getSeAlerts'])->name('agent.se.alerts');
-    Route::get('/agent/{id}/security-events/groups', [AgentController::class, 'getSeGroups'])->name('agent.se.groups');
-    Route::get('/agent/{id}/integrity-monitoring/events', [AgentController::class, 'getIntegrityEvents'])->name('agent.fim.events');
-    Route::get('/agent/{id}/security-events/chart-data', [AgentController::class, 'getSeChartData'])->name('agent.se.chart-data');
-    Route::get('/agent/{id}/integrity-monitoring/chart-data', [AgentController::class, 'getFimChartData'])->name('agent.fim.chart-data');
-    Route::get('/agent/{id}/sca/checks', [AgentController::class, 'getScaChecksJson'])->name('agent.sca.checks');
-    Route::get('/agent/{id}/mitre-attack/alerts', [AgentController::class, 'getMitreAlertsJson'])->name('agent.mitre.alerts');
-    Route::get('/agent/{id}/compliance', [AgentController::class, 'compliance'])->name('agent.compliance');
-    Route::get('/agent/{id}/inventory', [AgentController::class, 'inventoryData'])->name('agent.inventory');
-    Route::get('/agent/{id}/inventory/{type}', [AgentController::class, 'getInventoryJson'])->name('agent.inventory.data');
     Route::get('/agent/chart-data', [AgentController::class, 'getChartData'])->name('agent.chart-data');
-    Route::get('/agent/{id}/chart-data', [AgentController::class, 'getDetailChartData'])->name('agent.detail-chart-data');
     Route::post('/agent/sync', [AgentController::class, 'syncAgentsFromWazuh'])->name('agent.sync');
+
+    // Agent sub-page routes — access verified by VerifyAgentAccess middleware
+    Route::middleware('verify.agent')->group(function () {
+        Route::get('/agent/{id}/detail', [AgentController::class, 'detail'])->name('agent.detail');
+        Route::get('/agent/{id}/security-events', [AgentController::class, 'securityEvents'])->name('agent.security-events');
+        Route::get('/agent/{id}/integrity-monitoring', [AgentController::class, 'integrityMonitoring'])->name('agent.integrity-monitoring');
+        Route::get('/agent/{id}/sca', [AgentController::class, 'sca'])->name('agent.sca');
+        Route::get('/agent/{id}/vulnerabilities', [AgentController::class, 'vulnerabilities'])->name('agent.vulnerabilities');
+        Route::get('/agent/{id}/mitre-attack', [AgentController::class, 'mitreAttack'])->name('agent.mitre-attack');
+        Route::get('/agent/{id}/compliance', [AgentController::class, 'compliance'])->name('agent.compliance');
+        Route::get('/agent/{id}/inventory', [AgentController::class, 'inventoryData'])->name('agent.inventory');
+        Route::get('/agent/{id}/chart-data', [AgentController::class, 'getDetailChartData'])->name('agent.detail-chart-data');
+        Route::get('/agent/{id}/security-events/alerts', [AgentController::class, 'getSeAlerts'])->name('agent.se.alerts');
+        Route::get('/agent/{id}/security-events/groups', [AgentController::class, 'getSeGroups'])->name('agent.se.groups');
+        Route::get('/agent/{id}/security-events/chart-data', [AgentController::class, 'getSeChartData'])->name('agent.se.chart-data');
+        Route::get('/agent/{id}/integrity-monitoring/events', [AgentController::class, 'getIntegrityEvents'])->name('agent.fim.events');
+        Route::get('/agent/{id}/integrity-monitoring/chart-data', [AgentController::class, 'getFimChartData'])->name('agent.fim.chart-data');
+        Route::get('/agent/{id}/sca/checks', [AgentController::class, 'getScaChecksJson'])->name('agent.sca.checks');
+        Route::get('/agent/{id}/mitre-attack/alerts', [AgentController::class, 'getMitreAlertsJson'])->name('agent.mitre.alerts');
+        Route::get('/agent/{id}/inventory/{type}', [AgentController::class, 'getInventoryJson'])->name('agent.inventory.data');
+    });
 
     // Admin only routes
     Route::middleware('admin')->group(function () {

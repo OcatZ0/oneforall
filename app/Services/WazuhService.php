@@ -19,15 +19,20 @@ class WazuhService
         $this->_password = config('wazuh.password');
     }
 
+    private function http(): \Illuminate\Http\Client\PendingRequest
+    {
+        return Http::withoutVerifying()
+            ->connectTimeout(config('dashboard.http.connect_timeout'))
+            ->timeout(config('dashboard.http.timeout'));
+    }
+
     public function getToken(): ?string
     {
         $cached = Cache::get('wazuh_api_token');
         if ($cached) return $cached;
 
         try {
-            $response = Http::withoutVerifying()
-                ->connectTimeout(3)
-                ->timeout(3)
+            $response = $this->http()
                 ->withBasicAuth($this->_user, $this->_password)
                 ->post("{$this->_host}/security/user/authenticate");
 
@@ -37,7 +42,7 @@ class WazuhService
             }
 
             $token = $response->json('data.token');
-            if ($token) Cache::put('wazuh_api_token', $token, 800);
+            if ($token) Cache::put('wazuh_api_token', $token, config('dashboard.cache.token_ttl'));
             return $token;
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::warning('Wazuh API connection timeout: ' . $e->getMessage());
@@ -53,9 +58,7 @@ class WazuhService
         $empty = ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0];
 
         try {
-            $summary = Http::withoutVerifying()
-                ->connectTimeout(3)
-                ->timeout(3)
+            $summary = $this->http()
                 ->withToken($token)
                 ->get("{$this->_host}/agents/summary/status")
                 ->json('data.connection');
@@ -85,9 +88,7 @@ class WazuhService
                 $params['agents_list'] = implode(',', $agentIds);
             }
 
-            $response = Http::withoutVerifying()
-                ->connectTimeout(3)
-                ->timeout(3)
+            $response = $this->http()
                 ->withToken($token)
                 ->get("{$this->_host}/agents", $params);
 
@@ -108,9 +109,7 @@ class WazuhService
     public function getAgent(string $token, string $agentId): ?array
     {
         try {
-            $response = Http::withoutVerifying()
-                ->connectTimeout(3)
-                ->timeout(3)
+            $response = $this->http()
                 ->withToken($token)
                 ->get("{$this->_host}/agents", ['agents_list' => $agentId]);
 
@@ -128,8 +127,7 @@ class WazuhService
     public function getSCAPolicies(string $token, string $agentId): array
     {
         try {
-            $response = Http::withoutVerifying()
-                ->connectTimeout(3)->timeout(3)
+            $response = $this->http()
                 ->withToken($token)
                 ->get("{$this->_host}/sca/{$agentId}");
 
@@ -150,8 +148,7 @@ class WazuhService
                 $params['result'] = $result;
             }
 
-            $response = Http::withoutVerifying()
-                ->connectTimeout(3)->timeout(3)
+            $response = $this->http()
                 ->withToken($token)
                 ->get("{$this->_host}/sca/{$agentId}/checks/{$policyId}", $params);
 
@@ -174,8 +171,7 @@ class WazuhService
             $params = ['limit' => $limit, 'offset' => $offset];
             if ($severity) $params['severity'] = $severity;
 
-            $response = Http::withoutVerifying()
-                ->connectTimeout(3)->timeout(3)
+            $response = $this->http()
                 ->withToken($token)
                 ->get("{$this->_host}/vulnerability/{$agentId}", $params);
 
@@ -192,8 +188,7 @@ class WazuhService
     public function getVulnerabilitiesLastScan(string $token, string $agentId): ?array
     {
         try {
-            $response = Http::withoutVerifying()
-                ->connectTimeout(3)->timeout(3)
+            $response = $this->http()
                 ->withToken($token)
                 ->get("{$this->_host}/vulnerability/{$agentId}/last_scan");
 
@@ -213,9 +208,7 @@ class WazuhService
             $token = $this->getToken();
             if (!$token) return [];
 
-            $response = Http::withoutVerifying()
-                ->connectTimeout(3)
-                ->timeout(3)
+            $response = $this->http()
                 ->withToken($token)
                 ->get("{$this->_host}/agents", [
                     'limit'  => 500,
@@ -236,7 +229,7 @@ class WazuhService
     public function getInventoryHardware(string $token, string $agentId): ?array
     {
         try {
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)
+            $response = $this->http()
                 ->withToken($token)->get("{$this->_host}/syscollector/{$agentId}/hardware");
             if ($response->successful()) {
                 $items = $response->json('data.affected_items');
@@ -251,7 +244,7 @@ class WazuhService
     public function getInventoryOS(string $token, string $agentId): ?array
     {
         try {
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)
+            $response = $this->http()
                 ->withToken($token)->get("{$this->_host}/syscollector/{$agentId}/os");
             if ($response->successful()) {
                 $items = $response->json('data.affected_items');
@@ -299,7 +292,7 @@ class WazuhService
             $params = ['limit' => $limit, 'offset' => $offset];
             if ($search) $params['search'] = $search;
 
-            $response = Http::withoutVerifying()->connectTimeout(3)->timeout(3)
+            $response = $this->http()
                 ->withToken($token)->get("{$this->_host}/syscollector/{$agentId}/{$endpoint}", $params);
 
             if ($response->successful()) {
