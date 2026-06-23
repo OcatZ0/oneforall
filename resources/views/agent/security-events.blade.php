@@ -1,4 +1,4 @@
-@extends('layouts.wazuh')
+﻿@extends('layouts.wazuh')
 
 @section('title', 'Security Events - One For All')
 
@@ -37,17 +37,17 @@
     <ul class="nav flex-nowrap overflow-auto">
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.detail', $agent->agent_id) }}">
-          <span class="mdi mdi-home"></span> Detail
+          <span class="mdi mdi-home"></span> Details
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small active" href="{{ route('agent.security-events', $agent->agent_id) }}">
-          <span class="mdi mdi-format-list-bulleted"></span> Event Keamanan
+          <span class="mdi mdi-format-list-bulleted"></span> Security Events
         </a>
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.integrity-monitoring', $agent->agent_id) }}">
-          <span class="mdi mdi-shield"></span> Pemantauan Integritas
+          <span class="mdi mdi-shield"></span> Integrity Monitoring
         </a>
       </li>
       <li class="nav-item">
@@ -57,7 +57,7 @@
       </li>
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.vulnerabilities', $agent->agent_id) }}">
-          <span class="mdi mdi-bug"></span> Kerentanan
+          <span class="mdi mdi-bug"></span> Vulnerabilities
         </a>
       </li>
       <li class="nav-item">
@@ -67,7 +67,7 @@
       </li>
       <li class="nav-item dropdown">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <span class="mdi mdi-check-decagram"></span> Kepatuhan
+          <span class="mdi mdi-check-decagram"></span> Compliance
         </a>
         <ul class="dropdown-menu dropdown-menu-dark">
           <li><a class="dropdown-item" href="{{ route('agent.compliance', $agent->agent_id) }}?compliance_type=pci_dss">PCI DSS</a></li>
@@ -80,13 +80,13 @@
 
       <li class="nav-item">
         <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent.inventory', $agent->agent_id) }}">
-          <span class="mdi mdi-database"></span> Data Inventaris
+          <span class="mdi mdi-database"></span> Inventory Data
         </a>
       </li>
     </ul>
     <div class="ms-auto d-flex gap-2 flex-shrink-0 py-1">
-      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Kembali ke Daftar Agen">
-        <span class="mdi mdi-arrow-left"></span> Kembali
+      <a class="nav-link text-light px-3 py-2 d-flex align-items-center gap-1 small" href="{{ route('agent') }}" title="Back to Agents List">
+        <span class="mdi mdi-arrow-left"></span> Back
       </a>
     </div>
   </div>
