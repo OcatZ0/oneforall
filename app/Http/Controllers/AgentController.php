@@ -96,9 +96,11 @@ class AgentController extends Controller
     public function getDetailChartData($id)
     {
         try {
-            $agentId = (string) $id;
+            $agentId        = (string) $id;
             $timeRange      = request('time_range', '24h');
-            $complianceType = request('compliance_type', 'gdpr');
+            $complianceType = in_array(request('compliance_type'), config('dashboard.compliance_types'))
+                ? request('compliance_type')
+                : 'gdpr';
 
             return ApiResponse::success([
                 'events_evolution'            => $this->_openSearch->getEventsCountEvolution($agentId, $timeRange),
