@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\ApiResponse;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\WazuhAgent;
-use App\Models\DashboardLayout;
 use App\Models\User;
 use App\Services\WazuhService;
 use Illuminate\Http\Request;
@@ -13,9 +15,9 @@ class UserController extends Controller
 {
     private WazuhService $_wazuhService;
 
-    public function __construct()
+    public function __construct(WazuhService $_wazuhService)
     {
-        $this->_wazuhService = new WazuhService();
+        $this->_wazuhService = $_wazuhService;
     }
 
     public function index(Request $request)
@@ -34,10 +36,7 @@ class UserController extends Controller
 
         $query->orderBy('created_at', 'desc');
 
-        $perPage = $request->input('per_page', 10);
-        if (!in_array($perPage, [10, 25, 50])) {
-            $perPage = 10;
-        }
+        ['perPage' => $perPage] = $this->paginateRequest();
 
         $users = $query->paginate($perPage);
 
@@ -46,9 +45,7 @@ class UserController extends Controller
             'admin'    => User::where('role', 'admin')->count(),
             'customer' => User::where('role', 'customer')->count(),
         ];
-        $savedLayout = DashboardLayout::where('user_id', auth()->user()->id)
-                                      ->where('page', 'user')
-                                      ->value('layout');
+        $savedLayout = $this->getLayout('user');
 
         return view('user.index', compact('users', 'userStats', 'savedLayout'));
     }
@@ -59,16 +56,9 @@ class UserController extends Controller
         return view('user.create', compact('availableAgents'));
     }
 
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        $validated = $request->validate([
-            'username' => 'required|string|min:3|max:50|unique:user,username',
-            'email'    => 'required|email|unique:user,email',
-            'password' => 'required|string|min:6',
-            'role'     => 'required|in:admin,customer',
-            'agents'   => 'array',
-            'agents.*' => 'string',
-        ]);
+        $validated = $request->validated();
 
         if (!empty($validated['agents'])) {
             $assignmentError = $this->validateAgentAssignment($validated['agents']);
@@ -106,20 +96,14 @@ class UserController extends Controller
         return view('user.edit-user', compact('user', 'availableAgents', 'userAgentIds'));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateUserRequest $request, $id)
     {
         $user = User::find($id);
         if (!$user) {
             return redirect()->route('user')->with('error', 'User tidak ditemukan.');
         }
 
-        $validated = $request->validate([
-            'username' => "required|string|min:3|max:50|unique:user,username,{$id},id",
-            'email'    => "required|email|unique:user,email,{$id},id",
-            'role'     => 'required|in:admin,customer',
-            'agents'   => 'array',
-            'agents.*' => 'string',
-        ]);
+        $validated = $request->validated();
 
         if (!empty($validated['agents'])) {
             $assignmentError = $this->validateAgentAssignment($validated['agents'], $user->id);
@@ -149,17 +133,17 @@ class UserController extends Controller
     {
         $user = User::find($id);
         if (!$user) {
-            return response()->json(['success' => false, 'message' => 'User tidak ditemukan.'], 404);
+            return ApiResponse::error('User tidak ditemukan.', 404);
         }
 
         if ($user->id === auth()->user()->id) {
-            return response()->json(['success' => false, 'message' => 'Tidak dapat menghapus akun sendiri.'], 403);
+            return ApiResponse::error('Tidak dapat menghapus akun sendiri.', 403);
         }
 
         $user->agents()->update(['user_id' => null]);
         $user->delete();
 
-        return response()->json(['success' => true, 'message' => "User '{$user->username}' berhasil dihapus."]);
+        return ApiResponse::success([], "User '{$user->username}' berhasil dihapus.");
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 
@@ -11,21 +10,16 @@ class OpenSearchService
     private $_opensearchHost;
     private $_opensearchUser;
     private $_opensearchPassword;
-    private $_wazuhHost;
-    private $_wazuhUser;
-    private $_wazuhPassword;
+    private WazuhService $_wazuhService;
     private $_requestCache = [];
     private const CACHE_TTL = 60;
 
-    public function __construct()
+    public function __construct(WazuhService $_wazuhService)
     {
         $this->_opensearchHost     = config('opensearch.host');
         $this->_opensearchUser     = config('opensearch.user');
         $this->_opensearchPassword = config('opensearch.password');
-
-        $this->_wazuhHost     = config('wazuh.host');
-        $this->_wazuhUser     = config('wazuh.user');
-        $this->_wazuhPassword = config('wazuh.password');
+        $this->_wazuhService       = $_wazuhService;
     }
 
     public function getAlertTrendLast7Days($agentIds = null, $isAdmin = true)
@@ -280,20 +274,12 @@ class OpenSearchService
 
             $agentIds = array_map('strval', (array) $agentIds);
 
-            $token = Cache::get('wazuh_api_token');
-            if (!$token) {
-                $tokenResponse = $this->http()
-                    ->withBasicAuth($this->_wazuhUser, $this->_wazuhPassword)
-                    ->post("{$this->_wazuhHost}/security/user/authenticate");
-                if (!$tokenResponse->successful()) return [];
-                $token = $tokenResponse->json('data.token');
-                if ($token) Cache::put('wazuh_api_token', $token, config('dashboard.cache.token_ttl'));
-            }
+            $token = $this->_wazuhService->getToken();
             if (!$token) return [];
 
             $agentsResponse = $this->http()
                 ->withToken($token)
-                ->get("{$this->_wazuhHost}/agents", [
+                ->get(config('wazuh.host') . '/agents', [
                     'limit'       => 500,
                     'select'      => 'id,name,os.name',
                     'agents_list' => implode(',', $agentIds),

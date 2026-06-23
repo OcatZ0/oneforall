@@ -28,13 +28,6 @@ class AgentController extends Controller
         return in_array($timeRange, config('dashboard.time_ranges')) ? $timeRange : '24h';
     }
 
-    private function getLayout(string $page): ?string
-    {
-        return \App\Models\DashboardLayout::where('user_id', auth()->id())
-                                           ->where('page', $page)
-                                           ->value('layout');
-    }
-
     // ── Public actions ────────────────────────────────────────────────────────
 
     public function index()
@@ -366,12 +359,9 @@ class AgentController extends Controller
                 ? $this->_wazuhService->getVulnerabilities($token, $id, $perPage, $offset, $severity)
                 : ['data' => [], 'total' => 0];
 
-            $severityCounts = ['Critical' => 0, 'High' => 0, 'Medium' => 0, 'Low' => 0];
-            foreach (['Critical', 'High', 'Medium', 'Low'] as $sev) {
-                $severityCounts[$sev] = $token
-                    ? $this->_wazuhService->getVulnerabilities($token, $id, 1, 0, $sev)['total']
-                    : 0;
-            }
+            $severityCounts = $token
+                ? $this->_wazuhService->getVulnerabilityCounts($token, $id)
+                : ['Critical' => 0, 'High' => 0, 'Medium' => 0, 'Low' => 0];
 
             $summaryBatch = $token
                 ? $this->_wazuhService->getVulnerabilities($token, $id, 100, 0, null)['data']
@@ -574,66 +564,6 @@ class AgentController extends Controller
         }
     }
 
-    // ── Static view helpers ───────────────────────────────────────────────────
-
-    public static function getOSIcon(?string $os): string
-    {
-        if (!$os) return 'mdi-help-circle-outline';
-        $os = strtolower($os);
-        if (str_contains($os, 'windows')) return 'mdi-microsoft-windows';
-        if (str_contains($os, 'ubuntu') || str_contains($os, 'debian') || str_contains($os, 'linux')
-            || str_contains($os, 'centos') || str_contains($os, 'rhel') || str_contains($os, 'fedora')) {
-            return 'mdi-linux';
-        }
-        if (str_contains($os, 'mac') || str_contains($os, 'darwin')) return 'mdi-apple';
-        return 'mdi-help-circle-outline';
-    }
-
-    public static function getStatusBadgeColor(?string $status): string
-    {
-        return match ($status) {
-            'active'          => 'success',
-            'disconnected'    => 'danger',
-            'pending'         => 'warning',
-            'never_connected' => 'secondary',
-            default           => 'secondary',
-        };
-    }
-
-    public static function formatStatus(?string $status): string
-    {
-        return match ($status) {
-            'active'          => 'Aktif',
-            'disconnected'    => 'Terputus',
-            'pending'         => 'Menunggu',
-            'never_connected' => 'Tidak Pernah Terhubung',
-            default           => ucfirst($status ?? ''),
-        };
-    }
-
-    // ── Private helpers ───────────────────────────────────────────────────────
-
-    private function userHasAccessToAgent(string $agentId): bool
-    {
-        $user    = auth()->user();
-        $agentId = (string) $agentId;
-
-        $dbAgent = WazuhAgent::where('agent_id', $agentId)->first();
-        if (!$dbAgent) {
-            Log::warning('Agent not found in database', ['agent_id' => $agentId, 'user_id' => $user->id]);
-            return false;
-        }
-
-        if ($user->role === 'admin') return true;
-
-        $hasAccess = $dbAgent->user_id === $user->id;
-        if (!$hasAccess) {
-            Log::warning('Customer does not have access to agent', ['agent_id' => $agentId, 'user_id' => $user->id]);
-        }
-
-        return $hasAccess;
-    }
-
     private function enrichAgentData(object $agent): object
     {
         $agentId = $agent->agent_id ?? null;
@@ -758,23 +688,6 @@ class AgentController extends Controller
         if (!$wa) return null;
 
         return $this->enrichAgentData($this->mapWazuhAgent($wa));
-    }
-
-    private function resolveAgentView(string $id, string $view)
-    {
-        try {
-            if (!$this->userHasAccessToAgent($id)) {
-                return view($view, ['agent' => null, 'error' => 'You do not have permission to view this agent']);
-            }
-            $agent = $this->resolveAgent($id);
-            if (!$agent) {
-                return view($view, ['agent' => null, 'error' => 'Agent not found or API unavailable']);
-            }
-            return view($view, compact('agent'));
-        } catch (\Exception $e) {
-            Log::error("$view error: " . $e->getMessage());
-            return view($view, ['agent' => null, 'error' => 'Error loading page']);
-        }
     }
 
     private function buildDetailData(string $agentId): array

@@ -185,6 +185,34 @@ class WazuhService
         return ['data' => [], 'total' => 0];
     }
 
+    public function getVulnerabilityCounts(string $token, string $agentId): array
+    {
+        $severities = ['Critical', 'High', 'Medium', 'Low'];
+
+        try {
+            $responses = Http::pool(fn ($pool) => array_map(
+                fn ($sev) => $pool->as($sev)
+                    ->withoutVerifying()
+                    ->connectTimeout(config('dashboard.http.connect_timeout'))
+                    ->timeout(config('dashboard.http.timeout'))
+                    ->withToken($token)
+                    ->get("{$this->_host}/vulnerability/{$agentId}", ['severity' => $sev, 'limit' => 1]),
+                $severities
+            ));
+
+            $counts = [];
+            foreach ($severities as $sev) {
+                $counts[$sev] = ($responses[$sev] instanceof \Illuminate\Http\Client\Response && $responses[$sev]->successful())
+                    ? ($responses[$sev]->json('data.total_affected_items') ?? 0)
+                    : 0;
+            }
+            return $counts;
+        } catch (\Exception $e) {
+            Log::warning('Failed to fetch vulnerability counts: ' . $e->getMessage());
+            return array_fill_keys($severities, 0);
+        }
+    }
+
     public function getVulnerabilitiesLastScan(string $token, string $agentId): ?array
     {
         try {

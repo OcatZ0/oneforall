@@ -173,7 +173,7 @@
                   <td>{{ $agent->name }}</td>
                   <td>{{ $agent->ip }}</td>
                   <td>
-                    <i class="mdi {{ \App\Http\Controllers\AgentController::getOSIcon($agent->os) }} me-1"></i>
+                    <i class="mdi {{ \App\Helpers\AgentHelper::getOSIcon($agent->os) }} me-1"></i>
                     <small>{{ $agent->os }}</small>
                   </td>
                   <td><small class="text-muted">{{ $agent->version }}</small></td>
@@ -186,8 +186,8 @@
                   </td>
                   <td><small class="text-muted">{{ $agent->cluster_node }}</small></td>
                   <td>
-                    <span class="badge bg-{{ \App\Http\Controllers\AgentController::getStatusBadgeColor($agent->status) }}">
-                      {{ \App\Http\Controllers\AgentController::formatStatus($agent->status) }}
+                    <span class="badge bg-{{ \App\Helpers\AgentHelper::getStatusBadgeColor($agent->status) }}">
+                      {{ \App\Helpers\AgentHelper::formatStatus($agent->status) }}
                     </span>
                   </td>
                 </tr>

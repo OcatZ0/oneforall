@@ -29,4 +29,11 @@ abstract class Controller
 
         return $query->pluck('agent_id')->map(fn($id) => (string) $id)->toArray();
     }
+
+    protected function getLayout(string $page): ?string
+    {
+        return \App\Models\DashboardLayout::where('user_id', auth()->id())
+                                           ->where('page', $page)
+                                           ->value('layout');
+    }
 }
