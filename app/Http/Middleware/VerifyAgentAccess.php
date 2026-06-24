@@ -21,8 +21,7 @@ class VerifyAgentAccess
 
         $dbAgent = WazuhAgent::where('agent_id', $agentId)->first();
         if (!$dbAgent) {
-            Log::warning('Agent not found in database', ['agent_id' => $agentId, 'user_id' => $user->id]);
-            abort(403, 'You do not have permission to view this agent');
+            abort(404, 'Agent not found');
         }
 
         if ($user->role === 'admin') {
