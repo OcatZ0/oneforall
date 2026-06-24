@@ -12,7 +12,7 @@ class WazuhAgent extends Model
     /**
      * The table associated with the model.
      */
-    protected $table = 'agent';
+    protected $table = 'wazuh_agent';
 
     /**
      * The primary key for the model.
