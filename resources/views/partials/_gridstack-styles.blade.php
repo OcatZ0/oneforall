@@ -105,8 +105,51 @@
   }
   .gs-card-hidden .gs-hide-btn:hover { background: #27ae60; color: #fff; }
 
-  /* Hide edit controls on mobile */
+  /* Drag handle */
+  .gs-drag-handle {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    cursor: grab;
+    align-items: center;
+    justify-content: center;
+    z-index: 99;
+    color: rgba(75, 73, 172, 0.55);
+    font-size: 20px;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    background: rgba(75, 73, 172, 0.05);
+    border-radius: 4px 4px 0 0;
+    transition: background .15s, color .15s;
+  }
+  .gs-drag-handle:hover { color: rgba(75, 73, 172, 0.9); background: rgba(75, 73, 172, 0.1); }
+  .gs-drag-handle:active { cursor: grabbing; }
+  body.gs-edit-mode .gs-drag-handle { display: flex; }
+
+  /* Responsive edit controls — visible on all screen sizes */
   @media (max-width: 767px) {
-    #gs-fab, #gs-edit-toolbar { display: none !important; }
+    #gs-edit-toolbar {
+      left: 12px;
+      right: 12px;
+      bottom: 80px;
+      transform: none;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px 12px;
+    }
+    #gs-fab { bottom: 16px; right: 16px; }
+    #gs-fab-main { width: 44px; height: 44px; font-size: 18px; }
+    .gs-tb-btn { padding: 6px 14px; font-size: 12px; }
   }
 </style>
+<script>
+  document.addEventListener('touchstart', function (e) {
+    if (e.target.closest('.gs-drag-handle') && document.body.classList.contains('gs-edit-mode')) {
+      if (navigator.vibrate) navigator.vibrate(40);
+    }
+  }, { passive: true });
+</script>

@@ -1,4 +1,4 @@
-﻿@extends('layouts.wazuh')
+@extends('layouts.wazuh')
 
 @section('title', 'Agent Detail - One For All')
 
@@ -597,6 +597,7 @@ document.addEventListener('DOMContentLoaded', function () {
     float: false,
     staticGrid: true,
     resizable: { handles: 'se' },
+    draggable: { handle: '.gs-drag-handle' },
     columnOpts: {
       breakpointForWindow: true,
       breakpoints: [{ w: 768, c: 1 }],
@@ -636,6 +637,13 @@ document.addEventListener('DOMContentLoaded', function () {
       btn.innerHTML  = `<i class="mdi mdi-${isHidden ? 'eye' : 'eye-off'}"></i>`;
       btn.addEventListener('click', e => { e.stopPropagation(); setCardHidden(id, !hiddenCards.has(id)); });
       item.appendChild(btn);
+      if (!item.querySelector('.gs-drag-handle')) {
+        const dragHandle = document.createElement('div');
+        dragHandle.className = 'gs-drag-handle';
+        dragHandle.title = 'Seret untuk memindahkan';
+        dragHandle.innerHTML = '<i class="mdi mdi-drag"></i>';
+        item.appendChild(dragHandle);
+      }
     });
   }
 

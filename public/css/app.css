@@ -566,3 +566,8 @@ select.form-control option,
   font-size: 16px;
   padding:   14px 28px;
 }
+
+#profileDropdown:hover,
+#profileDropdown:focus {
+  color: var(--primary) !important;
+}
