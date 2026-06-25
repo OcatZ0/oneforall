@@ -27,13 +27,6 @@ class DatabaseSeeder extends Seeder
             'role' =>'customer',
         ]);
 
-        $customer2 = User::create([
-            'username' => 'janedoe',
-            'email' => 'jane@example.com',
-            'password' => bcrypt('janedoe'),
-            'role' =>'customer',
-        ]);
-
         // Add more customers for pagination testing
         User::create([
             'username' => 'michael',
@@ -64,37 +57,37 @@ class DatabaseSeeder extends Seeder
         ]);
 
         User::create([
-            'username' => 'david',
-            'email' => 'david@example.com',
-            'password' => bcrypt('david'),
+            'username' => 'anisabet',
+            'email' => 'anisabet@example.com',
+            'password' => bcrypt('anisabet'),
             'role' =>'customer',
         ]);
 
         User::create([
-            'username' => 'lisa',
-            'email' => 'lisa@example.com',
-            'password' => bcrypt('lisa'),
+            'username' => 'fauzii',
+            'email' => 'fauzii@example.com',
+            'password' => bcrypt('fauzii'),
             'role' =>'customer',
         ]);
 
         User::create([
-            'username' => 'james',
-            'email' => 'james@example.com',
-            'password' => bcrypt('james'),
+            'username' => 'wahyu',
+            'email' => 'wahyu@example.com',
+            'password' => bcrypt('wahyu'),
             'role' =>'customer',
         ]);
 
         User::create([
-            'username' => 'olivia',
-            'email' => 'olivia@example.com',
-            'password' => bcrypt('olivia'),
-            'role' =>'customer',
+            'username' => 'astreed',
+            'email' => 'astreed@example.com',
+            'password' => bcrypt('astreed'),
+            'role' =>'admin',
         ]);
 
         User::create([
-            'username' => 'william',
-            'email' => 'william@example.com',
-            'password' => bcrypt('william'),
+            'username' => 'ariffin',
+            'email' => 'ariffin@example.com',
+            'password' => bcrypt('ariffin'),
             'role' =>'customer',
         ]);
     }
