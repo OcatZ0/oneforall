@@ -117,7 +117,7 @@ class UserController extends Controller
         if ($validated['role'] !== 'admin' && $user->role === 'admin') {
             $adminCount = User::where('role', 'admin')->count();
             if ($adminCount <= 1) {
-                return redirect()->back()->withInput()->with('error', 'Cannot demote the last admin account.');
+                return redirect()->back()->withInput()->with('error', 'Tidak bisa menghapus akun admin terakhir.');
             }
         }
 
@@ -150,7 +150,7 @@ class UserController extends Controller
         }
 
         if ($user->role === 'admin' && User::where('role', 'admin')->count() <= 1) {
-            return ApiResponse::error('Cannot delete the last admin account.', 403);
+            return ApiResponse::error('Tidak bisa menghapus akun admin terakhir.', 403);
         }
 
         $user->agents()->update(['user_id' => null]);
