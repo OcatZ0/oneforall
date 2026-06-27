@@ -569,5 +569,5 @@ select.form-control option,
 
 #profileDropdown:hover,
 #profileDropdown:focus {
-  color: var(--primary) !important;
+  color: #ffffff !important;
 }
