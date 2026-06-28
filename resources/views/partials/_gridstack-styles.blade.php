@@ -137,7 +137,6 @@
       background-image: linear-gradient(rgba(75,73,172,.04) 1px, transparent 1px);
       background-size: 100% 60px;
     }
-    body.gs-edit-mode .gs-drag-handle { display: none; }
     #gs-edit-toolbar {
       left: 12px;
       right: 12px;
