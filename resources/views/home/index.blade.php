@@ -425,7 +425,18 @@
   function applyLoadedLayout() {
     if (!savedLayout || Array.isArray(savedLayout) || savedLayout.columns !== currentCols) return;
     const items = savedLayout.items ?? [];
-    grid.load(items.map(i => ({ id: i.id, x: i.x, y: i.y, w: i.w, h: i.h })), false);
+    if (currentCols === 1) {
+      // grid.load() corrupts internal responsive state in 1-col mode.
+      // Use direct grid.update() per item, sorted by saved y to preserve order.
+      grid.batchUpdate();
+      [...items].sort((a, b) => a.y - b.y).forEach(item => {
+        const el = document.querySelector(`.grid-stack-item[gs-id="${item.id}"]`);
+        if (el && el.gridstackNode) grid.update(el, { x: 0, y: item.y, w: 1, h: item.h });
+      });
+      grid.batchUpdate(false);
+    } else {
+      grid.load(items.map(i => ({ id: i.id, x: i.x, y: i.y, w: i.w, h: i.h })), false);
+    }
     items.filter(i => i.hidden).forEach(i => {
       hiddenCards.add(i.id);
       hiddenPositions[i.id] = { x: i.x, y: i.y, w: i.w, h: i.h };
@@ -568,9 +579,27 @@
       setTimeout(() => { exitEdit(); location.reload(); }, 2500);
       return;
     }
-    const items = grid.save(false);
+    const cols = grid.getColumn();
+    let items;
+    if (cols === 1) {
+      // grid.save() returns pre-responsive 12-col node values in responsive mode.
+      // Read actual visual order via rendered bounding rect instead.
+      let yPos = 0;
+      items = [...document.querySelectorAll('.grid-stack-item')]
+        .filter(el => el.gridstackNode)
+        .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)
+        .map(el => {
+          const id = el.getAttribute('gs-id');
+          const h  = el.gridstackNode.h || parseInt(el.getAttribute('gs-h') || '4');
+          const item = { id, x: 0, y: yPos, w: 1, h };
+          yPos += h;
+          return item;
+        });
+    } else {
+      items = grid.save(false);
+    }
     items.forEach(i => { if (hiddenCards.has(i.id)) i.hidden = true; });
-    const layout = { columns: grid.getColumn(), items };
+    const layout = { columns: cols, items };
     fetch('{{ route("dashboard.layout") }}', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
