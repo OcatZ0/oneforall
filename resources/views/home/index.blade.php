@@ -369,7 +369,7 @@
     draggable: { handle: '.gs-drag-handle' },
     columnOpts: {
       breakpointForWindow: true,
-      breakpoints: [{ w: 767, c: 1 }],
+      breakpoints: [{ w: 768, c: 1 }],
     },
   });
 
@@ -420,7 +420,7 @@
   const savedLayout = @json($savedLayout ?? null);
   // Use window.innerWidth (synchronous) — grid.getColumn() returns 12 on mobile
   // immediately after init because GridStack's ResizeObserver fires asynchronously
-  const currentCols = window.innerWidth < 768 ? 1 : 12;
+  const currentCols = window.innerWidth <= 768 ? 1 : 12;
 
   function applyLoadedLayout() {
     if (!savedLayout || Array.isArray(savedLayout) || savedLayout.columns !== currentCols) return;
