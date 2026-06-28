@@ -418,9 +418,15 @@
 
   // ── Load saved layout ──────────────────────────────────────────────────────
   const savedLayout = @json($savedLayout ?? null);
-  if (savedLayout && Array.isArray(savedLayout)) {
-    grid.load(savedLayout.map(i => ({ id: i.id, x: i.x, y: i.y, w: i.w, h: i.h })), false);
-    savedLayout.filter(i => i.hidden).forEach(i => {
+  // Use window.innerWidth (synchronous) — grid.getColumn() returns 12 on mobile
+  // immediately after init because GridStack's ResizeObserver fires asynchronously
+  const currentCols = window.innerWidth < 768 ? 1 : 12;
+
+  function applyLoadedLayout() {
+    if (!savedLayout || Array.isArray(savedLayout) || savedLayout.columns !== currentCols) return;
+    const items = savedLayout.items ?? [];
+    grid.load(items.map(i => ({ id: i.id, x: i.x, y: i.y, w: i.w, h: i.h })), false);
+    items.filter(i => i.hidden).forEach(i => {
       hiddenCards.add(i.id);
       hiddenPositions[i.id] = { x: i.x, y: i.y, w: i.w, h: i.h };
       const el = document.querySelector(`.grid-stack-item[gs-id="${i.id}"]`);
@@ -429,6 +435,10 @@
       el.style.display = 'none';
     });
   }
+
+  // Defer to next frame: ResizeObserver fires before rAF per browser spec,
+  // so GridStack's 1-col responsive switch is guaranteed to happen first
+  requestAnimationFrame(applyLoadedLayout);
 
   // Chart references for resize
   const charts = {};
@@ -501,13 +511,15 @@
   });
 
   // ── Edit mode ──────────────────────────────────────────────────────────────
-  let editMode  = false;
+  let editMode      = false;
+  let editStartCols = null;
   const fabMain = document.getElementById('gs-fab-main');
   const fabIcon = document.getElementById('gs-fab-icon');
   const toolbar = document.getElementById('gs-edit-toolbar');
 
   function enterEdit() {
-    editMode = true;
+    editMode      = true;
+    editStartCols = grid.getColumn();
     grid.setStatic(false);
     grid.enableMove(true);
     grid.enableResize(true);
@@ -551,8 +563,14 @@
   }
 
   document.getElementById('gs-save').addEventListener('click', () => {
-    const layout = grid.save(false);
-    layout.forEach(i => { if (hiddenCards.has(i.id)) i.hidden = true; });
+    if (grid.getColumn() !== editStartCols) {
+      gsShowErrorToast('Ukuran layar berubah saat edit. Halaman akan dimuat ulang.');
+      setTimeout(() => { exitEdit(); location.reload(); }, 2500);
+      return;
+    }
+    const items = grid.save(false);
+    items.forEach(i => { if (hiddenCards.has(i.id)) i.hidden = true; });
+    const layout = { columns: grid.getColumn(), items };
     fetch('{{ route("dashboard.layout") }}', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },

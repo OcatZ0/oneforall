@@ -36,9 +36,20 @@
   function gsShowSavedToast() {
     const t = document.getElementById('gs-saved-toast');
     if (!t) return;
+    t.style.background = '#27ae60';
+    t.innerHTML = '<span class="mdi mdi-check-circle"></span> Tata letak disimpan';
     t.style.display = 'flex';
     clearTimeout(t._hideTimer);
     t._hideTimer = setTimeout(() => { t.style.display = 'none'; }, 2000);
+  }
+  function gsShowErrorToast(msg) {
+    const t = document.getElementById('gs-saved-toast');
+    if (!t) return;
+    t.style.background = '#e74c3c';
+    t.innerHTML = '<span class="mdi mdi-alert-circle"></span> ' + msg;
+    t.style.display = 'flex';
+    clearTimeout(t._hideTimer);
+    t._hideTimer = setTimeout(() => { t.style.display = 'none'; }, 3000);
   }
   </script>
   @include('partials._scripts')
