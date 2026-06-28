@@ -508,6 +508,8 @@
   function enterEdit() {
     editMode = true;
     grid.setStatic(false);
+    grid.enableMove(true);
+    grid.enableResize(true);
     hiddenCards.forEach(id => {
       const el  = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
       if (!el) return;
@@ -529,6 +531,8 @@
 
   function exitEdit() {
     editMode = false;
+    grid.enableMove(false);
+    grid.enableResize(false);
     hiddenCards.forEach(id => {
       const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
       if (!el) return;
@@ -571,6 +575,18 @@
   document.getElementById('gs-cancel').addEventListener('click', () => {
     exitEdit();
     location.reload();
+  });
+
+  // Re-apply move/resize after GridStack's responsive column change resets static state
+  let _resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(() => {
+      if (editMode) {
+        grid.enableMove(true);
+        grid.enableResize(true);
+      }
+    }, 150);
   });
 
   fabMain.addEventListener('click', () => editMode ? exitEdit() : enterEdit());

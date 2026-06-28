@@ -132,6 +132,10 @@
 
   /* Responsive edit controls — visible on all screen sizes */
   @media (max-width: 767px) {
+    body.gs-edit-mode .grid-stack {
+      background-image: linear-gradient(rgba(75,73,172,.04) 1px, transparent 1px);
+      background-size: 100% 60px;
+    }
     #gs-edit-toolbar {
       left: 12px;
       right: 12px;
