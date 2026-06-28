@@ -105,28 +105,29 @@
   }
   .gs-card-hidden .gs-hide-btn:hover { background: #27ae60; color: #fff; }
 
-  /* Drag handle */
+  /* Drag handle — small centered pill at card top */
   .gs-drag-handle {
     display: none;
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 30px;
-    cursor: grab;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 44px;
+    height: 20px;
+    border-radius: 10px;
+    background: rgba(75, 73, 172, 0.18);
     align-items: center;
     justify-content: center;
-    z-index: 99;
-    color: rgba(75, 73, 172, 0.55);
-    font-size: 20px;
+    z-index: 100;
+    cursor: grab;
+    color: rgba(75, 73, 172, 0.75);
+    font-size: 13px;
     touch-action: none;
     -webkit-user-select: none;
     user-select: none;
-    background: rgba(75, 73, 172, 0.05);
-    border-radius: 4px 4px 0 0;
     transition: background .15s, color .15s;
   }
-  .gs-drag-handle:hover { color: rgba(75, 73, 172, 0.9); background: rgba(75, 73, 172, 0.1); }
+  .gs-drag-handle:hover { background: rgba(75, 73, 172, 0.32); color: rgba(75, 73, 172, 1); }
   .gs-drag-handle:active { cursor: grabbing; }
   body.gs-edit-mode .gs-drag-handle { display: flex; }
 
