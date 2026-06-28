@@ -44,11 +44,12 @@ class DashboardController extends Controller
             $topRules       = $this->_openSearch->getTopTriggeredRules(5, $accessibleAgentIds);
             $topAgents      = $this->_openSearch->getTopAgentsByAlerts(5, $accessibleAgentIds);
             $customerStats  = $isAdmin ? $this->getCustomerStats() : null;
-            $savedLayout    = DashboardLayout::where('user_id', $userId)->where('page', 'home')->value('layout');
+            $savedLayout       = DashboardLayout::where('user_id', $userId)->where('page', 'home')->value('layout');
+            $savedLayoutMobile = DashboardLayout::where('user_id', $userId)->where('page', 'home-mobile')->value('layout');
 
             return view('home.index', compact(
                 'agentStats', 'alertTrend', 'alertSeverity', 'totalAlerts',
-                'osDistribution', 'topRules', 'topAgents', 'customerStats', 'savedLayout'
+                'osDistribution', 'topRules', 'topAgents', 'customerStats', 'savedLayout', 'savedLayoutMobile'
             ));
         } catch (\Exception $e) {
             Log::error('Dashboard error: ' . $e->getMessage());

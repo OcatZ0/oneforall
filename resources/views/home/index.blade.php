@@ -417,10 +417,12 @@
   }
 
   // ── Load saved layout ──────────────────────────────────────────────────────
-  const savedLayout = @json($savedLayout ?? null);
-  // Use window.innerWidth (synchronous) — grid.getColumn() returns 12 on mobile
-  // immediately after init because GridStack's ResizeObserver fires asynchronously
-  const currentCols = window.innerWidth <= 768 ? 1 : 12;
+  const isMobileLayout  = window.innerWidth <= 768;
+  const currentCols     = isMobileLayout ? 1 : 12;
+  // Separate DB rows for mobile/desktop so saves don't overwrite each other
+  const savedLayout = isMobileLayout
+    ? @json($savedLayoutMobile ?? null)
+    : @json($savedLayout ?? null);
 
   function applyLoadedLayout() {
     if (!savedLayout || Array.isArray(savedLayout) || savedLayout.columns !== currentCols) return;
@@ -603,7 +605,7 @@
     fetch('{{ route("dashboard.layout") }}', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-      body: JSON.stringify({ layout, page: 'home' })
+      body: JSON.stringify({ layout, page: isMobileLayout ? 'home-mobile' : 'home' })
     })
     .then(r => r.json())
     .then(d => { if (d.success) { exitEdit(); gsShowSavedToast(); } });
