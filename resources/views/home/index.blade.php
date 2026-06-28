@@ -417,17 +417,16 @@
   }
 
   // ── Load saved layout ──────────────────────────────────────────────────────
-  const isMobileLayout  = window.innerWidth <= 768;
-  const currentCols     = isMobileLayout ? 1 : 12;
+  const isMobileLayout = window.innerWidth <= 768;
   // Separate DB rows for mobile/desktop so saves don't overwrite each other
   const savedLayout = isMobileLayout
     ? @json($savedLayoutMobile ?? null)
     : @json($savedLayout ?? null);
 
   function applyLoadedLayout() {
-    if (!savedLayout || Array.isArray(savedLayout) || savedLayout.columns !== currentCols) return;
+    if (!savedLayout || Array.isArray(savedLayout) || !savedLayout.items) return;
     const items = savedLayout.items ?? [];
-    if (currentCols === 1) {
+    if (isMobileLayout) {
       // grid.load() corrupts internal responsive state in 1-col mode.
       // Use direct grid.update() per item, sorted by saved y to preserve order.
       grid.batchUpdate();
@@ -601,7 +600,7 @@
       items = grid.save(false);
     }
     items.forEach(i => { if (hiddenCards.has(i.id)) i.hidden = true; });
-    const layout = { columns: cols, items };
+    const layout = { items };
     fetch('{{ route("dashboard.layout") }}', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
