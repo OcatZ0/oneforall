@@ -369,7 +369,7 @@
     draggable: { handle: '.gs-drag-handle' },
     columnOpts: {
       breakpointForWindow: true,
-      breakpoints: [{ w: 768, c: 1 }],
+      breakpoints: [{ w: 767, c: 1 }],
     },
   });
 
