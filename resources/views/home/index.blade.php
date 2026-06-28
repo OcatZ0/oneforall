@@ -418,37 +418,31 @@
 
   // ── Load saved layout ──────────────────────────────────────────────────────
   const savedLayout = @json($savedLayout ?? null);
-  // Use window.innerWidth (synchronous) — grid.getColumn() returns 12 on mobile
-  // immediately after init because GridStack's ResizeObserver fires asynchronously
-  const currentCols = window.innerWidth < 768 ? 1 : 12;
 
   function applyLoadedLayout() {
-    if (!savedLayout || Array.isArray(savedLayout) || savedLayout.columns !== currentCols) return;
-    const items = savedLayout.items ?? [];
-    if (currentCols === 1) {
-      // grid.load() corrupts internal responsive state in 1-col mode.
-      // Use direct grid.update() per item, sorted by saved y to preserve order.
-      grid.batchUpdate();
-      [...items].sort((a, b) => a.y - b.y).forEach(item => {
-        const el = document.querySelector(`.grid-stack-item[gs-id="${item.id}"]`);
-        if (el && el.gridstackNode) grid.update(el, { x: 0, y: item.y, w: 1, h: item.h });
-      });
-      grid.batchUpdate(false);
-    } else {
+    if (!savedLayout || typeof savedLayout !== 'object' || Array.isArray(savedLayout)) return;
+    const isMobile = window.innerWidth < 768;
+    const items    = savedLayout.items ?? [];
+    // Support both new {hidden:[]} format and old format where hidden was a flag per item
+    const hidden   = Array.isArray(savedLayout.hidden)
+      ? savedLayout.hidden
+      : items.filter(i => i.hidden).map(i => i.id);
+
+    if (!isMobile && items.length > 0) {
       grid.load(items.map(i => ({ id: i.id, x: i.x, y: i.y, w: i.w, h: i.h })), false);
     }
-    items.filter(i => i.hidden).forEach(i => {
-      hiddenCards.add(i.id);
-      hiddenPositions[i.id] = { x: i.x, y: i.y, w: i.w, h: i.h };
-      const el = document.querySelector(`.grid-stack-item[gs-id="${i.id}"]`);
+
+    hidden.forEach(id => {
+      hiddenCards.add(id);
+      const pos = items.find(i => i.id === id);
+      if (pos) hiddenPositions[id] = { x: pos.x, y: pos.y, w: pos.w, h: pos.h };
+      const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
       if (!el) return;
       grid.removeWidget(el, false);
       el.style.display = 'none';
     });
   }
 
-  // Defer to next frame: ResizeObserver fires before rAF per browser spec,
-  // so GridStack's 1-col responsive switch is guaranteed to happen first
   requestAnimationFrame(applyLoadedLayout);
 
   // Chart references for resize
@@ -529,11 +523,14 @@
   const toolbar = document.getElementById('gs-edit-toolbar');
 
   function enterEdit() {
-    editMode      = true;
-    editStartCols = grid.getColumn();
-    grid.setStatic(false);
-    grid.enableMove(true);
-    grid.enableResize(true);
+    editMode = true;
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile) {
+      editStartCols = grid.getColumn();
+      grid.setStatic(false);
+      grid.enableMove(true);
+      grid.enableResize(true);
+    }
     hiddenCards.forEach(id => {
       const el  = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
       if (!el) return;
@@ -574,36 +571,22 @@
   }
 
   document.getElementById('gs-save').addEventListener('click', () => {
-    if (grid.getColumn() !== editStartCols) {
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile && grid.getColumn() !== editStartCols) {
       gsShowErrorToast('Ukuran layar berubah saat edit. Halaman akan dimuat ulang.');
       setTimeout(() => { exitEdit(); location.reload(); }, 2500);
       return;
     }
-    const cols = grid.getColumn();
-    let items;
-    if (cols === 1) {
-      // grid.save() returns pre-responsive 12-col node values in responsive mode.
-      // Read actual visual order via rendered bounding rect instead.
-      let yPos = 0;
-      items = [...document.querySelectorAll('.grid-stack-item')]
-        .filter(el => el.gridstackNode)
-        .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)
-        .map(el => {
-          const id = el.getAttribute('gs-id');
-          const h  = el.gridstackNode.h || parseInt(el.getAttribute('gs-h') || '4');
-          const item = { id, x: 0, y: yPos, w: 1, h };
-          yPos += h;
-          return item;
-        });
-    } else {
-      items = grid.save(false);
-    }
-    items.forEach(i => { if (hiddenCards.has(i.id)) i.hidden = true; });
-    const layout = { columns: cols, items };
+    // Mobile: preserve existing desktop positions, only update hidden list.
+    // Desktop: save full grid positions.
+    const items  = isMobile
+      ? (savedLayout?.items ?? [])
+      : grid.save(false).map(({ id, x, y, w, h }) => ({ id, x, y, w, h }));
+    const hidden = [...hiddenCards];
     fetch('{{ route("dashboard.layout") }}', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-      body: JSON.stringify({ layout, page: 'home' })
+      body: JSON.stringify({ layout: { items, hidden }, page: 'home' })
     })
     .then(r => r.json())
     .then(d => { if (d.success) { exitEdit(); gsShowSavedToast(); } });
@@ -625,12 +608,12 @@
     location.reload();
   });
 
-  // Re-apply move/resize after GridStack's responsive column change resets static state
+  // Re-apply move/resize on desktop after GridStack responsive column change resets state
   let _resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(_resizeTimer);
     _resizeTimer = setTimeout(() => {
-      if (editMode) {
+      if (editMode && window.innerWidth >= 768) {
         grid.enableMove(true);
         grid.enableResize(true);
       }
