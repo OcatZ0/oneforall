@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Log Aktivitas - One For All')
 
@@ -274,10 +274,10 @@
     editMode = true;
     if (!isMobileLayout) {
       editStartCols = grid.getColumn();
-      grid.setStatic(false);
-      grid.enableMove(true);
       grid.enableResize(true);
     }
+    grid.setStatic(false);
+    grid.enableMove(true);
     hiddenCards.forEach(id => {
       const el  = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
       if (!el) return;
@@ -458,15 +458,6 @@ async function loadLogs(page, perPage) {
   if (dateFrom) params.set('date_from', dateFrom);
   if (dateTo)   params.set('date_to',   dateTo);
 
-  const url = new URL(window.location.href);
-  url.searchParams.set('page', logsPage);
-  url.searchParams.set('per_page', logsPerPage);
-  ['search', 'user_id', 'date_from', 'date_to'].forEach(k => url.searchParams.delete(k));
-  if (search)   url.searchParams.set('search',    search);
-  if (userId)   url.searchParams.set('user_id',   userId);
-  if (dateFrom) url.searchParams.set('date_from', dateFrom);
-  if (dateTo)   url.searchParams.set('date_to',   dateTo);
-  window.history.replaceState({}, '', url);
 
   const tbody  = document.getElementById('actlog-tbody');
   const footer = document.getElementById('actlog-pagination-footer');

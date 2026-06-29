@@ -1,4 +1,4 @@
-@extends('layouts.app')
+﻿@extends('layouts.app')
 
 @section('title', 'Pengguna - One For All')
 
@@ -322,10 +322,10 @@
     editMode = true;
     if (!isMobileLayout) {
       editStartCols = grid.getColumn();
-      grid.setStatic(false);
-      grid.enableMove(true);
       grid.enableResize(true);
     }
+    grid.setStatic(false);
+    grid.enableMove(true);
     // Restore hidden cards at their saved positions (pushes other cards aside)
     hiddenCards.forEach(id => {
       const el  = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);

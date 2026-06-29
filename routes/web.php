@@ -26,6 +26,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/dashboard/layout', [DashboardController::class, 'saveLayout'])->name('dashboard.layout');
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+    Route::get('/profile/logs', [ProfileController::class, 'logs'])->name('profile.logs');
     Route::post('/profile/change-password', [ProfileController::class, 'changePassword'])->name('profile.change-password');
     Route::post('auth/logout', [AuthController::class, 'logout'])->name('logout');
 

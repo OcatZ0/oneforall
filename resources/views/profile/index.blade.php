@@ -150,22 +150,13 @@
             <h5 class="card-title mb-0">Log Aktivitas</h5>
           </div>
 
-          <!-- Search Form -->
-          <form method="GET" action="{{ route('profile') }}" class="mb-3">
-            <div class="input-group">
-              <input type="text" name="search" class="form-control" placeholder="Cari aktivitas..." value="{{ $search }}">
-              <button class="btn btn-primary" type="submit">
-                <i class="mdi mdi-magnify me-1"></i> Cari
-              </button>
-              @if($search)
-                <a href="{{ route('profile') }}" class="btn btn-secondary">
-                  <i class="mdi mdi-close me-1"></i> Reset
-                </a>
-              @endif
-            </div>
-          </form>
+          <div class="input-group mb-3">
+            <input type="text" id="logSearch" class="form-control" placeholder="Cari aktivitas...">
+            <button class="btn btn-secondary" id="logSearchClear" type="button" style="display:none;">
+              <i class="mdi mdi-close"></i>
+            </button>
+          </div>
 
-          @if($logs->count() > 0)
           <div class="table-responsive">
             <table class="table table-striped table-hover mb-0">
               <thead>
@@ -175,46 +166,13 @@
                   <th>Tanggal</th>
                 </tr>
               </thead>
-              <tbody>
-                @foreach($logs as $log)
-                <tr>
-                  <td>{{ ($logs->currentPage() - 1) * $logs->perPage() + $loop->iteration }}</td>
-                  <td>{{ $log->activity }}</td>
-                  <td>
-                    <span class="text-muted" title="{{ \Carbon\Carbon::parse($log->created_at)->format('d M Y H:i:s') }}">
-                      {{ \Carbon\Carbon::parse($log->created_at)->translatedFormat('d M Y H:i') }}
-                    </span>
-                  </td>
-                </tr>
-                @endforeach
+              <tbody id="log-tbody">
+                <tr><td colspan="3" class="text-center text-muted py-4">Memuat...</td></tr>
               </tbody>
             </table>
           </div>
 
-          <!-- Pagination -->
-          <div class="d-flex align-items-center justify-content-between mt-3">
-            <div class="text-muted small">
-              @php
-                $from = ($logs->currentPage() - 1) * $logs->perPage() + 1;
-                $to = min($logs->currentPage() * $logs->perPage(), $logs->total());
-              @endphp
-              Menampilkan {{ $from }} hingga {{ $to }} dari {{ $logs->total() }} aktivitas
-            </div>
-            {{ $logs->appends(request()->query())->links() }}
-          </div>
-          @else
-          <div class="d-flex flex-column align-items-center justify-content-center text-muted py-5 text-center">
-            @if($search)
-            <span class="mdi mdi-magnify" style="font-size:3rem; opacity:0.3; margin-bottom:12px;"></span>
-            <span class="fw-semibold mb-1">Tidak ada aktivitas</span>
-            <span class="small">Tidak ada aktivitas yang ditemukan untuk pencarian "{{ $search }}"</span>
-            @else
-            <span class="mdi mdi-history" style="font-size:3rem; opacity:0.3; margin-bottom:12px;"></span>
-            <span class="fw-semibold mb-1">Belum ada aktivitas</span>
-            <span class="small">Log aktivitas akan muncul setelah ada tindakan</span>
-            @endif
-          </div>
-          @endif
+          <div id="log-pagination-footer" class="mt-3"></div>
         </div>
 
       </div>
@@ -222,5 +180,106 @@
 
   </div>
 </div>
+
+<script>
+const logsEndpoint = '{{ route('profile.logs') }}';
+let currentPage = 1;
+let currentSearch = '';
+
+async function loadLogs(page = 1, search = currentSearch) {
+  currentPage = page;
+  currentSearch = search;
+
+  const params = new URLSearchParams({ page });
+  if (search) params.set('search', search);
+
+  const tbody = document.getElementById('log-tbody');
+  tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">Memuat...</td></tr>';
+
+  try {
+    const res  = await fetch(logsEndpoint + '?' + params.toString(), {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger py-4">${data.error}</td></tr>`;
+      return;
+    }
+
+    if (!data.logs.length) {
+      const msg = search
+        ? `Tidak ada aktivitas yang ditemukan untuk pencarian "<strong>${search}</strong>"`
+        : 'Belum ada aktivitas';
+      tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted py-4">${msg}</td></tr>`;
+      document.getElementById('log-pagination-footer').innerHTML = '';
+      return;
+    }
+
+    tbody.innerHTML = data.logs.map((log, i) => `
+      <tr>
+        <td>${data.from + i}</td>
+        <td>${log.activity}</td>
+        <td><span class="text-muted" title="${log.created_at_formatted}">${log.created_at_formatted}</span></td>
+      </tr>
+    `).join('');
+
+    renderLogsPagination(data);
+  } catch {
+    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger py-4">Gagal memuat data.</td></tr>';
+  }
+}
+
+function renderLogsPagination(data) {
+  const footer = document.getElementById('log-pagination-footer');
+  if (data.totalPages <= 1 && data.total === 0) { footer.innerHTML = ''; return; }
+
+  const info = `<span class="text-muted small">Menampilkan ${data.from}–${data.to} dari ${data.total} aktivitas</span>`;
+
+  if (data.totalPages <= 1) { footer.innerHTML = `<div>${info}</div>`; return; }
+
+  const prev = `<button class="btn btn-sm btn-outline-secondary" ${data.page <= 1 ? 'disabled' : ''}
+    onclick="loadLogs(${data.page - 1})"><i class="mdi mdi-chevron-left"></i></button>`;
+  const next = `<button class="btn btn-sm btn-outline-secondary" ${data.page >= data.totalPages ? 'disabled' : ''}
+    onclick="loadLogs(${data.page + 1})"><i class="mdi mdi-chevron-right"></i></button>`;
+
+  const pages = [];
+  for (let p = 1; p <= data.totalPages; p++) {
+    if (p === 1 || p === data.totalPages || Math.abs(p - data.page) <= 1) {
+      pages.push(`<button class="btn btn-sm ${p === data.page ? 'btn-primary' : 'btn-outline-secondary'}"
+        onclick="loadLogs(${p})">${p}</button>`);
+    } else if (pages[pages.length - 1] !== '...') {
+      pages.push('...');
+    }
+  }
+
+  footer.innerHTML = `
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      ${info}
+      <div class="d-flex align-items-center gap-1">
+        ${prev}${pages.map(p => p === '...' ? `<span class="px-1">…</span>` : p).join('')}${next}
+      </div>
+    </div>`;
+}
+
+// Search with debounce
+let _searchTimer;
+const searchInput = document.getElementById('logSearch');
+const clearBtn    = document.getElementById('logSearchClear');
+
+searchInput.addEventListener('input', () => {
+  clearBtn.style.display = searchInput.value ? '' : 'none';
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(() => loadLogs(1, searchInput.value.trim()), 400);
+});
+
+clearBtn.addEventListener('click', () => {
+  searchInput.value = '';
+  clearBtn.style.display = 'none';
+  loadLogs(1, '');
+});
+
+loadLogs(1);
+</script>
 
 @endsection

@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Models\WazuhAgent;
 use App\Models\LogActivity;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class ProfileController extends Controller
 {
@@ -20,17 +22,49 @@ class ProfileController extends Controller
             $agents = WazuhAgent::where('user_id', $user->id)->get();
         }
 
-        // Fetch activity logs with pagination and search
-        $search = request('search');
-        $logsQuery = LogActivity::where('user_id', $user->id);
+        return view('profile.index', compact('user', 'agents'));
+    }
 
-        if ($search) {
-            $logsQuery->where('activity', 'like', '%' . $search . '%');
+    public function logs()
+    {
+        try {
+            $user    = Auth::user();
+            $perPage = 10;
+            $page    = max((int) request('page', 1), 1);
+            $offset  = ($page - 1) * $perPage;
+
+            $query = LogActivity::where('user_id', $user->id)->orderBy('created_at', 'desc');
+
+            if ($search = request('search')) {
+                $query->where('activity', 'like', '%' . $search . '%');
+            }
+
+            $total      = $query->count();
+            $logs       = $query->skip($offset)->take($perPage)->get();
+            $totalPages = $total > 0 ? (int) ceil($total / $perPage) : 1;
+            $from       = $total > 0 ? $offset + 1 : 0;
+            $to         = min($offset + $perPage, $total);
+
+            return response()->json([
+                'logs' => $logs->map(function ($log) {
+                    $ca = $log->created_at ? Carbon::parse($log->created_at) : null;
+                    return [
+                        'activity'             => $log->activity,
+                        'created_at_human'     => $ca?->diffForHumans(),
+                        'created_at_formatted' => $ca?->translatedFormat('d M Y H:i'),
+                    ];
+                }),
+                'total'      => $total,
+                'page'       => $page,
+                'perPage'    => $perPage,
+                'totalPages' => $totalPages,
+                'from'       => $from,
+                'to'         => $to,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Profile logs error: ' . $e->getMessage());
+            return response()->json(['error' => 'Gagal memuat log aktivitas'], 500);
         }
-
-        $logs = $logsQuery->orderBy('created_at', 'desc')->paginate(10);
-
-        return view('profile.index', compact('user', 'agents', 'logs', 'search'));
     }
 
     public function changePassword(ChangePasswordRequest $request)

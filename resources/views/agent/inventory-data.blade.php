@@ -1,4 +1,4 @@
-@extends('layouts.wazuh')
+﻿@extends('layouts.wazuh')
 
 @section('title', 'Inventory Data - One For All')
 
@@ -445,10 +445,10 @@ document.addEventListener('DOMContentLoaded', () => {
     editMode = true;
     if (!isMobileLayout) {
       editStartCols = grid.getColumn();
-      grid.setStatic(false);
-      grid.enableMove(true);
       grid.enableResize(true);
     }
+    grid.setStatic(false);
+    grid.enableMove(true);
     hiddenCards.forEach(id => {
       const el  = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
       if (!el) return;
