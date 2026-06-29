@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
         $admin = User::create([
             'username' => 'admin',
             'email' => 'admin@example.com',
-            'password' => bcrypt('admin'),
+            'password' => bcrypt('admin123'),
             'role' =>'admin',
         ]);
 
@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
         $customer1 = User::create([
             'username' => 'johndoe',
             'email' => 'john@example.com',
-            'password' => bcrypt('johndoe'),
+            'password' => bcrypt('johndoe123'),
             'role' =>'customer',
         ]);
 
@@ -31,63 +31,63 @@ class DatabaseSeeder extends Seeder
         User::create([
             'username' => 'michael',
             'email' => 'michael@example.com',
-            'password' => bcrypt('michael'),
+            'password' => bcrypt('michael123'),
             'role' =>'customer',
         ]);
 
         User::create([
             'username' => 'sarah',
             'email' => 'sarah@example.com',
-            'password' => bcrypt('sarah'),
+            'password' => bcrypt('sarah123'),
             'role' =>'customer',
         ]);
 
         User::create([
             'username' => 'robert',
             'email' => 'robert@example.com',
-            'password' => bcrypt('robert'),
+            'password' => bcrypt('robert123'),
             'role' =>'customer',
         ]);
 
         User::create([
             'username' => 'emma',
             'email' => 'emma@example.com',
-            'password' => bcrypt('emma'),
+            'password' => bcrypt('emma123'),
             'role' =>'customer',
         ]);
 
         User::create([
             'username' => 'anisabet',
             'email' => 'anisabet@example.com',
-            'password' => bcrypt('anisabet'),
+            'password' => bcrypt('anisabet123'),
             'role' =>'customer',
         ]);
 
         User::create([
             'username' => 'fauzii',
             'email' => 'fauzii@example.com',
-            'password' => bcrypt('fauzii'),
+            'password' => bcrypt('fauzii123'),
             'role' =>'customer',
         ]);
 
         User::create([
             'username' => 'wahyu',
             'email' => 'wahyu@example.com',
-            'password' => bcrypt('wahyu'),
+            'password' => bcrypt('wahyu123'),
             'role' =>'customer',
         ]);
 
         User::create([
             'username' => 'astreed',
             'email' => 'astreed@example.com',
-            'password' => bcrypt('astreed'),
+            'password' => bcrypt('astreed123'),
             'role' =>'admin',
         ]);
 
         User::create([
             'username' => 'ariffin',
             'email' => 'ariffin@example.com',
-            'password' => bcrypt('ariffin'),
+            'password' => bcrypt('ariffin123'),
             'role' =>'customer',
         ]);
     }

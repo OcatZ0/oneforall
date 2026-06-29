@@ -36,4 +36,11 @@ abstract class Controller
                                            ->where('page', $page)
                                            ->value('layout');
     }
+
+    protected function getLayoutMobile(string $page): ?string
+    {
+        return \App\Models\DashboardLayout::where('user_id', auth()->id())
+                                           ->where('page', $page . '-mobile')
+                                           ->value('layout');
+    }
 }

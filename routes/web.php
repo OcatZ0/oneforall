@@ -65,5 +65,6 @@ Route::middleware('auth')->group(function () {
         Route::put('/user/{id}', [UserController::class, 'update'])->name('user.update');
         Route::delete('/user/{id}', [UserController::class, 'destroy'])->name('user.destroy');
         Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log');
+        Route::get('/activity-log/search', [ActivityLogController::class, 'search'])->name('activity-log.search');
     });
 });

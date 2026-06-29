@@ -44,9 +44,10 @@ class AgentController extends Controller
             $stats      = $this->buildFilteredStats($token, $dbAgentIds);
 
             if (empty($dbAgentIds)) {
-                $agents      = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage, $page, ['path' => route('agent'), 'query' => request()->query()]);
-                $savedLayout = $this->getLayout('agent');
-                return view('agent.index', ['agents' => $agents, 'stats' => $stats, 'evolutionLabels' => '[]', 'evolutionData' => '[]', 'savedLayout' => $savedLayout]);
+                $agents            = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage, $page, ['path' => route('agent'), 'query' => request()->query()]);
+                $savedLayout       = $this->getLayout('agent');
+                $savedLayoutMobile = $this->getLayoutMobile('agent');
+                return view('agent.index', ['agents' => $agents, 'stats' => $stats, 'evolutionLabels' => '[]', 'evolutionData' => '[]', 'savedLayout' => $savedLayout, 'savedLayoutMobile' => $savedLayoutMobile]);
             }
 
             $wazuhData  = $this->_wazuhService->getAgents($token ?? '', $offset, $perPage, request('search'), request('status'), $dbAgentIds);
@@ -68,9 +69,10 @@ class AgentController extends Controller
             $evolutionLabels    = json_encode($evolution['labels'] ?? []);
             $evolutionData      = json_encode($evolution['data']['active'] ?? $evolution['data'] ?? []);
 
-            $savedLayout = $this->getLayout('agent');
+            $savedLayout       = $this->getLayout('agent');
+            $savedLayoutMobile = $this->getLayoutMobile('agent');
 
-            return view('agent.index', compact('agents', 'stats', 'evolutionLabels', 'evolutionData', 'savedLayout'));
+            return view('agent.index', compact('agents', 'stats', 'evolutionLabels', 'evolutionData', 'savedLayout', 'savedLayoutMobile'));
         } catch (\Exception $e) {
             Log::error('Agent index error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return $this->indexErrorView();
@@ -129,9 +131,10 @@ class AgentController extends Controller
 
             $agent = $this->enrichAgentData($this->mapWazuhAgent($wa, true));
 
-            $savedLayout = $this->getLayout('agent-detail');
+            $savedLayout       = $this->getLayout('agent-detail');
+            $savedLayoutMobile = $this->getLayoutMobile('agent-detail');
 
-            return view('agent.detail', array_merge(compact('agent', 'savedLayout'), $this->buildDetailData($agent->agent_id)));
+            return view('agent.detail', array_merge(compact('agent', 'savedLayout', 'savedLayoutMobile'), $this->buildDetailData($agent->agent_id)));
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('Agent detail timeout: ' . $e->getMessage());
             return view('agent.detail', ['agent' => null, 'error' => 'Connection timeout while fetching agent details']);
@@ -155,12 +158,13 @@ class AgentController extends Controller
             $groupsPage    = max((int) request('groups_page', 1), 1);
             $groupsOffset  = ($groupsPage - 1) * $groupsPerPage;
 
-            $savedLayout  = $this->getLayout('security-events');
+            $savedLayout       = $this->getLayout('security-events');
+            $savedLayoutMobile = $this->getLayoutMobile('security-events');
 
             $alertsResult = $this->_openSearch->getRecentAlerts($id, $timeRange, $perPage, $offset);
             $groupsResult = $this->_openSearch->getGroupsSummary($id, $timeRange, $groupsPerPage, $groupsOffset);
 
-            return view('agent.security-events', array_merge(compact('agent', 'timeRange', 'savedLayout', 'page', 'perPage', 'groupsPage', 'groupsPerPage'), [
+            return view('agent.security-events', array_merge(compact('agent', 'timeRange', 'savedLayout', 'savedLayoutMobile', 'page', 'perPage', 'groupsPage', 'groupsPerPage'), [
                 'metrics'                => $this->_openSearch->getSecurityEventsMetrics($id, 'now-' . $timeRange),
                 'alertGroupsEvolution'   => $this->_openSearch->getAlertGroupsEvolution($id, $timeRange),
                 'alertsEvolutionByLevel' => $this->_openSearch->getAlertsEvolutionByLevel($id, $timeRange),
@@ -278,11 +282,12 @@ class AgentController extends Controller
             $timeRange = request('time_range', '24h');
             ['perPage' => $perPage, 'page' => $page, 'offset' => $offset] = $this->paginateRequest();
 
-            $savedLayout = $this->getLayout('integrity-monitoring');
+            $savedLayout       = $this->getLayout('integrity-monitoring');
+            $savedLayoutMobile = $this->getLayoutMobile('integrity-monitoring');
 
             $eventsResult = $this->_openSearch->getFimEventsPaginated($id, $timeRange, $perPage, $offset);
 
-            return view('agent.integrity-monitoring', array_merge(compact('agent', 'timeRange', 'savedLayout', 'page', 'perPage'), [
+            return view('agent.integrity-monitoring', array_merge(compact('agent', 'timeRange', 'savedLayout', 'savedLayoutMobile', 'page', 'perPage'), [
                 'fimSummary'     => $this->_openSearch->getFimSummary($id, $timeRange),
                 'fimEvolution'   => $this->_openSearch->getFimEvolution($id, $timeRange),
                 'fimTopRules'    => $this->_openSearch->getFimTopRules($id, $timeRange, 5),
@@ -325,10 +330,11 @@ class AgentController extends Controller
                 ? (int) round(array_sum(array_column($policies, 'score')) / count($policies))
                 : 0;
 
-            $savedLayout = $this->getLayout('sca');
+            $savedLayout       = $this->getLayout('sca');
+            $savedLayoutMobile = $this->getLayoutMobile('sca');
 
             return view('agent.sca', array_merge(
-                compact('agent', 'policies', 'selectedPolicy', 'policyId', 'resultFilter', 'page', 'perPage', 'savedLayout'),
+                compact('agent', 'policies', 'selectedPolicy', 'policyId', 'resultFilter', 'page', 'perPage', 'savedLayout', 'savedLayoutMobile'),
                 [
                     'checks'      => $checksResult['data'],
                     'totalChecks' => $checksResult['total'],
@@ -370,9 +376,10 @@ class AgentController extends Controller
 
             $lastScan = $token ? $this->_wazuhService->getVulnerabilitiesLastScan($token, $id) : null;
 
-            $savedLayout = $this->getLayout('vulnerabilities');
+            $savedLayout       = $this->getLayout('vulnerabilities');
+            $savedLayoutMobile = $this->getLayoutMobile('vulnerabilities');
 
-            return view('agent.vulnerabilities', compact('agent', 'page', 'perPage', 'severity', 'severityCounts', 'summaryBatch', 'lastScan', 'savedLayout') + [
+            return view('agent.vulnerabilities', compact('agent', 'page', 'perPage', 'severity', 'severityCounts', 'summaryBatch', 'lastScan', 'savedLayout', 'savedLayoutMobile') + [
                 'vulnerabilities' => $vulnResult['data'],
                 'totalVulns'      => $vulnResult['total'],
             ]);
@@ -403,9 +410,10 @@ class AgentController extends Controller
 
             $alertsResult = $this->_openSearch->getMitreAlerts($id, $timeRange, $perPage, $offset);
 
-            $savedLayout = $this->getLayout('mitre-attack');
+            $savedLayout       = $this->getLayout('mitre-attack');
+            $savedLayoutMobile = $this->getLayoutMobile('mitre-attack');
 
-            return view('agent.mitre-attack', compact('agent', 'timeRange', 'page', 'perPage', 'savedLayout') + [
+            return view('agent.mitre-attack', compact('agent', 'timeRange', 'page', 'perPage', 'savedLayout', 'savedLayoutMobile') + [
                 'tactics'          => $this->_openSearch->getMitreTactics($id, $timeRange),
                 'techniques'       => $this->_openSearch->getMitreTechniques($id, $timeRange),
                 'evolution'        => $this->_openSearch->getMitreEvolution($id, $timeRange),
@@ -433,9 +441,10 @@ class AgentController extends Controller
 
             $allCompliance = $this->_openSearch->getAgentCompliance($id, $complianceType, $timeRange);
 
-            $savedLayout = $this->getLayout('compliance');
+            $savedLayout       = $this->getLayout('compliance');
+            $savedLayoutMobile = $this->getLayoutMobile('compliance');
 
-            return view('agent.compliance', compact('agent', 'complianceType', 'timeRange', 'allCompliance', 'savedLayout') + [
+            return view('agent.compliance', compact('agent', 'complianceType', 'timeRange', 'allCompliance', 'savedLayout', 'savedLayoutMobile') + [
                 'topRuleGroups'  => $this->_openSearch->getTopRuleGroups($id, $timeRange, 5, $complianceType),
                 'topRules'       => $this->_openSearch->getTopAlerts($id, $timeRange, 5, $complianceType),
                 'top5Compliance' => array_slice($allCompliance, 0, 5),
@@ -459,9 +468,10 @@ class AgentController extends Controller
             $hardware = $token ? $this->_wazuhService->getInventoryHardware($token, $id) : null;
             $osInfo   = $token ? $this->_wazuhService->getInventoryOS($token, $id)       : null;
 
-            $savedLayout = $this->getLayout('inventory-data');
+            $savedLayout       = $this->getLayout('inventory-data');
+            $savedLayoutMobile = $this->getLayoutMobile('inventory-data');
 
-            return view('agent.inventory-data', compact('agent', 'hardware', 'osInfo', 'savedLayout'));
+            return view('agent.inventory-data', compact('agent', 'hardware', 'osInfo', 'savedLayout', 'savedLayoutMobile'));
         } catch (\Exception $e) {
             Log::error('Inventory data error: ' . $e->getMessage());
             return view('agent.inventory-data', ['agent' => null, 'error' => 'Error loading inventory data']);
@@ -714,10 +724,12 @@ class AgentController extends Controller
         );
 
         return view('agent.index', [
-            'agents'          => $agents,
-            'stats'           => ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0],
-            'evolutionLabels' => json_encode([]),
-            'evolutionData'   => json_encode([]),
+            'agents'            => $agents,
+            'stats'             => ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0],
+            'evolutionLabels'   => json_encode([]),
+            'evolutionData'     => json_encode([]),
+            'savedLayout'       => null,
+            'savedLayoutMobile' => null,
         ]);
     }
 }

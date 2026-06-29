@@ -759,10 +759,25 @@ document.addEventListener('DOMContentLoaded', initializeCharts);
   }
 
   // ── Load saved layout ───────────────────────────────────────────────────
-  const savedLayout = @json($savedLayout ?? null);
-  if (savedLayout && Array.isArray(savedLayout)) {
-    grid.load(savedLayout.map(i => ({ id: i.id, x: i.x, y: i.y, w: i.w, h: i.h })), false);
-    savedLayout.filter(i => i.hidden).forEach(i => {
+  const isMobileLayout = window.innerWidth <= 768;
+  const savedLayout = isMobileLayout
+    ? @json($savedLayoutMobile ?? null)
+    : @json($savedLayout ?? null);
+
+  function applyLoadedLayout() {
+    if (!savedLayout || Array.isArray(savedLayout) || !savedLayout.items) return;
+    const items = savedLayout.items ?? [];
+    if (isMobileLayout) {
+      grid.batchUpdate();
+      [...items].sort((a, b) => a.y - b.y).forEach(item => {
+        const el = document.querySelector(`.grid-stack-item[gs-id="${item.id}"]`);
+        if (el && el.gridstackNode) grid.update(el, { x: 0, y: item.y, w: 1, h: item.h });
+      });
+      grid.batchUpdate(false);
+    } else {
+      grid.load(items.map(i => ({ id: i.id, x: i.x, y: i.y, w: i.w, h: i.h })), false);
+    }
+    items.filter(i => i.hidden).forEach(i => {
       hiddenCards.add(i.id);
       hiddenPositions[i.id] = { x: i.x, y: i.y, w: i.w, h: i.h };
       const el = document.querySelector(`.grid-stack-item[gs-id="${i.id}"]`);
@@ -771,20 +786,27 @@ document.addEventListener('DOMContentLoaded', initializeCharts);
       el.style.display = 'none';
     });
   }
+  requestAnimationFrame(applyLoadedLayout);
 
   grid.on('resizestop', () => {
     Object.values(chartInstances).forEach(c => c?.resize?.());
   });
 
   // ── Edit mode ────────────────────────────────────────────────────────────
-  let editMode  = false;
+  let editMode      = false;
+  let editStartCols = null;
   const fabMain = document.getElementById('gs-fab-main');
   const fabIcon = document.getElementById('gs-fab-icon');
   const toolbar = document.getElementById('gs-edit-toolbar');
 
   function enterEdit() {
     editMode = true;
-    grid.setStatic(false);
+    if (!isMobileLayout) {
+      editStartCols = grid.getColumn();
+      grid.setStatic(false);
+      grid.enableMove(true);
+      grid.enableResize(true);
+    }
     hiddenCards.forEach(id => {
       const el  = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
       if (!el) return;
@@ -806,6 +828,8 @@ document.addEventListener('DOMContentLoaded', initializeCharts);
 
   function exitEdit() {
     editMode = false;
+    grid.enableMove(false);
+    grid.enableResize(false);
     hiddenCards.forEach(id => {
       const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
       if (!el) return;
@@ -825,12 +849,32 @@ document.addEventListener('DOMContentLoaded', initializeCharts);
   fabMain.addEventListener('click', () => editMode ? exitEdit() : enterEdit());
 
   document.getElementById('gs-save').addEventListener('click', () => {
-    const layout = grid.save(false);
-    layout.forEach(i => { if (hiddenCards.has(i.id)) i.hidden = true; });
+    if (!isMobileLayout && grid.getColumn() !== editStartCols) {
+      gsShowErrorToast('Ukuran layar berubah saat edit. Halaman akan dimuat ulang.');
+      setTimeout(() => { exitEdit(); location.reload(); }, 2500);
+      return;
+    }
+    let items;
+    if (isMobileLayout) {
+      let yPos = 0;
+      items = [...document.querySelectorAll('.grid-stack-item')]
+        .filter(el => el.gridstackNode)
+        .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)
+        .map(el => {
+          const id = el.getAttribute('gs-id');
+          const h  = el.gridstackNode.h || parseInt(el.getAttribute('gs-h') || '4');
+          const item = { id, x: 0, y: yPos, w: 1, h };
+          yPos += h;
+          return item;
+        });
+    } else {
+      items = grid.save(false).map(({ id, x, y, w, h }) => ({ id, x, y, w, h }));
+    }
+    items.forEach(i => { if (hiddenCards.has(i.id)) i.hidden = true; });
     fetch('{{ route("dashboard.layout") }}', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-      body: JSON.stringify({ layout, page: 'security-events' })
+      body: JSON.stringify({ layout: { items }, page: isMobileLayout ? 'security-events-mobile' : 'security-events' })
     })
     .then(r => r.json())
     .then(d => { if (d.success) { exitEdit(); gsShowSavedToast(); } });
@@ -850,6 +894,17 @@ document.addEventListener('DOMContentLoaded', initializeCharts);
   document.getElementById('gs-cancel').addEventListener('click', () => {
     exitEdit();
     location.reload();
+  });
+
+  let _resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(() => {
+      if (editMode && window.innerWidth > 768) {
+        grid.enableMove(true);
+        grid.enableResize(true);
+      }
+    }, 150);
   });
 })();
 </script>

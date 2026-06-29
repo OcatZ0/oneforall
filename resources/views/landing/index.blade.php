@@ -17,24 +17,44 @@
     </a>
 
     <button class="navbar-toggler" type="button"
-            data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            data-bs-toggle="offcanvas" data-bs-target="#navDrawer"
+            aria-controls="navDrawer">
       <span class="navbar-toggler-icon"></span>
     </button>
 
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
-        <li class="nav-item"><a class="nav-link" href="#features">Fitur</a></li>
-        <li class="nav-item"><a class="nav-link" href="#about">Tentang</a></li>
-        <li class="nav-item"><a class="nav-link" href="#benefits">Keunggulan</a></li>
-        <li class="nav-item ms-lg-3">
-          <a href="/auth/login" class="btn-primary-custom" style="padding:10px 22px;font-size:0.83rem;">
-            Mulai Sekarang <i class="bi bi-arrow-right"></i>
-          </a>
-        </li>
-      </ul>
+    <div class="d-none d-lg-flex align-items-center ms-auto gap-1">
+      <a class="nav-link" href="#features">Fitur</a>
+      <a class="nav-link" href="#about">Tentang</a>
+      <a class="nav-link" href="#benefits">Keunggulan</a>
+      <a href="/auth/login" class="btn-primary-custom ms-3" style="padding:10px 22px;font-size:0.83rem;">
+        Mulai Sekarang <i class="bi bi-arrow-right"></i>
+      </a>
     </div>
   </div>
 </nav>
+
+{{-- Right-side drawer (mobile) --}}
+<div class="offcanvas offcanvas-end" tabindex="-1" id="navDrawer" aria-labelledby="navDrawerLabel" data-bs-scroll="true">
+  <div class="offcanvas-header">
+    <a class="navbar-brand" href="#" style="margin:0;" id="navDrawerLabel">
+      <div class="brand-icon" style="width:32px;height:32px;font-size:0.9rem;">
+        <i class="bi bi-shield-shaded" style="color:#fff;"></i>
+      </div>
+      <span>OneForAll</span>
+    </a>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <nav class="drawer-nav">
+      <a href="#features">Fitur</a>
+      <a href="#about">Tentang</a>
+      <a href="#benefits">Keunggulan</a>
+    </nav>
+    <a href="/auth/login" class="btn-primary-custom drawer-cta">
+      Mulai Sekarang <i class="bi bi-arrow-right"></i>
+    </a>
+  </div>
+</div>
 
 
 {{-- ══════════════════════════════════════════════

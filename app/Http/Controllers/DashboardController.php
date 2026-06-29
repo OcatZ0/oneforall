@@ -62,7 +62,8 @@ class DashboardController extends Controller
                 'topRules'       => [],
                 'topAgents'      => [],
                 'customerStats'  => null,
-                'savedLayout'    => null,
+                'savedLayout'       => null,
+                'savedLayoutMobile' => null,
             ]);
         }
     }

@@ -40,13 +40,14 @@
 
     /* ── Base ── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
 
     body {
       font-family: var(--font-body);
       background: var(--clr-bg);
       color: var(--clr-text);
       overflow-x: hidden;
+      padding-right: 0 !important;
     }
 
     /* ── Scrollbar ── */
@@ -96,7 +97,7 @@
     .brand-icon {
       width: 36px; height: 36px;
       background: linear-gradient(135deg, var(--clr-accent2), var(--clr-accent));
-      border-radius: var(--radius-sm);
+      border-radius: 0px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -111,7 +112,7 @@
       color: var(--clr-muted) !important;
       letter-spacing: 0.3px;
       padding: 0.5rem 1rem !important;
-      border-radius: var(--radius-sm);
+      border-radius: 0px;
       transition: var(--transition);
       position: relative;
     }
@@ -180,7 +181,7 @@
       font-weight: 600;
       font-size: 0.9rem;
       padding: 14px 30px;
-      border-radius: 0;
+      border-radius: 0px;
       border: none;
       display: inline-flex;
       align-items: center;
@@ -201,7 +202,7 @@
       font-weight: 600;
       font-size: 0.9rem;
       padding: 13px 28px;
-      border-radius: 0;
+      border-radius: 0px;
       border: 1.5px solid var(--clr-border-strong);
       display: inline-flex;
       align-items: center;
@@ -219,7 +220,7 @@
     .glass-card {
       background: var(--clr-card);
       border: 1px solid var(--clr-border);
-      border-radius: var(--radius-lg);
+      border-radius: 0px;
       box-shadow: 0 6px 20px rgba(0,41,93,0.08);
       transition: var(--transition);
       position: relative;
@@ -241,7 +242,7 @@
     /* ── Feature icon ── */
     .feat-icon {
       width: 54px; height: 54px;
-      border-radius: var(--radius-md);
+      border-radius: 0px;
       display: flex; align-items: center; justify-content: center;
       font-size: 1.4rem;
       margin-bottom: 20px;
@@ -254,7 +255,7 @@
       gap: 8px;
       background: rgba(0,78,146,0.08);
       border: 1px solid rgba(0,78,146,0.2);
-      border-radius: var(--radius-md);
+      border-radius: 0px;
       padding: 8px 16px;
       font-family: var(--font-mono);
       font-size: 0.78rem;
@@ -276,7 +277,7 @@
     .stat-block {
       background: var(--clr-surface);
       border: 1px solid var(--clr-border);
-      border-radius: var(--radius-lg);
+      border-radius: 0px;
       padding: 28px 24px;
       text-align: center;
       box-shadow: 0 4px 12px rgba(0,41,93,0.06);
@@ -310,7 +311,7 @@
 
     /* ── Image wrapper ── */
     .img-frame {
-      border-radius: var(--radius-lg);
+      border-radius: 0px;
       overflow: hidden;
       position: relative;
       box-shadow: 0 20px 50px rgba(0,41,93,0.18);
@@ -319,7 +320,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      border-radius: var(--radius-lg);
+      border-radius: 0px;
       border: 1px solid var(--clr-border);
     }
     .img-frame img { display: block; width: 100%; }
@@ -329,7 +330,7 @@
       font-family: var(--font-mono);
       font-size: 0.7rem;
       padding: 4px 10px;
-      border-radius: 6px;
+      border-radius: 0px;
       font-weight: 500;
     }
 
@@ -337,7 +338,7 @@
     .benefit-card {
       background: var(--clr-card);
       border: 1px solid var(--clr-border);
-      border-radius: var(--radius-lg);
+      border-radius: 0px;
       box-shadow: 0 4px 14px rgba(0,41,93,0.07);
       padding: 36px 28px;
       text-align: center;
@@ -362,7 +363,7 @@
     .benefit-card:hover::after { opacity: 1; }
     .benefit-icon {
       width: 62px; height: 62px;
-      border-radius: var(--radius-md);
+      border-radius: 0px;
       margin: 0 auto 20px;
       display: flex; align-items: center; justify-content: center;
       font-size: 1.6rem;
@@ -402,7 +403,7 @@
     .footer-link:hover { color: var(--clr-accent2); padding-left: 4px; }
     .social-btn {
       width: 38px; height: 38px;
-      border-radius: var(--radius-sm);
+      border-radius: 0px;
       background: rgba(0,78,146,0.05);
       border: 1px solid var(--clr-border);
       display: flex; align-items: center; justify-content: center;
@@ -447,6 +448,48 @@
       section { padding: 80px 0; }
       section:first-of-type { padding-top: 120px; }
     }
+
+    /* ── Offcanvas Drawer ── */
+    .offcanvas.offcanvas-end {
+      width: 300px;
+      background: var(--clr-bg);
+      border-left: 1px solid var(--clr-border);
+    }
+    .offcanvas-header {
+      height: 72px;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--clr-border);
+    }
+    .offcanvas-header .btn-close {
+      filter: invert(15%) sepia(50%) saturate(2000%) hue-rotate(200deg) brightness(60%);
+      opacity: 0.6;
+    }
+    .offcanvas-header .btn-close:hover { opacity: 1; }
+    .offcanvas-body {
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+    }
+    .drawer-nav a {
+      display: flex;
+      align-items: center;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--clr-text);
+      text-decoration: none;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--clr-border);
+      transition: color 0.2s, padding-left 0.2s;
+    }
+    .drawer-nav a:first-child { border-top: 1px solid var(--clr-border); }
+    .drawer-nav a:hover { color: var(--clr-accent2); padding-left: 6px; }
+    .drawer-cta {
+      margin-top: auto;
+      width: 100%;
+      justify-content: center;
+      padding: 14px 24px;
+      font-size: 0.95rem;
+    }
   </style>
 </head>
 
@@ -457,8 +500,18 @@
   <script>
     // Navbar scroll effect
     const navbar = document.querySelector('.navbar');
-    window.addEventListener('scroll', () => {
-      navbar.classList.toggle('scrolled', window.scrollY > 40);
+    if (navbar) {
+      window.addEventListener('scroll', () => {
+        navbar.classList.toggle('scrolled', window.scrollY > 40);
+      });
+    }
+
+    // Close offcanvas when a drawer link is clicked
+    document.querySelectorAll('.drawer-nav a').forEach(a => {
+      a.addEventListener('click', () => {
+        const drawer = bootstrap.Offcanvas.getInstance(document.getElementById('navDrawer'));
+        if (drawer) drawer.hide();
+      });
     });
 
     // Intersection observer for scroll reveal

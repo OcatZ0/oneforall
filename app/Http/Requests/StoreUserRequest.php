@@ -15,11 +15,18 @@ class StoreUserRequest extends FormRequest
     {
         return [
             'username' => 'required|string|min:3|max:50|unique:user,username',
-            'email'    => 'required|email|unique:user,email',
-            'password' => 'required|string|min:6',
+            'email'    => 'required|email:filter|unique:user,email',
+            'password' => 'required|string|min:8',
             'role'     => 'required|in:admin,customer',
             'agents'   => 'array',
             'agents.*' => 'string',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'email.email' => 'Format email tidak valid. Pastikan email mengandung domain yang lengkap (contoh: user@example.com).',
         ];
     }
 }

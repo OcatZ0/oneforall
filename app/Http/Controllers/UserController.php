@@ -47,9 +47,10 @@ class UserController extends Controller
             'admin'    => User::where('role', 'admin')->count(),
             'customer' => User::where('role', 'customer')->count(),
         ];
-        $savedLayout = $this->getLayout('user');
+        $savedLayout       = $this->getLayout('user');
+        $savedLayoutMobile = $this->getLayoutMobile('user');
 
-        return view('user.index', compact('users', 'userStats', 'savedLayout'));
+        return view('user.index', compact('users', 'userStats', 'savedLayout', 'savedLayoutMobile'));
     }
 
     public function create()
