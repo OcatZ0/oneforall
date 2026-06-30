@@ -32,7 +32,7 @@ class AuthController extends Controller
 
         if (!$user) {
             return back()->withErrors([
-                'email' => 'User tidak ditemukan.',
+                'email' => 'Username atau Password salah.',
             ])->onlyInput('email');
         }
 
