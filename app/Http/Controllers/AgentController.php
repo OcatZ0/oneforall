@@ -508,9 +508,6 @@ class AgentController extends Controller
     public function syncAgentsFromWazuh()
     {
         try {
-            if (!auth()->check()) {
-                return ApiResponse::error('Tidak diizinkan: Silakan login terlebih dahulu', 401);
-            }
             if (auth()->user()->role !== 'admin') {
                 return ApiResponse::error('Tidak diizinkan: Hanya admin yang dapat sinkronisasi agent', 403);
             }
@@ -617,7 +614,7 @@ class AgentController extends Controller
         $token = $this->_wazuhService->getToken();
         if (!$token) return ['success' => false, 'message' => 'Gagal melakukan autentikasi ke Wazuh API'];
 
-        // Phase 1: Fetch all agent data from Wazuh API (outside transaction)
+        // fetch all agent data from Wazuh API (outside transaction)
         $allWazuhAgents = [];
         $offset = 0;
         $limit  = 100;
@@ -630,7 +627,7 @@ class AgentController extends Controller
             $offset += $limit;
         } while (count($allWazuhAgents) < ($data['total'] ?? 0));
 
-        // Phase 2: All DB writes in a single transaction
+        // all DB writes in a single transaction
         $synced = $updated = $deleted = 0;
 
         DB::transaction(function () use ($allWazuhAgents, &$synced, &$updated, &$deleted) {
