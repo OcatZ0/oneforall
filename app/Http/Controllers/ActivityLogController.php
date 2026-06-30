@@ -107,7 +107,7 @@ class ActivityLogController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Activity log search error: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to load logs'], 500);
+            return response()->json(['error' => 'Gagal memuat log aktivitas'], 500);
         }
     }
 }

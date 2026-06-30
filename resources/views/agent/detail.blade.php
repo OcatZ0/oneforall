@@ -527,13 +527,13 @@ function updateChart(timeRange, event) {
     })
     .catch(error => {
       console.error('Error fetching chart data:', error);
-      const errHtml = '<div style="display:flex;align-items:center;justify-content:center;height:90px;background:#fef2f2;border-radius:4px;color:#dc3545;font-size:13px;"><span class="mdi mdi-alert-circle-outline me-2"></span>Failed to load data</div>';
+      const errHtml = '<div style="display:flex;align-items:center;justify-content:center;height:90px;background:#fef2f2;border-radius:4px;color:#dc3545;font-size:13px;"><span class="mdi mdi-alert-circle-outline me-2"></span>Gagal memuat data</div>';
       const evCont = document.getElementById('eventsChartContainer');
       if (evCont) { if (eventsChartInstance) { eventsChartInstance.destroy(); eventsChartInstance = null; } evCont.innerHTML = errHtml; }
       const compCont = document.getElementById('complianceChartContainer');
       if (compCont) { if (complianceChartInstance) { complianceChartInstance.destroy(); complianceChartInstance = null; } compCont.innerHTML = errHtml; }
       const mitreCont = document.querySelector('[data-mitre-container]');
-      if (mitreCont) mitreCont.innerHTML = '<div class="d-flex flex-column align-items-center justify-content-center text-center py-5"><span class="mdi mdi-alert-circle-outline display-4 text-muted opacity-25 mb-3"></span><p class="text-muted small mb-0">Failed to load data</p></div>';
+      if (mitreCont) mitreCont.innerHTML = '<div class="d-flex flex-column align-items-center justify-content-center text-center py-5"><span class="mdi mdi-alert-circle-outline display-4 text-muted opacity-25 mb-3"></span><p class="text-muted small mb-0">Gagal memuat data</p></div>';
     });
 }
 

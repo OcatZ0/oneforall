@@ -21,7 +21,7 @@ class VerifyAgentAccess
 
         $dbAgent = WazuhAgent::where('agent_id', $agentId)->first();
         if (!$dbAgent) {
-            abort(404, 'Agent not found');
+            abort(404, 'Agent tidak ditemukan');
         }
 
         if ($user->role === 'admin') {
@@ -30,7 +30,7 @@ class VerifyAgentAccess
 
         if ($dbAgent->user_id !== $user->id) {
             Log::warning('Customer does not have access to agent', ['agent_id' => $agentId, 'user_id' => $user->id]);
-            abort(403, 'You do not have permission to view this agent');
+            abort(403, 'Anda tidak memiliki izin untuk melihat agent ini');
         }
 
         return $next($request);

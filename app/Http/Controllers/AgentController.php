@@ -91,7 +91,7 @@ class AgentController extends Controller
             return ApiResponse::success(['labels' => $evolution['labels'] ?? [], 'data' => $evolution['data'] ?? []]);
         } catch (\Exception $e) {
             Log::error('Get chart data error', ['error' => $e->getMessage()]);
-            return ApiResponse::error('Failed to fetch chart data', 500);
+            return ApiResponse::error('Gagal memuat data grafik', 500);
         }
     }
 
@@ -112,7 +112,7 @@ class AgentController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Get detail chart data error', ['error' => $e->getMessage()]);
-            return ApiResponse::error('Failed to fetch chart data', 500);
+            return ApiResponse::error('Gagal memuat data grafik', 500);
         }
     }
 
@@ -121,12 +121,12 @@ class AgentController extends Controller
         try {
             $token = $this->_wazuhService->getToken();
             if (!$token) {
-                return view('agent.detail', ['agent' => null, 'error' => 'Unable to authenticate with Wazuh API']);
+                return view('agent.detail', ['agent' => null, 'error' => 'Gagal melakukan autentikasi ke Wazuh API']);
             }
 
             $wa = $this->_wazuhService->getAgent($token, $id);
             if (!$wa) {
-                return view('agent.detail', ['agent' => null, 'error' => 'Agent not found']);
+                return view('agent.detail', ['agent' => null, 'error' => 'Agent tidak ditemukan']);
             }
 
             $agent = $this->enrichAgentData($this->mapWazuhAgent($wa, true));
@@ -137,10 +137,10 @@ class AgentController extends Controller
             return view('agent.detail', array_merge(compact('agent', 'savedLayout', 'savedLayoutMobile'), $this->buildDetailData($agent->agent_id)));
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('Agent detail timeout: ' . $e->getMessage());
-            return view('agent.detail', ['agent' => null, 'error' => 'Connection timeout while fetching agent details']);
+            return view('agent.detail', ['agent' => null, 'error' => 'Koneksi timeout saat mengambil detail agent']);
         } catch (\Exception $e) {
             Log::error('Agent detail error: ' . $e->getMessage());
-            return view('agent.detail', ['agent' => null, 'error' => 'Error loading agent details']);
+            return view('agent.detail', ['agent' => null, 'error' => 'Gagal memuat detail agent']);
         }
     }
 
@@ -149,7 +149,7 @@ class AgentController extends Controller
         try {
             $agent = $this->resolveAgent($id);
             if (!$agent) {
-                return view('agent.security-events', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
+                return view('agent.security-events', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia']);
             }
 
             $timeRange    = request('time_range', '24h');
@@ -178,7 +178,7 @@ class AgentController extends Controller
             ]));
         } catch (\Exception $e) {
             Log::error('Security events error: ' . $e->getMessage());
-            return view('agent.security-events', ['agent' => null, 'error' => 'Error loading security events']);
+            return view('agent.security-events', ['agent' => null, 'error' => 'Gagal memuat data security events']);
         }
     }
 
@@ -223,7 +223,7 @@ class AgentController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('SE chart data error: ' . $e->getMessage());
-            return ApiResponse::error('Failed to load data', 500);
+            return ApiResponse::error('Gagal memuat data', 500);
         }
     }
 
@@ -241,7 +241,7 @@ class AgentController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('FIM chart data error: ' . $e->getMessage());
-            return ApiResponse::error('Failed to load data', 500);
+            return ApiResponse::error('Gagal memuat data', 500);
         }
     }
 
@@ -267,7 +267,7 @@ class AgentController extends Controller
                 'resultFilter'   => $resultFilter,
             ]);
         } catch (\Exception $e) {
-            return ApiResponse::error('Failed to load SCA checks', 500);
+            return ApiResponse::error('Gagal memuat data SCA checks', 500);
         }
     }
 
@@ -276,7 +276,7 @@ class AgentController extends Controller
         try {
             $agent = $this->resolveAgent($id);
             if (!$agent) {
-                return view('agent.integrity-monitoring', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
+                return view('agent.integrity-monitoring', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia']);
             }
 
             $timeRange = request('time_range', '24h');
@@ -299,7 +299,7 @@ class AgentController extends Controller
             ]));
         } catch (\Exception $e) {
             Log::error('Integrity monitoring error: ' . $e->getMessage());
-            return view('agent.integrity-monitoring', ['agent' => null, 'error' => 'Error loading integrity monitoring']);
+            return view('agent.integrity-monitoring', ['agent' => null, 'error' => 'Gagal memuat data integrity monitoring']);
         }
     }
 
@@ -308,7 +308,7 @@ class AgentController extends Controller
         try {
             $agent = $this->resolveAgent($id);
             if (!$agent) {
-                return view('agent.sca', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
+                return view('agent.sca', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia']);
             }
 
             $token    = $this->_wazuhService->getToken();
@@ -346,7 +346,7 @@ class AgentController extends Controller
             ));
         } catch (\Exception $e) {
             Log::error('SCA error: ' . $e->getMessage());
-            return view('agent.sca', ['agent' => null, 'error' => 'Error loading SCA']);
+            return view('agent.sca', ['agent' => null, 'error' => 'Gagal memuat data SCA']);
         }
     }
 
@@ -355,7 +355,7 @@ class AgentController extends Controller
         try {
             $agent = $this->resolveAgent($id);
             if (!$agent) {
-                return view('agent.vulnerabilities', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
+                return view('agent.vulnerabilities', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia']);
             }
 
             $token    = $this->_wazuhService->getToken();
@@ -385,7 +385,7 @@ class AgentController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Vulnerabilities error: ' . $e->getMessage());
-            return view('agent.vulnerabilities', ['agent' => null, 'error' => 'Error loading vulnerabilities']);
+            return view('agent.vulnerabilities', ['agent' => null, 'error' => 'Gagal memuat data vulnerabilities']);
         }
     }
 
@@ -402,7 +402,7 @@ class AgentController extends Controller
         try {
             $agent = $this->resolveAgent($id);
             if (!$agent) {
-                return view('agent.mitre-attack', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
+                return view('agent.mitre-attack', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia']);
             }
 
             $timeRange = $this->validatedTimeRange(request('time_range'));
@@ -424,7 +424,7 @@ class AgentController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('MITRE ATT&CK error: ' . $e->getMessage());
-            return view('agent.mitre-attack', ['agent' => null, 'error' => 'Error loading MITRE ATT&CK data']);
+            return view('agent.mitre-attack', ['agent' => null, 'error' => 'Gagal memuat data MITRE ATT&CK']);
         }
     }
 
@@ -433,7 +433,7 @@ class AgentController extends Controller
         try {
             $agent = $this->resolveAgent($id);
             if (!$agent) {
-                return view('agent.compliance', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
+                return view('agent.compliance', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia']);
             }
 
             $complianceType = in_array(request('compliance_type'), config('dashboard.compliance_types')) ? request('compliance_type') : 'gdpr';
@@ -452,7 +452,7 @@ class AgentController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Compliance error: ' . $e->getMessage());
-            return view('agent.compliance', ['agent' => null, 'error' => 'Error loading compliance data']);
+            return view('agent.compliance', ['agent' => null, 'error' => 'Gagal memuat data compliance']);
         }
     }
 
@@ -461,7 +461,7 @@ class AgentController extends Controller
         try {
             $agent = $this->resolveAgent($id);
             if (!$agent) {
-                return view('agent.inventory-data', ['agent' => null, 'error' => 'Agent not found or API unavailable']);
+                return view('agent.inventory-data', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia']);
             }
 
             $token    = $this->_wazuhService->getToken();
@@ -474,7 +474,7 @@ class AgentController extends Controller
             return view('agent.inventory-data', compact('agent', 'hardware', 'osInfo', 'savedLayout', 'savedLayoutMobile'));
         } catch (\Exception $e) {
             Log::error('Inventory data error: ' . $e->getMessage());
-            return view('agent.inventory-data', ['agent' => null, 'error' => 'Error loading inventory data']);
+            return view('agent.inventory-data', ['agent' => null, 'error' => 'Gagal memuat data inventory']);
         }
     }
 
@@ -482,12 +482,12 @@ class AgentController extends Controller
     {
         $allowed = ['netiface', 'ports', 'netaddr', 'hotfixes', 'packages', 'processes'];
         if (!in_array($type, $allowed)) {
-            return ApiResponse::error('Invalid type', 400);
+            return ApiResponse::error('Tipe tidak valid', 400);
         }
 
         $token = $this->_wazuhService->getToken();
         if (!$token) {
-            return ApiResponse::error('Unable to authenticate with Wazuh', 503);
+            return ApiResponse::error('Gagal melakukan autentikasi ke Wazuh', 503);
         }
 
         ['perPage' => $perPage, 'page' => $page, 'offset' => $offset] = $this->paginateRequest();
@@ -509,20 +509,20 @@ class AgentController extends Controller
     {
         try {
             if (!auth()->check()) {
-                return ApiResponse::error('Unauthorized: Please login first', 401);
+                return ApiResponse::error('Tidak diizinkan: Silakan login terlebih dahulu', 401);
             }
             if (auth()->user()->role !== 'admin') {
-                return ApiResponse::error('Unauthorized: Only admins can sync agents', 403);
+                return ApiResponse::error('Tidak diizinkan: Hanya admin yang dapat sinkronisasi agent', 403);
             }
 
             $result = $this->syncFromWazuh();
 
             return $result['success']
-                ? ApiResponse::success($result, 'Agent sync completed successfully')
-                : ApiResponse::error($result['message'] ?? 'Sync failed', 500);
+                ? ApiResponse::success($result, 'Sinkronisasi agent berhasil')
+                : ApiResponse::error($result['message'] ?? 'Sinkronisasi gagal', 500);
         } catch (\Exception $e) {
             Log::error('Agent sync error', ['error' => $e->getMessage()]);
-            return ApiResponse::error('Sync failed: ' . $e->getMessage(), 500);
+            return ApiResponse::error('Sinkronisasi gagal: ' . $e->getMessage(), 500);
         }
     }
 
@@ -568,7 +568,7 @@ class AgentController extends Controller
             ]);
         } catch (\Exception $e) {
             Log::error('Agent search error', ['error' => $e->getMessage()]);
-            return ApiResponse::error('Failed to search agents', 500);
+            return ApiResponse::error('Gagal mencari agent', 500);
         }
     }
 
@@ -615,7 +615,7 @@ class AgentController extends Controller
     private function syncFromWazuh(): array
     {
         $token = $this->_wazuhService->getToken();
-        if (!$token) return ['success' => false, 'message' => 'Failed to authenticate with Wazuh API'];
+        if (!$token) return ['success' => false, 'message' => 'Gagal melakukan autentikasi ke Wazuh API'];
 
         // Phase 1: Fetch all agent data from Wazuh API (outside transaction)
         $allWazuhAgents = [];

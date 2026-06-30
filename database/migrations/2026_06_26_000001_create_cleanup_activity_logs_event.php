@@ -14,7 +14,7 @@ return new class extends Migration
             ON SCHEDULE EVERY 1 DAY
             STARTS CURRENT_TIMESTAMP
             DO
-              DELETE FROM activity_logs
+              DELETE FROM activity_log
               WHERE created_at < NOW() - INTERVAL 1 YEAR
         ");
     }

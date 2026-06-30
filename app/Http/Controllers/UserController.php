@@ -202,7 +202,7 @@ class UserController extends Controller
         $conflicting = $query->with('user')->get();
         if ($conflicting->isNotEmpty()) {
             $names = $conflicting->map(fn($a) => "{$a->name} (assigned to {$a->user->username})")->implode(', ');
-            return "Gagal: Agent berikut sudah ditugaskan ke pengguna lain: {$names}";
+            return "Agent berikut sudah ditugaskan ke pengguna lain: {$names}";
         }
 
         return null;
