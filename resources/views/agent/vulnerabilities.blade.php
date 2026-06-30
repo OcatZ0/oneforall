@@ -1,4 +1,4 @@
-﻿@extends('layouts.wazuh')
+@extends('layouts.wazuh')
 
 @section('title', 'Vulnerabilities - One For All')
 
@@ -644,7 +644,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
       if (el) el.classList.remove('gs-card-hidden');
     });
-    grid.load(DEFAULT_LAYOUT);
+    grid.load(DEFAULT_LAYOUT.map(i => ({ ...i })));
     if (vulnSeverityChartInstance) vulnSeverityChartInstance.resize();
     if (vulnSummaryChartInstance)  vulnSummaryChartInstance.resize();
   });

@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Pengguna - One For All')
 
@@ -217,8 +217,8 @@
 <script>
 (function () {
   const DEFAULT_LAYOUT = [
-    { id: 'user-stats', x: 0, y: 0, w: 12, h: 4  },
-    { id: 'user-table', x: 0, y: 4, w: 12, h: 14 },
+    { id: 'user-stats', x: 0, y: 0, w: 12, h: 3  },
+    { id: 'user-table', x: 0, y: 4, w: 12, h: 18 },
   ];
 
   const grid = GridStack.init({
@@ -409,7 +409,7 @@
       const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
       if (el) el.classList.remove('gs-card-hidden');
     });
-    grid.load(DEFAULT_LAYOUT);
+    grid.load(DEFAULT_LAYOUT.map(i => ({ ...i })));
   });
 
   document.getElementById('gs-cancel').addEventListener('click', () => {

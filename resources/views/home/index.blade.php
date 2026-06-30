@@ -153,7 +153,7 @@
   </div>
 
   {{-- Alert Trend --}}
-  <div class="grid-stack-item" gs-id="alert-trend" data-label="Alert Trend" gs-x="0" gs-y="8" gs-w="5" gs-h="7">
+  <div class="grid-stack-item" gs-id="alert-trend" data-label="Alert Trend" gs-x="0" gs-y="9" gs-w="5" gs-h="7">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -176,7 +176,7 @@
     $medium_pct   = $total_alerts > 0 ? round($alertSeverity['medium']   / $total_alerts * 100, 1) : 0;
     $low_pct      = $total_alerts > 0 ? round($alertSeverity['low']      / $total_alerts * 100, 1) : 0;
   @endphp
-  <div class="grid-stack-item" gs-id="severity-chart" data-label="Severity Chart" gs-x="5" gs-y="8" gs-w="4" gs-h="7">
+  <div class="grid-stack-item" gs-id="severity-chart" data-label="Severity Chart" gs-x="5" gs-y="9" gs-w="4" gs-h="7">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -195,7 +195,7 @@
   </div>
 
   {{-- Total Alerts --}}
-  <div class="grid-stack-item" gs-id="total-alerts" data-label="Total Alerts" gs-x="9" gs-y="8" gs-w="3" gs-h="7">
+  <div class="grid-stack-item" gs-id="total-alerts" data-label="Total Alerts" gs-x="9" gs-y="9" gs-w="3" gs-h="7">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -216,7 +216,7 @@
   </div>
 
   {{-- OS Distribution --}}
-  <div class="grid-stack-item" gs-id="os-distribution" data-label="OS Distribution" gs-x="0" gs-y="15" gs-w="4" gs-h="7">
+  <div class="grid-stack-item" gs-id="os-distribution" data-label="OS Distribution" gs-x="0" gs-y="16" gs-w="4" gs-h="7">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -229,7 +229,7 @@
   </div>
 
   {{-- Top Rules --}}
-  <div class="grid-stack-item" gs-id="top-rules" data-label="Top Rules" gs-x="4" gs-y="15" gs-w="8" gs-h="7">
+  <div class="grid-stack-item" gs-id="top-rules" data-label="Top Rules" gs-x="4" gs-y="16" gs-w="8" gs-h="7">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -267,7 +267,7 @@
   </div>
 
   {{-- Top Agents --}}
-  <div class="grid-stack-item" gs-id="top-agents" data-label="Top Agents" gs-x="0" gs-y="22" gs-w="12" gs-h="7">
+  <div class="grid-stack-item" gs-id="top-agents" data-label="Top Agents" gs-x="0" gs-y="23" gs-w="12" gs-h="7">
     <div class="grid-stack-item-content">
       <div class="card gs-card">
         <div class="card-body">
@@ -347,15 +347,15 @@
     { id: 'disconnected',      x: 3,                   y: 0,  w: 3,                   h: 4 },
     { id: 'pending',           x: 6,                   y: 0,  w: 3,                   h: 4 },
     { id: 'never-connected',   x: 9,                   y: 0,  w: 3,                   h: 4 },
-    { id: 'total-agents',      x: 0,                   y: 4,  w: 3,                   h: 4 },
-    ...(hasCustomers ? [{ id: 'total-customers', x: 3, y: 4,  w: 3,                   h: 4 }] : []),
-    { id: 'agent-composition', x: hasCustomers ? 6 : 3, y: 4, w: hasCustomers ? 6 : 9, h: 8 },
-    { id: 'alert-trend',       x: 0,                   y: 8,  w: 5,                   h: 7 },
-    { id: 'severity-chart',    x: 5,                   y: 8,  w: 4,                   h: 7 },
-    { id: 'total-alerts',      x: 9,                   y: 8,  w: 3,                   h: 7 },
-    { id: 'os-distribution',   x: 0,                   y: 15, w: 4,                   h: 7 },
-    { id: 'top-rules',         x: 4,                   y: 15, w: 8,                   h: 7 },
-    { id: 'top-agents',        x: 0,                   y: 22, w: 12,                  h: 7 },
+    { id: 'total-agents',      x: 0,                   y: 4,  w: 3,                   h: 5 },
+    ...(hasCustomers ? [{ id: 'total-customers', x: 3, y: 4,  w: 3,                   h: 5 }] : []),
+    { id: 'agent-composition', x: hasCustomers ? 6 : 3, y: 4, w: hasCustomers ? 6 : 9, h: 5 },
+    { id: 'alert-trend',       x: 0,                   y: 9,  w: 5,                   h: 7 },
+    { id: 'severity-chart',    x: 5,                   y: 9,  w: 4,                   h: 7 },
+    { id: 'total-alerts',      x: 9,                   y: 9,  w: 3,                   h: 7 },
+    { id: 'os-distribution',   x: 0,                   y: 16, w: 4,                   h: 7 },
+    { id: 'top-rules',         x: 4,                   y: 16, w: 8,                   h: 7 },
+    { id: 'top-agents',        x: 0,                   y: 23, w: 12,                  h: 7 },
   ];
 
   // ── Init GridStack ─────────────────────────────────────────────────────────
@@ -617,7 +617,7 @@
       const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
       if (el) el.classList.remove('gs-card-hidden');
     });
-    grid.load(DEFAULT_LAYOUT);
+    grid.load(DEFAULT_LAYOUT.map(i => ({ ...i })));
     Object.values(charts).forEach(c => c.resize());
   });
 

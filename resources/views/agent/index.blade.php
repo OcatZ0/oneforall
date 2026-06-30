@@ -1,4 +1,4 @@
-﻿@extends('layouts.wazuh')
+@extends('layouts.wazuh')
 
 @section('title', 'Agent - One For All')
 
@@ -730,7 +730,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
       if (el) el.classList.remove('gs-card-hidden');
     });
-    grid.load(DEFAULT_LAYOUT);
+    grid.load(DEFAULT_LAYOUT.map(i => ({ ...i })));
   });
 
   document.getElementById('gs-cancel').addEventListener('click', () => {

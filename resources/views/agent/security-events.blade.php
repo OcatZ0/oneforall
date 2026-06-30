@@ -1,4 +1,4 @@
-﻿@extends('layouts.wazuh')
+@extends('layouts.wazuh')
 
 @section('title', 'Security Events - One For All')
 
@@ -887,7 +887,7 @@ document.addEventListener('DOMContentLoaded', initializeCharts);
       const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
       if (el) el.classList.remove('gs-card-hidden');
     });
-    grid.load(DEFAULT_LAYOUT);
+    grid.load(DEFAULT_LAYOUT.map(i => ({ ...i })));
     Object.values(chartInstances).forEach(c => c?.resize?.());
   });
 

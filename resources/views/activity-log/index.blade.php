@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Log Aktivitas - One For All')
 
@@ -175,7 +175,7 @@
 <script>
 (function () {
   const DEFAULT_LAYOUT = [
-    { id: 'actlog-filter', x: 0, y: 0, w: 12, h: 5  },
+    { id: 'actlog-filter', x: 0, y: 0, w: 12, h: 3  },
     { id: 'actlog-table',  x: 0, y: 5, w: 12, h: 19 },
   ];
 
@@ -356,7 +356,7 @@
       const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
       if (el) el.classList.remove('gs-card-hidden');
     });
-    grid.load(DEFAULT_LAYOUT);
+    grid.load(DEFAULT_LAYOUT.map(i => ({ ...i })));
   });
 
   document.getElementById('gs-cancel').addEventListener('click', () => {
