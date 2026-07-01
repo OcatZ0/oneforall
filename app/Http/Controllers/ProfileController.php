@@ -7,6 +7,7 @@ use App\Models\WazuhAgent;
 use App\Models\LogActivity;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
@@ -75,13 +76,15 @@ class ProfileController extends Controller
             return back()->withErrors(['current_password' => 'Password saat ini tidak sesuai.']);
         }
 
-        $user->password = Hash::make($request->validated()['new_password']);
-        $user->save();
+        DB::transaction(function () use ($user, $request) {
+            $user->password = Hash::make($request->validated()['new_password']);
+            $user->save();
 
-        LogActivity::create([
-            'user_id'  => $user->id,
-            'activity' => 'Pengguna mengubah password',
-        ]);
+            LogActivity::create([
+                'user_id'  => $user->id,
+                'activity' => 'Pengguna mengubah password',
+            ]);
+        });
 
         session()->flash('password_success', 'Password berhasil diubah.');
 

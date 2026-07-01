@@ -9,6 +9,7 @@ use App\Models\WazuhAgent;
 use App\Models\User;
 use App\Services\WazuhService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -70,18 +71,20 @@ class UserController extends Controller
             }
         }
 
-        $user = User::create([
-            'username' => $validated['username'],
-            'email'    => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role'     => $validated['role'],
-        ]);
+        DB::transaction(function () use ($validated) {
+            $user = User::create([
+                'username' => $validated['username'],
+                'email'    => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'role'     => $validated['role'],
+            ]);
 
-        if (!empty($validated['agents'])) {
-            foreach ($validated['agents'] as $agentId) {
-                WazuhAgent::where('agent_id', $agentId)->update(['user_id' => $user->id]);
+            if (!empty($validated['agents'])) {
+                foreach ($validated['agents'] as $agentId) {
+                    WazuhAgent::where('agent_id', $agentId)->update(['user_id' => $user->id]);
+                }
             }
-        }
+        });
 
         return redirect()->route('user')->with('success', "User '{$validated['username']}' berhasil ditambahkan.");
     }
@@ -122,19 +125,21 @@ class UserController extends Controller
             }
         }
 
-        $user->update([
-            'username' => $validated['username'],
-            'email'    => $validated['email'],
-            'role'     => $validated['role'],
-        ]);
+        DB::transaction(function () use ($user, $validated) {
+            $user->update([
+                'username' => $validated['username'],
+                'email'    => $validated['email'],
+                'role'     => $validated['role'],
+            ]);
 
-        $user->agents()->update(['user_id' => null]);
+            $user->agents()->update(['user_id' => null]);
 
-        if (!empty($validated['agents'])) {
-            foreach ($validated['agents'] as $agentId) {
-                WazuhAgent::where('agent_id', $agentId)->update(['user_id' => $user->id]);
+            if (!empty($validated['agents'])) {
+                foreach ($validated['agents'] as $agentId) {
+                    WazuhAgent::where('agent_id', $agentId)->update(['user_id' => $user->id]);
+                }
             }
-        }
+        });
 
         return redirect()->route('user')->with('success', "User '{$validated['username']}' berhasil diperbarui.");
     }
@@ -154,8 +159,10 @@ class UserController extends Controller
             return ApiResponse::error('Tidak bisa menghapus akun admin terakhir.', 403);
         }
 
-        $user->agents()->update(['user_id' => null]);
-        $user->delete();
+        DB::transaction(function () use ($user) {
+            $user->agents()->update(['user_id' => null]);
+            $user->delete();
+        });
 
         return ApiResponse::success([], "User '{$user->username}' berhasil dihapus.");
     }

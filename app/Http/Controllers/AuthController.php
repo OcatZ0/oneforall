@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\LogActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -108,10 +109,12 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Token reset sudah kedaluwarsa. Silakan minta ulang.']);
         }
 
-        $user->password = Hash::make($validated['password']);
-        $user->save();
+        DB::transaction(function () use ($user, $validated) {
+            $user->password = Hash::make($validated['password']);
+            $user->save();
 
-        PasswordResetToken::where('user_id', $user->id)->delete();
+            PasswordResetToken::where('user_id', $user->id)->delete();
+        });
 
         return redirect()->route('login')->with('status', 'Kata sandi berhasil diubah. Silakan masuk.');
     }
