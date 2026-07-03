@@ -451,13 +451,19 @@ class OpenSearchService
             default => ['interval' => '1h', 'duration' => 1440],
         };
 
+        $from = match($timeRange) {
+            'today' => 'now/d',
+            'week'  => 'now/w',
+            default => "now-{$timeRange}",
+        };
+
         $query = [
             'size' => 0,
             'aggs' => ['events_by_time' => ['date_histogram' => ['field' => 'timestamp', 'fixed_interval' => $config['interval'], 'min_doc_count' => 0]]],
             'query' => [
                 'bool' => [
                     'must'   => [['term' => ['agent.id' => $agentId]]],
-                    'filter' => [['range' => ['timestamp' => ['gte' => "now-{$timeRange}"]]]]
+                    'filter' => [['range' => ['timestamp' => ['gte' => $from]]]]
                 ]
             ]
         ];

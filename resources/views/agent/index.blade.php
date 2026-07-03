@@ -403,9 +403,10 @@ function updateChart(timeRange, event) {
 
   fetch('{{ route("agent.chart-data") }}?time_range=' + timeRange)
     .then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        const dataPoints = Array.isArray(data.data) ? data.data : (data.data.active ?? []);
+    .then(res => {
+      if (res.success) {
+        const data = res.data ?? {};
+        const dataPoints = Array.isArray(data.data) ? data.data : (data.data?.active ?? []);
         const labels = data.labels ?? [];
         initChart(labels, dataPoints);
         document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
@@ -823,9 +824,9 @@ async function loadAgents(page, perPage) {
 
   try {
     const res  = await fetch(`${searchEndpoint}?${params}`, { headers: { 'Accept': 'application/json' } });
-    const data = await res.json();
-
-    if (data.error) throw new Error(data.error);
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    const data = json.data ?? {};
 
     if (tbody) {
       if (data.agents.length === 0) {

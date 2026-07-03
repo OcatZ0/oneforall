@@ -510,8 +510,9 @@ function updateChart(timeRange, event) {
 
   fetch(url)
     .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-    .then(data => {
-      if (data.success) {
+    .then(res => {
+      if (res.success) {
+        const data = res.data ?? {};
         initEventsChart(data.events_evolution?.labels ?? [], data.events_evolution?.data ?? []);
         initComplianceChart(data.compliance_data ?? []);
         updateMitreTactics(data.mitre_tactics ?? []);

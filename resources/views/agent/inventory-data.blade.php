@@ -217,7 +217,7 @@ function loadTable(tableId, type) {
     .then(r => r.json())
     .then(data => {
       renderRows(tableId, type, data.data);
-      renderFooter(tableId, type, data.total, data.page, data.perPage);
+      renderFooter(tableId, type, data.total, data.page, data.per_page);
     })
     .catch(() => {
       tbody.innerHTML = '<tr><td colspan="20" class="inv-empty text-danger">Gagal memuat data.</td></tr>';
