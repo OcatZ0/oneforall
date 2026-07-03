@@ -185,9 +185,9 @@
           <canvas id="severity-chart"></canvas>
           <div class="d-flex justify-content-around mt-3">
             <span class="badge bg-danger">Kritis</span>
-            <span class="badge bg-warning text-white">Tinggi</span>
-            <span class="badge bg-info text-white">Sedang</span>
-            <span class="badge bg-success">Rendah</span>
+            <span class="badge text-white" style="background:#fd7e14;">Tinggi</span>
+            <span class="badge bg-warning text-white">Sedang</span>
+            <span class="badge bg-secondary">Rendah</span>
           </div>
         </div>
       </div>
@@ -250,13 +250,7 @@
                   <td class="fw-bold">{{ number_format($rule['count']) }}</td>
                 </tr>
                 @empty
-                <tr>
-                  <td colspan="4" class="text-center py-5 text-muted">
-                    <span class="mdi mdi-shield-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-                    <span class="d-block fw-semibold mb-1">Tidak ada alert</span>
-                    <span class="d-block small">Tidak ada event keamanan dalam periode ini</span>
-                  </td>
-                </tr>
+                <x-empty-state-row colspan="4" icon="mdi-shield-check-outline" title="Tidak ada alert" subtitle="Tidak ada event keamanan dalam periode ini" />
                 @endforelse
               </tbody>
             </table>
@@ -301,13 +295,7 @@
                   </td>
                 </tr>
                 @empty
-                <tr>
-                  <td colspan="6" class="text-center py-5 text-muted">
-                    <span class="mdi mdi-server-network-off d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-                    <span class="d-block fw-semibold mb-1">Tidak ada agent</span>
-                    <span class="d-block small">Belum ada agent dengan alert keamanan</span>
-                  </td>
-                </tr>
+                <x-empty-state-row colspan="6" icon="mdi-server-network-off" title="Tidak ada agent" subtitle="Belum ada agent dengan alert keamanan" />
                 @endforelse
               </tbody>
             </table>
@@ -498,7 +486,7 @@
       type: 'doughnut',
       data: {
         labels: ['Critical','High','Medium','Low'],
-        datasets: [{ data: [sevData.critical, sevData.high, sevData.medium, sevData.low], backgroundColor: ['#FF4747','#FFC542','#17C1E8','#82D616'], borderWidth: 0, hoverOffset: 6 }]
+        datasets: [{ data: [sevData.critical, sevData.high, sevData.medium, sevData.low], backgroundColor: ['#dc3545','#fd7e14','#ffc107','#6c757d'], borderWidth: 0, hoverOffset: 6 }]
       },
       options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
     });

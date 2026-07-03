@@ -25,18 +25,7 @@
 @section('content')
 
 @if(!$agent)
-<div class="container-fluid py-5">
-  <div class="alert alert-danger d-flex align-items-center gap-3" role="alert">
-    <i class="mdi mdi-alert-circle-outline display-4"></i>
-    <div>
-      <h5 class="alert-heading mb-1">Agen Tidak Ditemukan</h5>
-      <p class="mb-0">Gagal memuat detail agen. Agen mungkin sudah tidak ada atau akses ditolak.</p>
-      <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2">
-        <i class="mdi mdi-arrow-left me-1"></i> Kembali ke Agen
-      </a>
-    </div>
-  </div>
-</div>
+<x-agent-not-found />
 @else
 
 @include('agent._nav', ['agent' => $agent, 'activeTab' => 'mitre-attack'])
@@ -249,13 +238,7 @@
                   <td class="font-monospace" style="font-size:10px;">{{ $alert['mitre_id'] ?? '—' }}</td>
                 </tr>
                 @empty
-                <tr>
-                  <td colspan="7" class="text-center py-5 text-muted">
-                    <span class="mdi mdi-sword-cross d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-                    <span class="d-block fw-semibold mb-1">Tidak ada taktik</span>
-                    <span class="d-block small">Tidak ada taktik MITRE ATT&amp;CK yang terdeteksi</span>
-                  </td>
-                </tr>
+                <x-empty-state-row colspan="7" icon="mdi-sword-cross" title="Tidak ada taktik" subtitle="Tidak ada taktik MITRE ATT&CK yang terdeteksi" />
                 @endforelse
               </tbody>
             </table>
@@ -507,11 +490,7 @@ async function loadMitreAlerts(page, perPage) {
             <td class="font-monospace" style="font-size:10px;">${escHtml(r.mitre_id || '—')}</td>
           </tr>`;
         }).join('')
-      : `<tr><td colspan="7" class="text-center py-5 text-muted">
-        <span class="mdi mdi-sword-cross d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-        <span class="d-block fw-semibold mb-1">Tidak ada taktik</span>
-        <span class="d-block small">Tidak ada taktik MITRE ATT&CK yang terdeteksi</span>
-      </td></tr>`;
+      : emptyStateRow(7, 'mdi-sword-cross', 'Tidak ada taktik', 'Tidak ada taktik MITRE ATT&CK yang terdeteksi');
     renderPagination('mitre-alerts-footer', json.total, json.page, json.perPage, 'loadMitreAlerts');
   } catch (e) { console.error('loadMitreAlerts failed', e); }
 }

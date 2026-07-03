@@ -26,7 +26,7 @@
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    background: #4B49AC;
+    background: var(--clr-accent);
     color: #fff;
     border: none;
     box-shadow: 0 4px 14px rgba(75,73,172,.45);

@@ -17,18 +17,7 @@
 @section('content')
 
 @if(!$agent)
-<div class="container-fluid py-5">
-  <div class="alert alert-danger d-flex align-items-center gap-3" role="alert">
-    <i class="mdi mdi-alert-circle-outline display-4"></i>
-    <div>
-      <h5 class="alert-heading mb-1">Agen Tidak Ditemukan</h5>
-      <p class="mb-0">Gagal memuat detail agen. Agen mungkin sudah tidak ada atau akses ditolak.</p>
-      <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2">
-        <i class="mdi mdi-arrow-left me-1"></i> Kembali ke Agen
-      </a>
-    </div>
-  </div>
-</div>
+<x-agent-not-found />
 @else
 
 @include('agent._nav', ['agent' => $agent, 'activeTab' => 'sca'])
@@ -235,19 +224,12 @@
                   <td class="text-muted" title="{{ $detail }}">{{ Str::limit($detail, 100) }}</td>
                 </tr>
                 @empty
-                <tr>
-                  <td colspan="4" class="text-center py-5 text-muted">
-                    @if(!$policyId)
-                    <span class="mdi mdi-clipboard-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-                    <span class="d-block fw-semibold mb-1">Pilih kebijakan</span>
-                    <span class="d-block small">Pilih kebijakan SCA untuk melihat pemeriksaan</span>
-                    @else
-                    <span class="mdi mdi-clipboard-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-                    <span class="d-block fw-semibold mb-1">Tidak ada pemeriksaan SCA</span>
-                    <span class="d-block small">Tidak ada data{{ $resultFilter ? ' untuk filter: ' . $resultFilter : '' }}</span>
-                    @endif
-                  </td>
-                </tr>
+                <x-empty-state-row
+                  colspan="4"
+                  icon="mdi-clipboard-check-outline"
+                  :title="$policyId ? 'Tidak ada pemeriksaan SCA' : 'Pilih kebijakan'"
+                  :subtitle="$policyId ? ('Tidak ada data' . ($resultFilter ? ' untuk filter: ' . $resultFilter : '')) : 'Pilih kebijakan SCA untuk melihat pemeriksaan'"
+                />
                 @endforelse
               </tbody>
             </table>
@@ -356,6 +338,14 @@ function initializeCharts() {
           },
         });
       }
+    } else {
+      const container = document.getElementById('scaScoreChartContainer');
+      if (container) {
+        container.innerHTML = `<div class="d-flex flex-column align-items-center justify-content-center text-muted text-center h-100">
+          <span class="mdi mdi-clipboard-check-outline" style="font-size:2rem; opacity:0.3; margin-bottom:6px;"></span>
+          <span class="small">Belum ada hasil pemeriksaan untuk kebijakan ini</span>
+        </div>`;
+      }
     }
   }
 }
@@ -420,11 +410,9 @@ async function loadScaData(policyId, resultFilter, page, perPage) {
         <td><span class="badge bg-${rc}">${escHtml(r.result||'n/a')}</span></td>
         <td class="text-muted" title="${escHtml(detail)}">${escHtml(detail.substring(0,100))}</td>
       </tr>`;
-    }).join('') : `<tr><td colspan="4" class="text-center py-5 text-muted">
-      <span class="mdi mdi-clipboard-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-      <span class="d-block fw-semibold mb-1">${currentPolicyId ? 'Tidak ada pemeriksaan SCA' : 'Pilih kebijakan'}</span>
-      <span class="d-block small">${currentPolicyId ? ('Tidak ada data' + (currentResultFilter ? ' untuk filter: ' + currentResultFilter : '')) : 'Pilih kebijakan SCA untuk melihat pemeriksaan'}</span>
-    </td></tr>`;
+    }).join('') : emptyStateRow(4, 'mdi-clipboard-check-outline',
+        currentPolicyId ? 'Tidak ada pemeriksaan SCA' : 'Pilih kebijakan',
+        currentPolicyId ? ('Tidak ada data' + (currentResultFilter ? ' untuk filter: ' + currentResultFilter : '')) : 'Pilih kebijakan SCA untuk melihat pemeriksaan');
 
     renderPagination('sca-footer', json.total, json.page, json.perPage, 'loadScaPage');
 

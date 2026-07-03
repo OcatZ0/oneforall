@@ -37,14 +37,8 @@
               <div class="text-uppercase text-muted fw-semibold" style="font-size:10px;letter-spacing:.05em">Status</div>
               <div>
                 @php
-                  $statusColor = match($agent->status ?? 'unknown') {
-                    'active'          => 'success',
-                    'disconnected'    => 'danger',
-                    'pending'         => 'warning',
-                    'never_connected' => 'secondary',
-                    default           => 'secondary',
-                  };
-                  $statusText = ucfirst(str_replace('_', ' ', $agent->status ?? 'unknown'));
+                  $statusColor = \App\Helpers\AgentHelper::getStatusBadgeColor($agent->status ?? 'unknown');
+                  $statusText  = \App\Helpers\AgentHelper::formatStatus($agent->status ?? 'unknown');
                 @endphp
                 <span class="badge bg-{{ $statusColor }}"><span class="mdi mdi-circle me-1" style="font-size:7px"></span>{{ $statusText }}</span>
               </div>
@@ -234,13 +228,7 @@
                   <td class="text-muted">{{ $event['rule_id'] ?? '' }}</td>
                 </tr>
                 @empty
-                <tr>
-                  <td colspan="6" class="text-center py-5 text-muted">
-                    <span class="mdi mdi-file-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-                    <span class="d-block fw-semibold mb-1">Tidak ada event FIM</span>
-                    <span class="d-block small">Tidak ada perubahan file yang terdeteksi</span>
-                  </td>
-                </tr>
+                <x-empty-state-row colspan="6" icon="mdi-file-check-outline" title="Tidak ada event FIM" subtitle="Tidak ada perubahan file yang terdeteksi" />
                 @endforelse
               </tbody>
             </table>
@@ -274,13 +262,10 @@
       <div class="card gs-card">
         <div class="card-header d-flex align-items-center justify-content-between py-2">
           <span class="fw-semibold small">SCA: Pemindaian Terbaru</span>
-          <a href="#" class="text-secondary small"><span class="mdi mdi-open-in-new"></span></a>
-        </div>
-        <div class="px-3 py-2 border-bottom bg-light d-flex align-items-center flex-wrap gap-2">
-          <a href="#" class="text-primary small fw-medium text-decoration-none">CIS Microsoft Windows Server 2022 Benchmark v1.0.0</a>
-          <span class="badge bg-success" style="font-size:10px">cis_win2022</span>
+          <a href="{{ route('agent.sca', $agent->agent_id) }}" class="text-secondary small"><span class="mdi mdi-open-in-new"></span></a>
         </div>
         <div class="card-body p-0">
+          @if(count($latestScaScans) > 0)
           <div class="table-responsive">
             <table class="table table-sm table-hover mb-0" style="font-size:11px">
               <thead class="table-light">
@@ -294,24 +279,34 @@
                 </tr>
               </thead>
               <tbody>
+                @foreach($latestScaScans as $policy)
+                @php $score = $policy['score'] ?? 0; @endphp
                 <tr>
-                  <td class="text-muted" style="max-width:140px;white-space:normal">CIS Microsoft Windows Server 2022 Benchmark v1.0.0</td>
-                  <td class="text-muted text-nowrap">Apr 11, 2026 @<br>03:39:44.000</td>
-                  <td class="text-success fw-bold">120</td>
-                  <td class="text-danger fw-bold">219</td>
-                  <td class="text-muted">3</td>
+                  <td class="text-muted" style="max-width:140px;white-space:normal" title="{{ $policy['name'] ?? '' }}">{{ Str::limit($policy['name'] ?? 'N/A', 45) }}</td>
+                  <td class="text-muted text-nowrap">{{ isset($policy['end_scan']) ? \Carbon\Carbon::parse($policy['end_scan'])->format('M d, Y @ H:i:s') : 'N/A' }}</td>
+                  <td class="text-success fw-bold">{{ $policy['pass'] ?? 0 }}</td>
+                  <td class="text-danger fw-bold">{{ $policy['fail'] ?? 0 }}</td>
+                  <td class="text-muted">{{ $policy['not_applicable'] ?? 0 }}</td>
                   <td>
                     <div class="d-flex align-items-center gap-1">
                       <div class="progress flex-grow-1" style="height:5px;min-width:40px">
-                        <div class="progress-bar bg-warning" style="width:35%"></div>
+                        <div class="progress-bar {{ $score >= 75 ? 'bg-success' : ($score >= 50 ? 'bg-warning' : 'bg-danger') }}" style="width:{{ $score }}%"></div>
                       </div>
-                      <span class="fw-bold text-warning text-nowrap">35%</span>
+                      <span class="fw-bold text-nowrap {{ $score >= 75 ? 'text-success' : ($score >= 50 ? 'text-warning' : 'text-danger') }}">{{ $score }}%</span>
                     </div>
                   </td>
                 </tr>
+                @endforeach
               </tbody>
             </table>
           </div>
+          @else
+          <div class="d-flex flex-column align-items-center justify-content-center text-muted text-center py-4">
+            <span class="mdi mdi-clipboard-check-outline" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
+            <span class="fw-semibold mb-1">Tidak ada pemeriksaan SCA</span>
+            <span class="small">Belum ada kebijakan SCA yang dipindai untuk agent ini</span>
+          </div>
+          @endif
         </div>
       </div>
     </div>
@@ -335,18 +330,7 @@
 
 @else
 
-<div class="container-fluid py-5">
-  <div class="alert alert-danger d-flex align-items-center gap-3" role="alert">
-    <i class="mdi mdi-alert-circle-outline display-4"></i>
-    <div>
-      <h5 class="alert-heading mb-1">Agen Tidak Ditemukan</h5>
-      <p class="mb-0">{{ $error ?? 'Tidak dapat memuat detail agen. Silakan coba lagi atau hubungi administrator.' }}</p>
-      <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2">
-        <i class="mdi mdi-arrow-left me-1"></i> Kembali ke Agen
-      </a>
-    </div>
-  </div>
-</div>
+<x-agent-not-found :message="$error ?? 'Tidak dapat memuat detail agen. Silakan coba lagi atau hubungi administrator.'" />
 
 @endif
 
@@ -467,7 +451,15 @@ function initComplianceChart(data) {
 
   const labels    = data.map(item => item.name || 'Unknown').filter(l => l !== 'Unknown');
   const chartData = data.map(item => item.count || 0);
-  if (labels.length === 0) return;
+  if (labels.length === 0) {
+    if (complianceChartInstance) { complianceChartInstance.destroy(); complianceChartInstance = null; }
+    container.innerHTML = `<div class="d-flex flex-column align-items-center justify-content-center text-muted py-4 text-center" style="min-height:200px;">
+      <span class="mdi mdi-chart-line-variant" style="font-size:2.5rem; opacity:0.3; margin-bottom:8px;"></span>
+      <span class="fw-semibold mb-1">Tidak ada data</span>
+      <span class="small">Tidak ada data kepatuhan dalam periode ini</span>
+    </div>`;
+    return;
+  }
 
   const colors = ['#20c997','#0d6efd','#dc3545','#6f42c1','#d63384','#fd7e14','#20c997','#0dcaf0'];
 

@@ -14,7 +14,7 @@
   .inv-table-card table tbody tr:hover { background:#f8f9fa; }
   .inv-pagination { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; font-size:12px; border-top:1px solid #f0f0f0; flex-shrink:0; }
   .inv-pagination .page-btns button { border:1px solid #dee2e6; background:#fff; padding:2px 8px; font-size:12px; cursor:pointer; }
-  .inv-pagination .page-btns button.active { background:#4B49AC; color:#fff; border-color:#4B49AC; }
+  .inv-pagination .page-btns button.active { background:var(--clr-accent); color:#fff; border-color:var(--clr-accent); }
   .inv-pagination .page-btns button:disabled { opacity:.4; cursor:default; }
   .inv-loading { text-align:center; padding:24px; color:#aaa; font-size:12px; }
   .inv-empty { text-align:center; padding:24px; color:#aaa; font-size:12px; }
@@ -47,16 +47,7 @@
 @section('content')
 
 @if(!$agent)
-<div class="container-fluid py-5">
-  <div class="alert alert-danger d-flex align-items-center gap-3">
-    <i class="mdi mdi-alert-circle-outline display-4"></i>
-    <div>
-      <h5 class="alert-heading mb-1">Agen Tidak Ditemukan</h5>
-      <p class="mb-0">Gagal memuat detail agen.</p>
-      <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2"><i class="mdi mdi-arrow-left me-1"></i> Kembali ke Agen</a>
-    </div>
-  </div>
-</div>
+<x-agent-not-found message="Gagal memuat detail agen." />
 @else
 
 @include('agent._nav', ['agent' => $agent, 'activeTab' => 'inventory'])

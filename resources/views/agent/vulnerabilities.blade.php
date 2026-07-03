@@ -12,18 +12,7 @@
 @section('content')
 
 @if(!$agent)
-<div class="container-fluid py-5">
-  <div class="alert alert-danger d-flex align-items-center gap-3" role="alert">
-    <i class="mdi mdi-alert-circle-outline display-4"></i>
-    <div>
-      <h5 class="alert-heading mb-1">Agen Tidak Ditemukan</h5>
-      <p class="mb-0">Gagal memuat detail agen. Agen mungkin sudah tidak ada atau akses ditolak.</p>
-      <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2">
-        <i class="mdi mdi-arrow-left me-1"></i> Kembali ke Agen
-      </a>
-    </div>
-  </div>
-</div>
+<x-agent-not-found />
 @else
 
 @include('agent._nav', ['agent' => $agent, 'activeTab' => 'vulnerabilities'])
@@ -228,13 +217,12 @@
                   <td class="text-muted" style="font-size:10px;">{{ $detectionTime ?? '—' }}</td>
                 </tr>
                 @empty
-                <tr>
-                  <td colspan="8" class="text-center py-5 text-muted">
-                    <span class="mdi mdi-bug-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-                    <span class="d-block fw-semibold mb-1">Tidak ada kerentanan</span>
-                    <span class="d-block small">{{ $severity ? 'Tidak ada kerentanan untuk severity: ' . $severity : 'Agent ini bersih dari kerentanan yang terdeteksi' }}</span>
-                  </td>
-                </tr>
+                <x-empty-state-row
+                  colspan="8"
+                  icon="mdi-bug-check-outline"
+                  title="Tidak ada kerentanan"
+                  :subtitle="$severity ? 'Tidak ada kerentanan untuk severity: ' . $severity : 'Agent ini bersih dari kerentanan yang terdeteksi'"
+                />
                 @endforelse
               </tbody>
             </table>

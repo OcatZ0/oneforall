@@ -53,29 +53,6 @@ class WazuhService
         }
     }
 
-    public function getAgentSummaryStatus(string $token): array
-    {
-        $empty = ['total' => 0, 'active' => 0, 'disconnected' => 0, 'pending' => 0, 'never_connected' => 0];
-
-        try {
-            $summary = $this->http()
-                ->withToken($token)
-                ->get("{$this->_host}/agents/summary/status")
-                ->json('data.connection');
-
-            return [
-                'total'           => $summary['total'] ?? 0,
-                'active'          => $summary['active'] ?? 0,
-                'disconnected'    => $summary['disconnected'] ?? 0,
-                'pending'         => $summary['pending'] ?? 0,
-                'never_connected' => $summary['never_connected'] ?? 0,
-            ];
-        } catch (\Exception $e) {
-            Log::warning('Failed to fetch agent summary: ' . $e->getMessage());
-            return $empty;
-        }
-    }
-
     public function getAgents(string $token, int $offset = 0, int $limit = 10, ?string $search = null, ?string $status = null, ?array $agentIds = null): array
     {
         try {
@@ -228,30 +205,6 @@ class WazuhService
             Log::warning('Failed to fetch vulnerability last scan: ' . $e->getMessage());
         }
         return null;
-    }
-
-    public function getAgentsWithIPs(): array
-    {
-        try {
-            $token = $this->getToken();
-            if (!$token) return [];
-
-            $response = $this->http()
-                ->withToken($token)
-                ->get("{$this->_host}/agents", [
-                    'limit'  => 500,
-                    'select' => 'id,name,ip',
-                    'q'      => 'id!=000',
-                ]);
-
-            if ($response->successful()) {
-                return $response->json('data.affected_items') ?? [];
-            }
-        } catch (\Exception $e) {
-            Log::warning('Failed to fetch agents with IPs: ' . $e->getMessage());
-        }
-
-        return [];
     }
 
     public function getInventoryHardware(string $token, string $agentId): ?array

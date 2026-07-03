@@ -17,18 +17,7 @@
 @section('content')
 
 @if(!$agent)
-<div class="container-fluid py-5">
-  <div class="alert alert-danger d-flex align-items-center gap-3" role="alert">
-    <i class="mdi mdi-alert-circle-outline display-4"></i>
-    <div>
-      <h5 class="alert-heading mb-1">Agen Tidak Ditemukan</h5>
-      <p class="mb-0">Gagal memuat detail agen. Agen mungkin sudah tidak ada atau akses ditolak.</p>
-      <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2">
-        <i class="mdi mdi-arrow-left me-1"></i> Kembali ke Agen
-      </a>
-    </div>
-  </div>
-</div>
+<x-agent-not-found />
 @else
 
 @include('agent._nav', ['agent' => $agent, 'activeTab' => 'security-events'])
@@ -222,13 +211,7 @@
                   <td><span class="badge bg-secondary">{{ $alert['groups'] }}</span></td>
                 </tr>
                 @empty
-                <tr>
-                  <td colspan="6" class="text-center py-5 text-muted">
-                    <span class="mdi mdi-monitor-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-                    <span class="d-block fw-semibold mb-1">Tidak ada alert</span>
-                    <span class="d-block small">Tidak ada event keamanan dalam periode ini</span>
-                  </td>
-                </tr>
+                <x-empty-state-row colspan="6" icon="mdi-monitor-outline" title="Tidak ada alert" subtitle="Tidak ada event keamanan dalam periode ini" />
                 @endforelse
               </tbody>
             </table>
@@ -304,13 +287,7 @@
                   <td class="fw-bold">{{ number_format($grp['count']) }}</td>
                 </tr>
                 @empty
-                <tr>
-                  <td colspan="2" class="text-center py-5 text-muted">
-                    <span class="mdi mdi-monitor-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-                    <span class="d-block fw-semibold mb-1">Tidak ada alert</span>
-                    <span class="d-block small">Tidak ada event keamanan dalam periode ini</span>
-                  </td>
-                </tr>
+                <x-empty-state-row colspan="2" icon="mdi-monitor-outline" title="Tidak ada alert" subtitle="Tidak ada event keamanan dalam periode ini" />
                 @endforelse
               </tbody>
             </table>
@@ -640,11 +617,7 @@ async function loadAlerts(page, perPage) {
         <td class="text-center fw-bold">${r.count||1}</td>
         <td><span class="badge bg-secondary">${escHtml(r.groups)}</span></td>
       </tr>`;
-    }).join('') : `<tr><td colspan="6" class="text-center py-5 text-muted">
-      <span class="mdi mdi-monitor-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-      <span class="d-block fw-semibold mb-1">Tidak ada alert</span>
-      <span class="d-block small">Tidak ada event keamanan dalam periode ini</span>
-    </td></tr>`;
+    }).join('') : emptyStateRow(6, 'mdi-monitor-outline', 'Tidak ada alert', 'Tidak ada event keamanan dalam periode ini');
     renderPagination('alerts-footer', json.total, json.page, json.perPage, 'loadAlerts');
   } catch(e) { console.error('loadAlerts failed', e); }
 }
@@ -658,11 +631,7 @@ async function loadGroups(page, perPage) {
     const tbody = document.getElementById('groups-tbody');
     tbody.innerHTML = json.data.length ? json.data.map(r =>
       `<tr><td><span class="badge bg-secondary">${escHtml(r.group)}</span></td><td class="fw-bold">${r.count.toLocaleString()}</td></tr>`
-    ).join('') : `<tr><td colspan="2" class="text-center py-5 text-muted">
-      <span class="mdi mdi-monitor-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-      <span class="d-block fw-semibold mb-1">Tidak ada alert</span>
-      <span class="d-block small">Tidak ada event keamanan dalam periode ini</span>
-    </td></tr>`;
+    ).join('') : emptyStateRow(2, 'mdi-monitor-outline', 'Tidak ada alert', 'Tidak ada event keamanan dalam periode ini');
     renderPagination('groups-footer', json.total, json.page, json.perPage, 'loadGroups');
   } catch(e) { console.error('loadGroups failed', e); }
 }

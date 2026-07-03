@@ -134,7 +134,7 @@ class AgentController extends Controller
             $savedLayout       = $this->getLayout('agent-detail');
             $savedLayoutMobile = $this->getLayoutMobile('agent-detail');
 
-            return view('agent.detail', array_merge(compact('agent', 'savedLayout', 'savedLayoutMobile'), $this->buildDetailData($agent->agent_id)));
+            return view('agent.detail', array_merge(compact('agent', 'savedLayout', 'savedLayoutMobile'), $this->buildDetailData($agent->agent_id, $token)));
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('Agent detail timeout: ' . $e->getMessage());
             return view('agent.detail', ['agent' => null, 'error' => 'Koneksi timeout saat mengambil detail agent']);
@@ -705,11 +705,15 @@ class AgentController extends Controller
         return $this->enrichAgentData($this->mapWazuhAgent($wa));
     }
 
-    private function buildDetailData(string $agentId): array
+    private function buildDetailData(string $agentId, ?string $token): array
     {
+        $scaPolicies = $token ? $this->_wazuhService->getSCAPolicies($token, $agentId) : [];
+        usort($scaPolicies, fn($a, $b) => ($b['end_scan'] ?? '') <=> ($a['end_scan'] ?? ''));
+
         return [
-            'alertStats' => $this->_openSearch->getAgentAlertStats($agentId),
-            'fimEvents'  => $this->_openSearch->getFimEvents($agentId, 5),
+            'alertStats'      => $this->_openSearch->getAgentAlertStats($agentId),
+            'fimEvents'       => $this->_openSearch->getFimEvents($agentId, 5),
+            'latestScaScans'  => array_slice($scaPolicies, 0, 3),
         ];
     }
 

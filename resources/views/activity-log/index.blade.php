@@ -133,13 +133,7 @@
                   </td>
                 </tr>
                 @empty
-                <tr>
-                  <td colspan="4" class="text-center py-5 text-muted">
-                    <span class="mdi mdi-history d-block" style="font-size:2.5rem;opacity:.35;margin-bottom:8px;"></span>
-                    <span class="d-block fw-semibold mb-1">Belum ada aktivitas</span>
-                    <span class="d-block small">Log aktivitas akan muncul di sini setelah ada tindakan pengguna</span>
-                  </td>
-                </tr>
+                <x-empty-state-row colspan="4" icon="mdi-history" title="Belum ada aktivitas" subtitle="Log aktivitas akan muncul di sini setelah ada tindakan pengguna" />
                 @endforelse
               </tbody>
             </table>
@@ -471,13 +465,7 @@ async function loadLogs(page, perPage) {
 
     if (tbody) {
       if (!data.logs || data.logs.length === 0) {
-        tbody.innerHTML = `<tr>
-          <td colspan="4" class="text-center py-5 text-muted">
-            <span class="mdi mdi-history d-block" style="font-size:2.5rem;opacity:.35;margin-bottom:8px;"></span>
-            <span class="d-block fw-semibold mb-1">Belum ada aktivitas</span>
-            <span class="d-block small">Log aktivitas akan muncul di sini setelah ada tindakan pengguna</span>
-          </td>
-        </tr>`;
+        tbody.innerHTML = emptyStateRow(4, 'mdi-history', 'Belum ada aktivitas', 'Log aktivitas akan muncul di sini setelah ada tindakan pengguna');
       } else {
         tbody.innerHTML = data.logs.map((log, i) => {
           const rowNum    = (logsPage - 1) * logsPerPage + i + 1;

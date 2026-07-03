@@ -128,13 +128,7 @@
                   </td>
                 </tr>
                 @empty
-                <tr>
-                  <td colspan="8" class="text-center py-5 text-muted">
-                    <span class="mdi mdi-account-off-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-                    <span class="d-block fw-semibold mb-1">Tidak ada pengguna</span>
-                    <span class="d-block small">Coba ubah filter pencarian</span>
-                  </td>
-                </tr>
+                <x-empty-state-row colspan="8" icon="mdi-account-off-outline" title="Tidak ada pengguna" subtitle="Coba ubah filter pencarian" />
                 @endforelse
               </tbody>
             </table>

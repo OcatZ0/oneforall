@@ -192,13 +192,7 @@
                   </td>
                 </tr>
                 @empty
-                <tr>
-                  <td colspan="9" class="text-center py-5 text-muted">
-                    <span class="mdi mdi-server-network-off d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-                    <span class="d-block fw-semibold mb-1">Tidak ada agent</span>
-                    <span class="d-block small">Coba ubah filter pencarian atau tambahkan agent baru</span>
-                  </td>
-                </tr>
+                <x-empty-state-row colspan="9" icon="mdi-server-network-off" title="Tidak ada agent" subtitle="Coba ubah filter pencarian atau tambahkan agent baru" />
                 @endforelse
               </tbody>
             </table>
@@ -266,7 +260,7 @@
         <button type="button" class="btn btn-outline-secondary btn-sm"
                 data-bs-dismiss="modal">Tutup</button>
         <button type="button" class="btn btn-sm" id="syncModalReload"
-                style="background:#4B49AC;color:#fff;" onclick="location.reload()">
+                style="background:var(--clr-accent);color:#fff;" onclick="location.reload()">
           <i class="mdi mdi-refresh me-1"></i>Muat Ulang
         </button>
       </div>
@@ -451,7 +445,7 @@ function showSyncModal(success, data, message) {
         </div>
         <div class="col-6">
           <div class="rounded p-3 text-center" style="background:#eff6ff;">
-            <div class="fw-bold fs-5" style="color:#4B49AC">${data.updated_existing}</div>
+            <div class="fw-bold fs-5" style="color:var(--clr-accent)">${data.updated_existing}</div>
             <div class="text-muted small">Diperbarui</div>
           </div>
         </div>
@@ -835,11 +829,7 @@ async function loadAgents(page, perPage) {
 
     if (tbody) {
       if (data.agents.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-muted">
-          <span class="mdi mdi-server-network-off d-block" style="font-size:2.5rem;opacity:.35;margin-bottom:8px;"></span>
-          <span class="d-block fw-semibold mb-1">Tidak ada agent</span>
-          <span class="d-block small">Coba ubah filter pencarian atau tambahkan agent baru</span>
-        </td></tr>`;
+        tbody.innerHTML = emptyStateRow(9, 'mdi-server-network-off', 'Tidak ada agent', 'Coba ubah filter pencarian atau tambahkan agent baru');
       } else {
         tbody.innerHTML = data.agents.map((a, i) => {
           const rowNum = (searchPage - 1) * searchPerPage + i + 1;

@@ -6,4 +6,7 @@
 <link rel="stylesheet" href="{{ asset('css/app.css') }}">
 <link rel="shortcut icon" href="{{ asset('images/logo_dofa.png') }}" />
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<style>
+  :root { --clr-accent: #4B49AC; }
+</style>
 @stack('styles')

@@ -16,18 +16,7 @@
 @section('content')
 
 @if(!$agent)
-<div class="container-fluid py-5">
-  <div class="alert alert-danger d-flex align-items-center gap-3" role="alert">
-    <i class="mdi mdi-alert-circle-outline display-4"></i>
-    <div>
-      <h5 class="alert-heading mb-1">Agen Tidak Ditemukan</h5>
-      <p class="mb-0">Gagal memuat detail agen. Agen mungkin sudah tidak ada atau akses ditolak.</p>
-      <a href="{{ route('agent') }}" class="btn btn-sm btn-outline-danger mt-2">
-        <i class="mdi mdi-arrow-left me-1"></i> Kembali ke Agen
-      </a>
-    </div>
-  </div>
-</div>
+<x-agent-not-found />
 @else
 
 @include('agent._nav', ['agent' => $agent, 'activeTab' => 'integrity-monitoring'])
@@ -269,13 +258,7 @@
                   <td><span class="badge bg-{{ $levelColor }}">{{ $event['level'] }}</span></td>
                 </tr>
                 @empty
-                <tr>
-                  <td colspan="5" class="text-center py-5 text-muted">
-                    <span class="mdi mdi-file-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-                    <span class="d-block fw-semibold mb-1">Tidak ada event FIM</span>
-                    <span class="d-block small">Tidak ada perubahan file yang terdeteksi</span>
-                  </td>
-                </tr>
+                <x-empty-state-row colspan="5" icon="mdi-file-check-outline" title="Tidak ada event FIM" subtitle="Tidak ada perubahan file yang terdeteksi" />
                 @endforelse
               </tbody>
             </table>
@@ -582,11 +565,7 @@ async function loadFimEvents(page, perPage) {
         </td>
         <td><span class="badge bg-${lc}">${lv}</span></td>
       </tr>`;
-    }).join('') : `<tr><td colspan="5" class="text-center py-5 text-muted">
-      <span class="mdi mdi-file-check-outline d-block" style="font-size:2.5rem; opacity:0.35; margin-bottom:8px;"></span>
-      <span class="d-block fw-semibold mb-1">Tidak ada event FIM</span>
-      <span class="d-block small">Tidak ada perubahan file yang terdeteksi</span>
-    </td></tr>`;
+    }).join('') : emptyStateRow(5, 'mdi-file-check-outline', 'Tidak ada event FIM', 'Tidak ada perubahan file yang terdeteksi');
     renderPagination('fim-footer', json.total, json.page, json.perPage, 'loadFimEvents');
   } catch(e) { console.error('loadFimEvents failed', e); }
 }
