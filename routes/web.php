@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/agent/{id}/sca/checks', [AgentController::class, 'getScaChecksJson'])->name('agent.sca.checks');
         Route::get('/agent/{id}/mitre-attack/alerts', [AgentController::class, 'getMitreAlertsJson'])->name('agent.mitre.alerts');
         Route::get('/agent/{id}/inventory/{type}', [AgentController::class, 'getInventoryJson'])->name('agent.inventory.data');
+        Route::put('/agent/{id}/description', [AgentController::class, 'updateDescription'])->name('agent.update-description');
     });
 
     // Admin only routes

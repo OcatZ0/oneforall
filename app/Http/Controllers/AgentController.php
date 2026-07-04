@@ -53,7 +53,7 @@ class AgentController extends Controller
             $wazuhData  = $this->_wazuhService->getAgents($token ?? '', $offset, $perPage, request('search'), request('status'), $dbAgentIds);
             $rawAgents  = collect($wazuhData['agents'])->reject(fn($a) => ($a['id'] ?? '') === AgentStatus::Master->value);
             $agentMap   = $this->buildAgentMap($rawAgents->pluck('id')->filter()->all());
-            $agentsList = $rawAgents->map(fn($a) => $this->enrichAgentData($this->mapWazuhAgent($a), $agentMap));
+                            $agentsList = $rawAgents->map(fn($a) => $this->enrichAgentData($this->mapWazuhAgent($a), $agentMap));
 
             $agents = new \Illuminate\Pagination\LengthAwarePaginator(
                 items: $agentsList->values(),
@@ -523,6 +523,29 @@ class AgentController extends Controller
         }
     }
 
+    public function updateDescription($id)
+    {
+        try {
+            $validated = request()->validate([
+                'description' => 'nullable|string|max:255',
+            ]);
+
+            $agent = WazuhAgent::where('agent_id', $id)->first();
+            if (!$agent) {
+                return ApiResponse::error('Agent tidak ditemukan', 404);
+            }
+
+            $agent->update(['description' => $validated['description'] ?? '']);
+
+            return ApiResponse::success(['description' => $agent->description], 'Deskripsi agent berhasil diperbarui');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return ApiResponse::error($e->validator->errors()->first(), 422);
+        } catch (\Exception $e) {
+            Log::error('Update agent description error', ['error' => $e->getMessage()]);
+            return ApiResponse::error('Gagal memperbarui deskripsi agent', 500);
+        }
+    }
+
     public function search()
     {
         try {
@@ -554,6 +577,7 @@ class AgentController extends Controller
                     'version'      => $a->version,
                     'status'       => $a->status,
                     'cluster_node' => $a->cluster_node,
+                    'description'  => $a->description ?? '',
                     'user'         => $a->user ? ['username' => $a->user->username] : null,
                 ]),
                 'total'      => $total,
@@ -581,6 +605,7 @@ class AgentController extends Controller
         if (!$agentId) return $agent;
 
         $dbAgent = $dbAgentMap[$agentId] ?? WazuhAgent::where('agent_id', $agentId)->with('user')->first();
+        $agent->description = $dbAgent->description ?? '';
         if ($dbAgent) $agent->user = $dbAgent->user;
         return $agent;
     }

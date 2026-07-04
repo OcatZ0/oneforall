@@ -94,6 +94,10 @@
                 @endif
               </div>
             </div>
+            <div>
+              <div class="text-uppercase text-muted fw-semibold" style="font-size:10px;letter-spacing:.05em">Deskripsi Agen</div>
+              <div title="{{ $agent->description ?? '' }}">{{ $agent->description ?: '-' }}</div>
+            </div>
           </div>
         </div>
       </div>

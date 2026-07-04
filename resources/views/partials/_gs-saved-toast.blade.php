@@ -8,11 +8,11 @@
   <span class="mdi mdi-check-circle"></span> Tata letak disimpan
 </div>
 <script>
-function gsShowSavedToast() {
+function gsShowSavedToast(msg) {
   const t = document.getElementById('gs-saved-toast');
   if (!t) return;
   t.style.background = '#27ae60';
-  t.innerHTML = '<span class="mdi mdi-check-circle"></span> Tata letak disimpan';
+  t.innerHTML = '<span class="mdi mdi-check-circle"></span> ' + (msg || 'Tata letak disimpan');
   t.style.display = 'flex';
   clearTimeout(t._hideTimer);
   t._hideTimer = setTimeout(() => { t.style.display = 'none'; }, 2000);

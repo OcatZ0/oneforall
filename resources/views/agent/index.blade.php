@@ -4,6 +4,7 @@
 
 @push('styles')
 @include('partials._gridstack-styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
 @endpush
 
 @section('content')
@@ -162,12 +163,14 @@
                   <th>Versi</th>
                   <th>Ditugaskan Ke</th>
                   <th>Cluster Node</th>
+                  <th>Deskripsi Agent</th>
                   <th>Status</th>
+                  <th style="width:60px">Aksi</th>
                 </tr>
               </thead>
               <tbody id="agent-tbody">
                 @forelse($agents as $agent)
-                <tr onclick="window.location='{{ route('agent.detail', $agent->agent_id) }}'" style="cursor: pointer;">
+                <tr data-agent-id="{{ $agent->agent_id }}" onclick="handleAgentRowClick(event, '{{ route('agent.detail', $agent->agent_id) }}')" style="cursor: pointer;">
                   <td>{{ ($agents->currentPage() - 1) * $agents->perPage() + $loop->iteration }}</td>
                   <td class="fw-bold">{{ $agent->agent_id }}</td>
                   <td>{{ $agent->name }}</td>
@@ -185,14 +188,21 @@
                     @endif
                   </td>
                   <td><small class="text-muted">{{ $agent->cluster_node }}</small></td>
+                  <td data-desc-cell><small class="text-muted" title="{{ $agent->description ?? '' }}">{{ Str::limit($agent->description ?: '-', 40) }}</small></td>
                   <td>
                     <span class="badge bg-{{ \App\Helpers\AgentHelper::getStatusBadgeColor($agent->status) }}">
                       {{ \App\Helpers\AgentHelper::formatStatus($agent->status) }}
                     </span>
                   </td>
+                  <td>
+                    <button type="button" class="btn btn-sm btn-outline-primary edit-desc-btn" title="Edit Deskripsi Agent"
+                      data-agent-id="{{ $agent->agent_id }}" data-description="{{ $agent->description ?? '' }}">
+                      <i class="mdi mdi-pencil"></i>
+                    </button>
+                  </td>
                 </tr>
                 @empty
-                <x-empty-state-row colspan="9" icon="mdi-server-network-off" title="Tidak ada agent" subtitle="Coba ubah filter pencarian atau tambahkan agent baru" />
+                <x-empty-state-row colspan="11" icon="mdi-server-network-off" title="Tidak ada agent" subtitle="Coba ubah filter pencarian atau tambahkan agent baru" />
                 @endforelse
               </tbody>
             </table>
@@ -269,6 +279,39 @@
   </div>
 </div>
 
+{{-- Edit Agent Description Modal --}}
+<div class="modal fade" id="editDescriptionModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:440px;">
+    <div class="modal-content border-0 shadow">
+
+      <div class="modal-header border-0 pb-0 pt-4 px-4">
+        <div>
+          <h5 class="modal-title mb-0 fw-semibold">Edit Deskripsi Agen</h5>
+          <p class="text-muted small mb-0">Agent ID: <span id="editDescriptionAgentLabel" class="fw-semibold"></span></p>
+        </div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body px-4 py-3">
+        <form id="editDescriptionForm" onsubmit="return false;">
+          <div class="form-group">
+            <label class="form-label" for="editDescriptionInput">Deskripsi Agen</label>
+            <textarea id="editDescriptionInput" class="form-control" rows="3" maxlength="255" placeholder="Masukkan deskripsi agen..."></textarea>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer border-0 px-4 pt-0 pb-4 gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-sm btn-primary" id="saveDescriptionBtn" onclick="saveAgentDescription()">
+          <i class="mdi mdi-content-save me-1"></i>Simpan
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 {{-- Floating pencil --}}
 <div id="gs-fab">
   <button id="gs-fab-main" title="Edit layout">
@@ -287,7 +330,15 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack-all.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
 <script>
+const notyf = new Notyf({
+  duration: 3000,
+  position: { x: 'right', y: 'top' },
+  ripple: false,
+  dismissible: true,
+});
+
 // ── Global chart state (accessible from HTML onclick handlers) ────────────────
 let evolutionChartInstance = null;
 
@@ -830,7 +881,7 @@ async function loadAgents(page, perPage) {
 
     if (tbody) {
       if (data.agents.length === 0) {
-        tbody.innerHTML = emptyStateRow(9, 'mdi-server-network-off', 'Tidak ada agent', 'Coba ubah filter pencarian atau tambahkan agent baru');
+        tbody.innerHTML = emptyStateRow(11, 'mdi-server-network-off', 'Tidak ada agent', 'Coba ubah filter pencarian atau tambahkan agent baru');
       } else {
         tbody.innerHTML = data.agents.map((a, i) => {
           const rowNum = (searchPage - 1) * searchPerPage + i + 1;
@@ -840,7 +891,9 @@ async function loadAgents(page, perPage) {
           const userBadge = a.user
             ? `<span class="badge bg-primary">${escHtml(a.user.username)}</span>`
             : `<span class="text-muted fst-italic">Unassigned</span>`;
-          return `<tr onclick="window.location='/agent/${escHtml(a.agent_id)}/detail'" style="cursor:pointer;">
+          const description = a.description || '';
+          const descTruncated = description.length > 40 ? description.slice(0, 40) + '…' : (description || '-');
+          return `<tr data-agent-id="${escHtml(a.agent_id)}" onclick="handleAgentRowClick(event, '/agent/${escHtml(a.agent_id)}/detail')" style="cursor:pointer;">
             <td>${rowNum}</td>
             <td class="fw-bold">${escHtml(a.agent_id)}</td>
             <td>${escHtml(a.name)}</td>
@@ -849,7 +902,14 @@ async function loadAgents(page, perPage) {
             <td><small class="text-muted">${escHtml(a.version)}</small></td>
             <td>${userBadge}</td>
             <td><small class="text-muted">${escHtml(a.cluster_node)}</small></td>
+            <td data-desc-cell><small class="text-muted" title="${escHtml(description)}">${escHtml(descTruncated)}</small></td>
             <td><span class="badge bg-${statusColor}">${statusLabel}</span></td>
+            <td>
+              <button type="button" class="btn btn-sm btn-outline-primary edit-desc-btn" title="Edit Deskripsi Agent"
+                data-agent-id="${escHtml(a.agent_id)}" data-description="${escHtml(description)}">
+                <i class="mdi mdi-pencil"></i>
+              </button>
+            </td>
           </tr>`;
         }).join('');
       }
@@ -879,5 +939,81 @@ document.addEventListener('DOMContentLoaded', () => {
     statusFilter.addEventListener('change', () => loadAgents(1, searchPerPage));
   }
 });
+
+// ── Edit agent description ────────────────────────────────────────────────────
+function handleAgentRowClick(event, detailUrl) {
+  if (event.target.closest('.edit-desc-btn')) return;
+  window.location = detailUrl;
+}
+
+let _editDescriptionAgentId = null;
+
+function openEditDescriptionModal(agentId, description) {
+  _editDescriptionAgentId = agentId;
+  document.getElementById('editDescriptionAgentLabel').textContent = agentId;
+  document.getElementById('editDescriptionInput').value = description || '';
+  new bootstrap.Modal(document.getElementById('editDescriptionModal')).show();
+}
+
+// Event delegation so this works for both server-rendered and AJAX-rendered rows
+document.getElementById('agent-tbody')?.addEventListener('click', e => {
+  const btn = e.target.closest('.edit-desc-btn');
+  if (!btn) return;
+  e.stopPropagation();
+  openEditDescriptionModal(btn.dataset.agentId, btn.dataset.description || '');
+});
+
+function saveAgentDescription() {
+  if (!_editDescriptionAgentId) return;
+
+  const btn      = document.getElementById('saveDescriptionBtn');
+  const input    = document.getElementById('editDescriptionInput');
+  const original = btn.innerHTML;
+
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...';
+
+  fetch(`/agent/${encodeURIComponent(_editDescriptionAgentId)}/description`, {
+    method: 'PUT',
+    headers: {
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({ description: input.value }),
+  })
+    .then(r => r.json())
+    .then(json => {
+      btn.disabled  = false;
+      btn.innerHTML = original;
+
+      if (json.success) {
+        const newDescription = json.data?.description ?? input.value;
+
+        // Update the table row in place without a full reload
+        const row = document.querySelector(`tr[data-agent-id="${CSS.escape(_editDescriptionAgentId)}"]`);
+        if (row) {
+          const descCell = row.querySelector('[data-desc-cell] small');
+          if (descCell) {
+            const truncated = newDescription.length > 40 ? newDescription.slice(0, 40) + '…' : (newDescription || '-');
+            descCell.textContent = truncated;
+            descCell.title = newDescription;
+          }
+          const editBtn = row.querySelector('.edit-desc-btn');
+          if (editBtn) editBtn.dataset.description = newDescription;
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById('editDescriptionModal'))?.hide();
+        notyf.success('Deskripsi agent berhasil diperbarui');
+      } else {
+        notyf.error(json.message || 'Gagal memperbarui deskripsi agent');
+      }
+    })
+    .catch(() => {
+      btn.disabled  = false;
+      btn.innerHTML = original;
+      notyf.error('Gagal memperbarui deskripsi agent');
+    });
+}
 </script>
 @endpush
