@@ -404,7 +404,8 @@ async function refreshData() {
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
+    const raw  = await res.json();
+    const json = raw.data ?? {};
 
     // Update metrics
     const s = json.fimSummary || {};
@@ -566,7 +567,7 @@ async function loadFimEvents(page, perPage) {
         <td><span class="badge bg-${lc}">${lv}</span></td>
       </tr>`;
     }).join('') : emptyStateRow(5, 'mdi-file-check-outline', 'Tidak ada event FIM', 'Tidak ada perubahan file yang terdeteksi');
-    renderPagination('fim-footer', json.total, json.page, json.perPage, 'loadFimEvents');
+    renderPagination('fim-footer', json.total, json.page, json.per_page, 'loadFimEvents');
   } catch(e) { console.error('loadFimEvents failed', e); }
 }
 

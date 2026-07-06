@@ -491,7 +491,7 @@ async function loadMitreAlerts(page, perPage) {
           </tr>`;
         }).join('')
       : emptyStateRow(7, 'mdi-sword-cross', 'Tidak ada taktik', 'Tidak ada taktik MITRE ATT&CK yang terdeteksi');
-    renderPagination('mitre-alerts-footer', json.total, json.page, json.perPage, 'loadMitreAlerts');
+    renderPagination('mitre-alerts-footer', json.total, json.page, json.per_page, 'loadMitreAlerts');
   } catch (e) { console.error('loadMitreAlerts failed', e); }
 }
 

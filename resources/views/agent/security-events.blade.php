@@ -420,7 +420,8 @@ async function refreshData() {
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
+    const raw  = await res.json();
+    const json = raw.data ?? {};
 
     // Update metrics
     const m = json.metrics || {};
@@ -618,7 +619,7 @@ async function loadAlerts(page, perPage) {
         <td><span class="badge bg-secondary">${escHtml(r.groups)}</span></td>
       </tr>`;
     }).join('') : emptyStateRow(6, 'mdi-monitor-outline', 'Tidak ada alert', 'Tidak ada event keamanan dalam periode ini');
-    renderPagination('alerts-footer', json.total, json.page, json.perPage, 'loadAlerts');
+    renderPagination('alerts-footer', json.total, json.page, json.per_page, 'loadAlerts');
   } catch(e) { console.error('loadAlerts failed', e); }
 }
 
@@ -632,7 +633,7 @@ async function loadGroups(page, perPage) {
     tbody.innerHTML = json.data.length ? json.data.map(r =>
       `<tr><td><span class="badge bg-secondary">${escHtml(r.group)}</span></td><td class="fw-bold">${r.count.toLocaleString()}</td></tr>`
     ).join('') : emptyStateRow(2, 'mdi-monitor-outline', 'Tidak ada alert', 'Tidak ada event keamanan dalam periode ini');
-    renderPagination('groups-footer', json.total, json.page, json.perPage, 'loadGroups');
+    renderPagination('groups-footer', json.total, json.page, json.per_page, 'loadGroups');
   } catch(e) { console.error('loadGroups failed', e); }
 }
 

@@ -397,7 +397,8 @@ async function loadScaData(policyId, resultFilter, page, perPage) {
   try {
     const res  = await fetch(`${scaEndpoint}?${params}`, { headers: { 'Accept': 'application/json' } });
     if (!res.ok) return;
-    const json = await res.json();
+    const raw  = await res.json();
+    const json = raw.data ?? {};
 
     // Update checks table
     const tbody = document.getElementById('sca-tbody');
