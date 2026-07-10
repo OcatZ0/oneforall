@@ -267,27 +267,6 @@ class WazuhService
         return $this->_getSyscollector($token, $agentId, 'processes', $limit, $offset, $search);
     }
 
-    public function getAgentOsList(string $token, array $agentIds): array
-    {
-        try {
-            $response = $this->http()
-                ->withToken($token)
-                ->get("{$this->_host}/agents", [
-                    'limit'       => 500,
-                    'select'      => 'id,name,os.name',
-                    'agents_list' => implode(',', $agentIds),
-                ]);
-
-            if ($response->successful()) {
-                return $response->json('data.affected_items') ?? [];
-            }
-        } catch (\Exception $e) {
-            Log::warning('Failed to fetch agent OS list: ' . $e->getMessage());
-        }
-
-        return [];
-    }
-
     private function _getSyscollector(string $token, string $agentId, string $endpoint, int $limit, int $offset, ?string $search): array
     {
         try {

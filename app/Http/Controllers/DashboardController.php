@@ -37,12 +37,13 @@ class DashboardController extends Controller
 
             $accessibleAgentIds = $this->getAccessibleAgentIds();
 
-            $alertTrend     = $this->_openSearch->getAlertTrendLast7Days($accessibleAgentIds);
-            $alertSeverity  = $this->_openSearch->getAlertSeverityDistribution($accessibleAgentIds);
-            $totalAlerts    = $this->_openSearch->getTotalAlertCount($accessibleAgentIds);
-            $osDistribution = $this->_openSearch->getOsDistribution($accessibleAgentIds);
-            $topRules       = $this->_openSearch->getTopTriggeredRules(5, $accessibleAgentIds);
-            $topAgents      = $this->_openSearch->getTopAgentsByAlerts(5, $accessibleAgentIds);
+            $dashboardData  = $this->_openSearch->getDashboardData($accessibleAgentIds, $token);
+            $alertTrend     = $dashboardData['alertTrend'];
+            $alertSeverity  = $dashboardData['alertSeverity'];
+            $totalAlerts    = array_sum($alertSeverity);
+            $osDistribution = $dashboardData['osDistribution'];
+            $topRules       = $dashboardData['topRules'];
+            $topAgents      = $dashboardData['topAgents'];
             $customerStats  = $isAdmin ? $this->getCustomerStats() : null;
             $savedLayout       = DashboardLayout::where('user_id', $userId)->where('page', 'home')->value('layout');
             $savedLayoutMobile = DashboardLayout::where('user_id', $userId)->where('page', 'home-mobile')->value('layout');

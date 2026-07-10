@@ -22,107 +22,167 @@ class OpenSearchService
         $this->_wazuhService       = $_wazuhService;
     }
 
-    public function getAlertTrendLast7Days($agentIds = null)
+    public function getDashboardData(array $agentIds, ?string $wazuhToken = null): array
     {
-        if (empty($agentIds)) {
-            return [];
-        }
-
-        if (is_array($agentIds) && !empty($agentIds)) {
-            $agentIds = array_map('strval', $agentIds);
-        }
-
-        $query = [
-            'size' => 0,
-            'aggs' => [
-                'alerts_by_day' => [
-                    'date_histogram' => [
-                        'field'          => 'timestamp',
-                        'fixed_interval' => '1d',
-                        'min_doc_count'  => 0,
-                    ]
-                ]
-            ],
-            'query' => [
-                'bool' => [
-                    'filter' => [
-                        ['range' => ['timestamp' => ['gte' => 'now-6d/d', 'lte' => 'now']]]
-                    ],
-                    'must_not' => [
-                        ['term' => ['agent.id' => '000']]
-                    ]
-                ]
-            ]
+        $empty = [
+            'alertTrend'     => [0, 0, 0, 0, 0, 0, 0],
+            'alertSeverity'  => ['critical' => 0, 'high' => 0, 'medium' => 0, 'low' => 0],
+            'osDistribution' => [],
+            'topRules'       => [],
+            'topAgents'      => [],
         ];
 
-        if (!empty($agentIds)) {
-            $query['query']['bool']['filter'][] = ['terms' => ['agent.id' => $agentIds]];
-        }
+        if (empty($agentIds)) return $empty;
+
+        $agentIds = array_map('strval', $agentIds);
+
+        $trendQuery = [
+            'size' => 0,
+            'aggs' => ['alerts_by_day' => ['date_histogram' => ['field' => 'timestamp', 'fixed_interval' => '1d', 'min_doc_count' => 0]]],
+            'query' => ['bool' => [
+                'filter'   => [['range' => ['timestamp' => ['gte' => 'now-6d/d', 'lte' => 'now']]], ['terms' => ['agent.id' => $agentIds]]],
+                'must_not' => [['term' => ['agent.id' => '000']]],
+            ]],
+        ];
+
+        $severityQuery = [
+            'size' => 0,
+            'aggs' => ['severity_counts' => ['terms' => ['field' => 'rule.level', 'size' => 20]]],
+            'query' => ['bool' => [
+                'filter'   => [['range' => ['timestamp' => ['gte' => 'now-7d']]], ['terms' => ['agent.id' => $agentIds]]],
+                'must_not' => [['term' => ['agent.id' => '000']]],
+            ]],
+        ];
+
+        $topRulesQuery = [
+            'size' => 0,
+            'aggs' => ['top_rules' => [
+                'terms' => ['field' => 'rule.id', 'size' => 5],
+                'aggs'  => [
+                    'rule_description' => ['terms' => ['field' => 'rule.description', 'size' => 1]],
+                    'rule_level'       => ['terms' => ['field' => 'rule.level', 'size' => 1]],
+                ],
+            ]],
+            'query' => ['bool' => [
+                'filter'   => [['range' => ['timestamp' => ['gte' => 'now-7d']]], ['terms' => ['agent.id' => $agentIds]]],
+                'must_not' => [['term' => ['agent.id' => '000']]],
+            ]],
+        ];
+
+        $topAgentsQuery = [
+            'size' => 0,
+            'aggs' => ['top_agents' => [
+                'terms' => ['field' => 'agent.id', 'size' => 5],
+                'aggs'  => [
+                    'agent_name' => ['terms' => ['field' => 'agent.name',    'size' => 1]],
+                    'agent_ip'   => ['terms' => ['field' => 'agent.ip',      'size' => 1]],
+                    'agent_os'   => ['terms' => ['field' => 'agent.os.name', 'size' => 1]],
+                ],
+            ]],
+            'query' => ['bool' => [
+                'filter'   => [['range' => ['timestamp' => ['gte' => 'now-7d']]], ['terms' => ['agent.id' => $agentIds]]],
+                'must_not' => [['term' => ['agent.id' => '000']]],
+            ]],
+        ];
 
         try {
-            $response = $this->http()
-                ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
-                ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+            $responses = Http::pool(function ($pool) use ($trendQuery, $severityQuery, $topRulesQuery, $topAgentsQuery, $wazuhToken, $agentIds) {
+                $requests = [
+                    $pool->as('trend')
+                        ->withoutVerifying()
+                        ->connectTimeout(config('dashboard.http.connect_timeout'))
+                        ->timeout(config('dashboard.http.timeout'))
+                        ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
+                        ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $trendQuery),
+                    $pool->as('severity')
+                        ->withoutVerifying()
+                        ->connectTimeout(config('dashboard.http.connect_timeout'))
+                        ->timeout(config('dashboard.http.timeout'))
+                        ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
+                        ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $severityQuery),
+                    $pool->as('rules')
+                        ->withoutVerifying()
+                        ->connectTimeout(config('dashboard.http.connect_timeout'))
+                        ->timeout(config('dashboard.http.timeout'))
+                        ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
+                        ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $topRulesQuery),
+                    $pool->as('agents')
+                        ->withoutVerifying()
+                        ->connectTimeout(config('dashboard.http.connect_timeout'))
+                        ->timeout(config('dashboard.http.timeout'))
+                        ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
+                        ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $topAgentsQuery),
+                ];
 
-            if ($response->successful()) {
-                $buckets = $response->json('aggregations.alerts_by_day.buckets') ?? [];
-                $trend   = array_map(fn($b) => $b['doc_count'], $buckets);
-                return $trend ?: [0, 0, 0, 0, 0, 0, 0];
-            }
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            \Log::warning('OpenSearch alert trend timeout: ' . $e->getMessage());
+                if ($wazuhToken) {
+                    $requests[] = $pool->as('os')
+                        ->withoutVerifying()
+                        ->connectTimeout(config('dashboard.http.connect_timeout'))
+                        ->timeout(config('dashboard.http.timeout'))
+                        ->withToken($wazuhToken)
+                        ->get(config('wazuh.host') . '/agents', ['limit' => 500, 'select' => 'id,name,os.name', 'agents_list' => implode(',', $agentIds)]);
+                }
+
+                return $requests;
+            });
         } catch (\Exception $e) {
-            \Log::error('OpenSearch alert trend failed: ' . $e->getMessage());
-        }
-
-        return [0, 0, 0, 0, 0, 0, 0];
-    }
-
-    public function getAlertSeverityDistribution($agentIds = null)
-    {
-        $empty = ['critical' => 0, 'high' => 0, 'medium' => 0, 'low' => 0];
-
-        if (empty($agentIds)) {
+            \Log::error('Dashboard data pool failed: ' . $e->getMessage());
             return $empty;
         }
 
-        if (is_array($agentIds) && !empty($agentIds)) {
-            $agentIds = array_map('strval', $agentIds);
+        $ok = fn ($key) => isset($responses[$key])
+            && $responses[$key] instanceof \Illuminate\Http\Client\Response
+            && $responses[$key]->successful();
+
+        $alertTrend = $empty['alertTrend'];
+        if ($ok('trend')) {
+            $buckets    = $responses['trend']->json('aggregations.alerts_by_day.buckets') ?? [];
+            $trend      = array_map(fn($b) => $b['doc_count'], $buckets);
+            $alertTrend = $trend ?: $empty['alertTrend'];
         }
 
-        $query = [
-            'size' => 0,
-            'aggs' => ['severity_counts' => ['terms' => ['field' => 'rule.level', 'size' => 20]]],
-            'query' => [
-                'bool' => [
-                    'filter'   => [['range' => ['timestamp' => ['gte' => 'now-7d']]]],
-                    'must_not' => [['term' => ['agent.id' => '000']]]
-                ]
-            ]
-        ];
+        $alertSeverity = $ok('severity')
+            ? $this->parseSeverityResponse($responses['severity']->json())
+            : $empty['alertSeverity'];
 
-        if (!empty($agentIds)) {
-            $query['query']['bool']['filter'][] = ['terms' => ['agent.id' => $agentIds]];
+        $topRules = [];
+        if ($ok('rules')) {
+            $buckets  = $responses['rules']->json('aggregations.top_rules.buckets') ?? [];
+            $topRules = array_map(fn($b) => [
+                'id'          => $b['key'] ?? '',
+                'description' => $b['rule_description']['buckets'][0]['key'] ?? 'Unknown',
+                'level'       => $b['rule_level']['buckets'][0]['key'] ?? 0,
+                'count'       => $b['doc_count'] ?? 0,
+            ], $buckets);
         }
 
-        try {
-            $response = $this->http()
-                ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
-                ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
+        $topAgents = [];
+        if ($ok('agents')) {
+            $buckets   = $responses['agents']->json('aggregations.top_agents.buckets') ?? [];
+            $topAgents = array_map(fn($b) => [
+                'id'          => $b['key'] ?? '',
+                'name'        => $b['agent_name']['buckets'][0]['key'] ?? 'Unknown',
+                'ip'          => $b['agent_ip']['buckets'][0]['key']   ?? 'N/A',
+                'os'          => $b['agent_os']['buckets'][0]['key']   ?? 'Unknown',
+                'alert_count' => $b['doc_count'] ?? 0,
+            ], $buckets);
+        }
 
-            if ($response->successful()) {
-                return $this->parseSeverityResponse($response->json());
+        $osDistribution = [];
+        if ($wazuhToken && $ok('os')) {
+            $agents = array_filter(
+                $responses['os']->json('data.affected_items') ?? [],
+                fn($a) => ($a['id'] ?? null) !== \App\Enums\AgentStatus::Master->value
+            );
+            foreach ($agents as $agent) {
+                if (isset($agent['os']['name'])) {
+                    $osName = $agent['os']['name'];
+                    $osDistribution[$osName] = ($osDistribution[$osName] ?? 0) + 1;
+                }
             }
-        } catch (\Exception $e) {
-            \Log::warning('OpenSearch severity query failed: ' . $e->getMessage());
         }
 
-        return $empty;
-    }
-
-    public function getTotalAlertCount($agentIds = null): int
-    {
-        return array_sum($this->getAlertSeverityDistribution($agentIds));
+        return compact('alertTrend', 'alertSeverity', 'osDistribution', 'topRules', 'topAgents');
     }
 
     public function getAgentEvolutionByTimeRange($timeRange = '24h', $agentIds = null, $baseTime = null)
@@ -265,143 +325,6 @@ class OpenSearchService
             \Log::error('[AgentEvolution] Exception: ' . $e->getMessage());
             return $this->getAgentEvolutionFallbackData($labels);
         }
-    }
-
-    public function getOsDistribution($agentIds = null)
-    {
-        try {
-            if (empty($agentIds)) return [];
-
-            $agentIds = array_map('strval', (array) $agentIds);
-
-            $token = $this->_wazuhService->getToken();
-            if (!$token) return [];
-
-            $agents = array_filter(
-                $this->_wazuhService->getAgentOsList($token, $agentIds),
-                fn($a) => ($a['id'] ?? null) !== \App\Enums\AgentStatus::Master->value
-            );
-
-            $osDistribution = [];
-            foreach ($agents as $agent) {
-                if (isset($agent['os']['name'])) {
-                    $osName = $agent['os']['name'];
-                    $osDistribution[$osName] = ($osDistribution[$osName] ?? 0) + 1;
-                }
-            }
-
-            return $osDistribution ?: [];
-
-        } catch (\Exception $e) {
-            \Log::warning('OS distribution query failed: ' . $e->getMessage());
-            return [];
-        }
-    }
-
-    public function getTopTriggeredRules($limit = 5, $agentIds = null)
-    {
-        if (empty($agentIds)) return [];
-
-        if (is_array($agentIds) && !empty($agentIds)) {
-            $agentIds = array_map('strval', $agentIds);
-        }
-
-        $query = [
-            'size' => 0,
-            'aggs' => [
-                'top_rules' => [
-                    'terms' => ['field' => 'rule.id', 'size' => $limit],
-                    'aggs'  => [
-                        'rule_description' => ['terms' => ['field' => 'rule.description', 'size' => 1]],
-                        'rule_level'       => ['terms' => ['field' => 'rule.level', 'size' => 1]],
-                    ]
-                ]
-            ],
-            'query' => [
-                'bool' => [
-                    'filter'   => [['range' => ['timestamp' => ['gte' => 'now-7d']]]],
-                    'must_not' => [['term' => ['agent.id' => '000']]]
-                ]
-            ]
-        ];
-
-        if (!empty($agentIds)) {
-            $query['query']['bool']['filter'][] = ['terms' => ['agent.id' => $agentIds]];
-        }
-
-        try {
-            $response = $this->http()
-                ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
-                ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
-
-            if ($response->successful()) {
-                $buckets = $response->json('aggregations.top_rules.buckets') ?? [];
-                return array_map(fn($b) => [
-                    'id'          => $b['key'] ?? '',
-                    'description' => $b['rule_description']['buckets'][0]['key'] ?? 'Unknown',
-                    'level'       => $b['rule_level']['buckets'][0]['key'] ?? 0,
-                    'count'       => $b['doc_count'] ?? 0,
-                ], $buckets);
-            }
-        } catch (\Exception $e) {
-            \Log::warning('OpenSearch top rules failed: ' . $e->getMessage());
-        }
-
-        return [];
-    }
-
-    public function getTopAgentsByAlerts($limit = 5, $agentIds = null)
-    {
-        if (empty($agentIds)) return [];
-
-        if (is_array($agentIds) && !empty($agentIds)) {
-            $agentIds = array_map('strval', $agentIds);
-        }
-
-        $query = [
-            'size' => 0,
-            'aggs' => [
-                'top_agents' => [
-                    'terms' => ['field' => 'agent.id', 'size' => $limit],
-                    'aggs'  => [
-                        'agent_name' => ['terms' => ['field' => 'agent.name',    'size' => 1]],
-                        'agent_ip'   => ['terms' => ['field' => 'agent.ip',      'size' => 1]],
-                        'agent_os'   => ['terms' => ['field' => 'agent.os.name', 'size' => 1]],
-                    ]
-                ]
-            ],
-            'query' => [
-                'bool' => [
-                    'filter'   => [['range' => ['timestamp' => ['gte' => 'now-7d']]]],
-                    'must_not' => [['term' => ['agent.id' => '000']]]
-                ]
-            ]
-        ];
-
-        if (!empty($agentIds)) {
-            $query['query']['bool']['filter'][] = ['terms' => ['agent.id' => $agentIds]];
-        }
-
-        try {
-            $response = $this->http()
-                ->withBasicAuth($this->_opensearchUser, $this->_opensearchPassword)
-                ->post("{$this->_opensearchHost}/wazuh-alerts-*/_search", $query);
-
-            if ($response->successful()) {
-                $buckets = $response->json('aggregations.top_agents.buckets') ?? [];
-                return array_map(fn($b) => [
-                    'id'          => $b['key'] ?? '',
-                    'name'        => $b['agent_name']['buckets'][0]['key'] ?? 'Unknown',
-                    'ip'          => $b['agent_ip']['buckets'][0]['key']   ?? 'N/A',
-                    'os'          => $b['agent_os']['buckets'][0]['key']   ?? 'Unknown',
-                    'alert_count' => $b['doc_count'] ?? 0,
-                ], $buckets);
-            }
-        } catch (\Exception $e) {
-            \Log::warning('OpenSearch top agents failed: ' . $e->getMessage());
-        }
-
-        return [];
     }
 
     public function getFimEvents($agentId, $limit = 5)
