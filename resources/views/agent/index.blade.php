@@ -4,7 +4,6 @@
 
 @push('styles')
 @include('partials._gridstack-styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
 @endpush
 
 @section('content')
@@ -330,15 +329,7 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/gridstack@10/dist/gridstack-all.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
 <script>
-const notyf = new Notyf({
-  duration: 3000,
-  position: { x: 'right', y: 'top' },
-  ripple: false,
-  dismissible: true,
-});
-
 // ── Global chart state (accessible from HTML onclick handlers) ────────────────
 let evolutionChartInstance = null;
 

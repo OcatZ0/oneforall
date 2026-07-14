@@ -47,7 +47,7 @@ class AgentController extends Controller
                 $agents            = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage, $page, ['path' => route('agent'), 'query' => request()->query()]);
                 $savedLayout       = $this->getLayout('agent');
                 $savedLayoutMobile = $this->getLayoutMobile('agent');
-                return view('agent.index', ['agents' => $agents, 'stats' => $stats, 'evolutionLabels' => '[]', 'evolutionData' => '[]', 'savedLayout' => $savedLayout, 'savedLayoutMobile' => $savedLayoutMobile]);
+                return view('agent.index', ['agents' => $agents, 'stats' => $stats, 'evolutionLabels' => '[]', 'evolutionData' => '[]', 'savedLayout' => $savedLayout, 'savedLayoutMobile' => $savedLayoutMobile, 'wazuhConnected' => (bool) $token]);
             }
 
             $wazuhData  = $this->_wazuhService->getAgents($token ?? '', $offset, $perPage, request('search'), request('status'), $dbAgentIds);
@@ -71,8 +71,9 @@ class AgentController extends Controller
 
             $savedLayout       = $this->getLayout('agent');
             $savedLayoutMobile = $this->getLayoutMobile('agent');
+            $wazuhConnected    = (bool) $token;
 
-            return view('agent.index', compact('agents', 'stats', 'evolutionLabels', 'evolutionData', 'savedLayout', 'savedLayoutMobile'));
+            return view('agent.index', compact('agents', 'stats', 'evolutionLabels', 'evolutionData', 'savedLayout', 'savedLayoutMobile', 'wazuhConnected'));
         } catch (\Exception $e) {
             Log::error('Agent index error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return $this->indexErrorView();
@@ -121,20 +122,21 @@ class AgentController extends Controller
         try {
             $token = $this->_wazuhService->getToken();
             if (!$token) {
-                return view('agent.detail', ['agent' => null, 'error' => 'Gagal melakukan autentikasi ke Wazuh API']);
+                return view('agent.detail', ['agent' => null, 'error' => 'Gagal melakukan autentikasi ke Wazuh API', 'wazuhConnected' => false]);
             }
 
             $wa = $this->_wazuhService->getAgent($token, $id);
             if (!$wa) {
-                return view('agent.detail', ['agent' => null, 'error' => 'Agent tidak ditemukan']);
+                return view('agent.detail', ['agent' => null, 'error' => 'Agent tidak ditemukan', 'wazuhConnected' => true]);
             }
 
             $agent = $this->enrichAgentData($this->mapWazuhAgent($wa, true));
 
             $savedLayout       = $this->getLayout('agent-detail');
             $savedLayoutMobile = $this->getLayoutMobile('agent-detail');
+            $wazuhConnected    = true;
 
-            return view('agent.detail', array_merge(compact('agent', 'savedLayout', 'savedLayoutMobile'), $this->buildDetailData($agent->agent_id, $token)));
+            return view('agent.detail', array_merge(compact('agent', 'savedLayout', 'savedLayoutMobile', 'wazuhConnected'), $this->buildDetailData($agent->agent_id, $token)));
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('Agent detail timeout: ' . $e->getMessage());
             return view('agent.detail', ['agent' => null, 'error' => 'Koneksi timeout saat mengambil detail agent']);
@@ -147,9 +149,10 @@ class AgentController extends Controller
     public function securityEvents($id)
     {
         try {
-            $agent = $this->resolveAgent($id);
+            $agent          = $this->resolveAgent($id, $token);
+            $wazuhConnected = (bool) $token;
             if (!$agent) {
-                return view('agent.security-events', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia']);
+                return view('agent.security-events', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia', 'wazuhConnected' => $wazuhConnected]);
             }
 
             $timeRange    = request('time_range', '24h');
@@ -164,7 +167,7 @@ class AgentController extends Controller
             $alertsResult = $this->_openSearch->getRecentAlerts($id, $timeRange, $perPage, $offset);
             $groupsResult = $this->_openSearch->getGroupsSummary($id, $timeRange, $groupsPerPage, $groupsOffset);
 
-            return view('agent.security-events', array_merge(compact('agent', 'timeRange', 'savedLayout', 'savedLayoutMobile', 'page', 'perPage', 'groupsPage', 'groupsPerPage'), [
+            return view('agent.security-events', array_merge(compact('agent', 'timeRange', 'savedLayout', 'savedLayoutMobile', 'page', 'perPage', 'groupsPage', 'groupsPerPage', 'wazuhConnected'), [
                 'metrics'                => $this->_openSearch->getSecurityEventsMetrics($id, 'now-' . $timeRange),
                 'alertGroupsEvolution'   => $this->_openSearch->getAlertGroupsEvolution($id, $timeRange),
                 'alertsEvolutionByLevel' => $this->_openSearch->getAlertsEvolutionByLevel($id, $timeRange),
@@ -274,9 +277,10 @@ class AgentController extends Controller
     public function integrityMonitoring($id)
     {
         try {
-            $agent = $this->resolveAgent($id);
+            $agent          = $this->resolveAgent($id, $token);
+            $wazuhConnected = (bool) $token;
             if (!$agent) {
-                return view('agent.integrity-monitoring', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia']);
+                return view('agent.integrity-monitoring', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia', 'wazuhConnected' => $wazuhConnected]);
             }
 
             $timeRange = request('time_range', '24h');
@@ -287,7 +291,7 @@ class AgentController extends Controller
 
             $eventsResult = $this->_openSearch->getFimEventsPaginated($id, $timeRange, $perPage, $offset);
 
-            return view('agent.integrity-monitoring', array_merge(compact('agent', 'timeRange', 'savedLayout', 'savedLayoutMobile', 'page', 'perPage'), [
+            return view('agent.integrity-monitoring', array_merge(compact('agent', 'timeRange', 'savedLayout', 'savedLayoutMobile', 'page', 'perPage', 'wazuhConnected'), [
                 'fimSummary'     => $this->_openSearch->getFimSummary($id, $timeRange),
                 'fimEvolution'   => $this->_openSearch->getFimEvolution($id, $timeRange),
                 'fimTopRules'    => $this->_openSearch->getFimTopRules($id, $timeRange, 5),
@@ -306,12 +310,12 @@ class AgentController extends Controller
     public function sca($id)
     {
         try {
-            $agent = $this->resolveAgent($id);
+            $agent          = $this->resolveAgent($id, $token);
+            $wazuhConnected = (bool) $token;
             if (!$agent) {
-                return view('agent.sca', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia']);
+                return view('agent.sca', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia', 'wazuhConnected' => $wazuhConnected]);
             }
 
-            $token    = $this->_wazuhService->getToken();
             $policies = $token ? $this->_wazuhService->getSCAPolicies($token, $id) : [];
 
             $policyId       = request('policy_id', $policies[0]['policy_id'] ?? null);
@@ -334,7 +338,7 @@ class AgentController extends Controller
             $savedLayoutMobile = $this->getLayoutMobile('sca');
 
             return view('agent.sca', array_merge(
-                compact('agent', 'policies', 'selectedPolicy', 'policyId', 'resultFilter', 'page', 'perPage', 'savedLayout', 'savedLayoutMobile'),
+                compact('agent', 'policies', 'selectedPolicy', 'policyId', 'resultFilter', 'page', 'perPage', 'savedLayout', 'savedLayoutMobile', 'wazuhConnected'),
                 [
                     'checks'      => $checksResult['data'],
                     'totalChecks' => $checksResult['total'],
@@ -353,12 +357,12 @@ class AgentController extends Controller
     public function vulnerabilities($id)
     {
         try {
-            $agent = $this->resolveAgent($id);
+            $agent          = $this->resolveAgent($id, $token);
+            $wazuhConnected = (bool) $token;
             if (!$agent) {
-                return view('agent.vulnerabilities', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia']);
+                return view('agent.vulnerabilities', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia', 'wazuhConnected' => $wazuhConnected]);
             }
 
-            $token    = $this->_wazuhService->getToken();
             $severity = in_array(request('severity'), ['Critical', 'High', 'Medium', 'Low']) ? request('severity') : null;
             ['perPage' => $perPage, 'page' => $page, 'offset' => $offset] = $this->paginateRequest();
 
@@ -379,7 +383,7 @@ class AgentController extends Controller
             $savedLayout       = $this->getLayout('vulnerabilities');
             $savedLayoutMobile = $this->getLayoutMobile('vulnerabilities');
 
-            return view('agent.vulnerabilities', compact('agent', 'page', 'perPage', 'severity', 'severityCounts', 'summaryBatch', 'lastScan', 'savedLayout', 'savedLayoutMobile') + [
+            return view('agent.vulnerabilities', compact('agent', 'page', 'perPage', 'severity', 'severityCounts', 'summaryBatch', 'lastScan', 'savedLayout', 'savedLayoutMobile', 'wazuhConnected') + [
                 'vulnerabilities' => $vulnResult['data'],
                 'totalVulns'      => $vulnResult['total'],
             ]);
@@ -400,9 +404,10 @@ class AgentController extends Controller
     public function mitreAttack($id)
     {
         try {
-            $agent = $this->resolveAgent($id);
+            $agent          = $this->resolveAgent($id, $token);
+            $wazuhConnected = (bool) $token;
             if (!$agent) {
-                return view('agent.mitre-attack', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia']);
+                return view('agent.mitre-attack', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia', 'wazuhConnected' => $wazuhConnected]);
             }
 
             $timeRange = $this->validatedTimeRange(request('time_range'));
@@ -413,7 +418,7 @@ class AgentController extends Controller
             $savedLayout       = $this->getLayout('mitre-attack');
             $savedLayoutMobile = $this->getLayoutMobile('mitre-attack');
 
-            return view('agent.mitre-attack', compact('agent', 'timeRange', 'page', 'perPage', 'savedLayout', 'savedLayoutMobile') + [
+            return view('agent.mitre-attack', compact('agent', 'timeRange', 'page', 'perPage', 'savedLayout', 'savedLayoutMobile', 'wazuhConnected') + [
                 'tactics'          => $this->_openSearch->getMitreTactics($id, $timeRange),
                 'techniques'       => $this->_openSearch->getMitreTechniques($id, $timeRange),
                 'evolution'        => $this->_openSearch->getMitreEvolution($id, $timeRange),
@@ -431,9 +436,10 @@ class AgentController extends Controller
     public function compliance($id)
     {
         try {
-            $agent = $this->resolveAgent($id);
+            $agent          = $this->resolveAgent($id, $token);
+            $wazuhConnected = (bool) $token;
             if (!$agent) {
-                return view('agent.compliance', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia']);
+                return view('agent.compliance', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia', 'wazuhConnected' => $wazuhConnected]);
             }
 
             $complianceType = in_array(request('compliance_type'), config('dashboard.compliance_types')) ? request('compliance_type') : 'gdpr';
@@ -444,7 +450,7 @@ class AgentController extends Controller
             $savedLayout       = $this->getLayout('compliance');
             $savedLayoutMobile = $this->getLayoutMobile('compliance');
 
-            return view('agent.compliance', compact('agent', 'complianceType', 'timeRange', 'allCompliance', 'savedLayout', 'savedLayoutMobile') + [
+            return view('agent.compliance', compact('agent', 'complianceType', 'timeRange', 'allCompliance', 'savedLayout', 'savedLayoutMobile', 'wazuhConnected') + [
                 'topRuleGroups'  => $this->_openSearch->getTopRuleGroups($id, $timeRange, 5, $complianceType),
                 'topRules'       => $this->_openSearch->getTopAlerts($id, $timeRange, 5, $complianceType),
                 'top5Compliance' => array_slice($allCompliance, 0, 5),
@@ -459,19 +465,19 @@ class AgentController extends Controller
     public function inventoryData($id)
     {
         try {
-            $agent = $this->resolveAgent($id);
+            $agent          = $this->resolveAgent($id, $token);
+            $wazuhConnected = (bool) $token;
             if (!$agent) {
-                return view('agent.inventory-data', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia']);
+                return view('agent.inventory-data', ['agent' => null, 'error' => 'Agent tidak ditemukan atau API tidak tersedia', 'wazuhConnected' => $wazuhConnected]);
             }
 
-            $token    = $this->_wazuhService->getToken();
             $hardware = $token ? $this->_wazuhService->getInventoryHardware($token, $id) : null;
             $osInfo   = $token ? $this->_wazuhService->getInventoryOS($token, $id)       : null;
 
             $savedLayout       = $this->getLayout('inventory-data');
             $savedLayoutMobile = $this->getLayoutMobile('inventory-data');
 
-            return view('agent.inventory-data', compact('agent', 'hardware', 'osInfo', 'savedLayout', 'savedLayoutMobile'));
+            return view('agent.inventory-data', compact('agent', 'hardware', 'osInfo', 'savedLayout', 'savedLayoutMobile', 'wazuhConnected'));
         } catch (\Exception $e) {
             Log::error('Inventory data error: ' . $e->getMessage());
             return view('agent.inventory-data', ['agent' => null, 'error' => 'Gagal memuat data inventory']);
@@ -719,7 +725,7 @@ class AgentController extends Controller
         }
     }
 
-    private function resolveAgent(string $id): ?object
+    private function resolveAgent(string $id, ?string &$token = null): ?object
     {
         $token = $this->_wazuhService->getToken();
         if (!$token) return null;

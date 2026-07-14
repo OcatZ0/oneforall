@@ -11,7 +11,8 @@
       <div class="card-body">
         <div class="d-flex align-items-center justify-content-between mb-4">
           <h4 class="card-title mb-0">Profil</h4>
-          <button class="btn btn-sm btn-outline-warning" type="button" data-bs-toggle="collapse" data-bs-target="#changePasswordForm" aria-expanded="false">
+          @php $openPasswordForm = session('password_success') || $errors->hasAny(['current_password', 'new_password']) || request()->boolean('change_password'); @endphp
+          <button class="btn btn-sm btn-outline-warning" type="button" data-bs-toggle="collapse" data-bs-target="#changePasswordForm" aria-expanded="{{ $openPasswordForm ? 'true' : 'false' }}">
             <i class="mdi mdi-lock-reset me-1"></i> Ganti Password
           </button>
         </div>
@@ -52,7 +53,7 @@
         <hr>
 
         {{-- Collapsible Password Change Form --}}
-        <div class="collapse mb-4 {{ session('password_success') || $errors->hasAny(['current_password', 'new_password']) ? 'show' : '' }}" id="changePasswordForm">
+        <div class="collapse mb-4 {{ $openPasswordForm ? 'show' : '' }}" id="changePasswordForm">
           <div class="card card-body border">
             <h5 class="card-title mb-3">Ganti Password</h5>
 

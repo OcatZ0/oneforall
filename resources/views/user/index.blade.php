@@ -4,7 +4,6 @@
 
 @push('styles')
 @include('partials._gridstack-styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
 @endpush
 
 @section('content')
@@ -451,15 +450,7 @@
 })();
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
 <script>
-const notyf = new Notyf({
-  duration: 3000,
-  position: { x: 'right', y: 'top' },
-  ripple: false,
-  dismissible: true,
-});
-
 // Show success toast after page reload post-delete
 const _pendingSuccess = sessionStorage.getItem('userDeleteSuccess');
 if (_pendingSuccess) {

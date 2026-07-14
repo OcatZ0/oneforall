@@ -18,7 +18,7 @@
           <p class="fw-light small-text mb-0 text-muted">Detail akun</p>
         </div>
       </a>
-      <a class="dropdown-item preview-item" href="/auth/forgot-password">
+      <a class="dropdown-item preview-item" href="/profile?change_password=1#changePasswordForm">
         <div class="preview-thumbnail">
           <div class="preview-icon bg-warning">
             <i class="mdi mdi-lock mx-0"></i>

@@ -47,10 +47,11 @@ class DashboardController extends Controller
             $customerStats  = $isAdmin ? $this->getCustomerStats() : null;
             $savedLayout       = DashboardLayout::where('user_id', $userId)->where('page', 'home')->value('layout');
             $savedLayoutMobile = DashboardLayout::where('user_id', $userId)->where('page', 'home-mobile')->value('layout');
+            $wazuhConnected    = (bool) $token;
 
             return view('home.index', compact(
                 'agentStats', 'alertTrend', 'alertSeverity', 'totalAlerts',
-                'osDistribution', 'topRules', 'topAgents', 'customerStats', 'savedLayout', 'savedLayoutMobile'
+                'osDistribution', 'topRules', 'topAgents', 'customerStats', 'savedLayout', 'savedLayoutMobile', 'wazuhConnected'
             ));
         } catch (\Exception $e) {
             Log::error('Dashboard error: ' . $e->getMessage());
