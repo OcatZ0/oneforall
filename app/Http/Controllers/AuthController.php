@@ -82,9 +82,27 @@ class AuthController extends Controller
 
     public function showResetForm(Request $request, string $token)
     {
+        $email = $request->query('email', '');
+        $invalidMessage = 'Tautan reset tidak valid atau sudah kedaluwarsa. Silakan minta tautan baru.';
+
+        $user = $email ? User::where('email', $email)->first() : null;
+        if (!$user) {
+            return redirect()->route('password.request')->with('error', $invalidMessage);
+        }
+
+        $record = PasswordResetToken::where('user_id', $user->id)->first();
+        if (!$record || !Hash::check($token, $record->token)) {
+            return redirect()->route('password.request')->with('error', $invalidMessage);
+        }
+
+        if ($record->created_at->copy()->addMinutes(60)->isPast()) {
+            PasswordResetToken::where('user_id', $user->id)->delete();
+            return redirect()->route('password.request')->with('error', $invalidMessage);
+        }
+
         return view('auth.reset-password', [
             'token' => $token,
-            'email' => $request->query('email', ''),
+            'email' => $email,
         ]);
     }
 
@@ -104,7 +122,7 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Token reset tidak valid.']);
         }
 
-        if (now()->diffInMinutes($record->created_at) > 60) {
+        if ($record->created_at->copy()->addMinutes(60)->isPast()) {
             PasswordResetToken::where('user_id', $user->id)->delete();
             return back()->withErrors(['email' => 'Token reset sudah kedaluwarsa. Silakan minta ulang.']);
         }

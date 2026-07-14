@@ -18,7 +18,11 @@ class StoreUserRequest extends FormRequest
             'email'    => 'required|email:filter|unique:user,email',
             'password' => 'required|string|min:8',
             'role'     => 'required|in:admin,customer',
-            'agents'   => 'array',
+            'agents'   => ['array', function ($attribute, $value, $fail) {
+                if ($this->input('role') === 'admin' && !empty($value)) {
+                    $fail('Admin tidak dapat ditugaskan agent.');
+                }
+            }],
             'agents.*' => 'string',
         ];
     }

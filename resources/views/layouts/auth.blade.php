@@ -24,6 +24,8 @@
       --text-muted: rgba(255,255,255,0.55);
       --placeholder: rgba(255,255,255,0.35);
       --danger: #ff6b6b;
+      --danger-bg: rgba(255,107,107,0.1);
+      --danger-border: rgba(255,107,107,0.2);
       --success: #4ade80;
       --success-bg: rgba(74,222,128,0.1);
       --success-border: rgba(74,222,128,0.2);
@@ -86,6 +88,11 @@
     .alert-success {
       background: var(--success-bg); border: 1px solid var(--success-border); border-radius: 0px; padding: 12px 14px;
       font-size: 13px; color: var(--success); margin-bottom: 20px; line-height: 1.5;
+    }
+
+    .alert-error {
+      background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: 0px; padding: 12px 14px;
+      font-size: 13px; color: var(--danger); margin-bottom: 20px; line-height: 1.5;
     }
 
     .btn-submit {

@@ -75,7 +75,7 @@
           </div>
 
           <!-- Agent Assignment -->
-          <div class="card mb-4">
+          <div class="card mb-4" id="agentAssignmentCard">
             <div class="card-header">
               <h6 class="card-title mb-0">Penugasan Agent Wazuh</h6>
               <p class="text-muted small mb-0">Pilih agent yang belum ditugaskan kepada pengguna lain</p>
@@ -87,7 +87,7 @@
                   @forelse($availableAgents as $agent)
                     <div class="form-check mb-3 pb-2 d-flex align-items-start" style="border-bottom: 1px solid #eee;">
                       <input type="checkbox" class="form-check-input flex-shrink-0 mt-1" id="agent_{{ $agent['id'] }}"
-                        name="agents[]" value="{{ $agent['id'] }}"
+                        name="agents[]" value="{{ $agent['id'] }}" data-assigned="{{ $agent['assigned'] && !in_array($agent['id'], $userAgentIds) ? '1' : '0' }}"
                         {{ in_array($agent['id'], old('agents', $userAgentIds)) ? 'checked' : '' }}
                         {{ $agent['assigned'] && !in_array($agent['id'], $userAgentIds) ? 'disabled' : '' }}
                         style="width: 18px; height: 18px; cursor: pointer; margin-top: 2px; margin-left: 0;">
@@ -120,6 +120,10 @@
             </div>
           </div>
 
+          <div class="alert alert-secondary d-none" id="adminAgentHint" role="alert">
+            <i class="mdi mdi-information-outline me-1"></i>Admin tidak dapat ditugaskan agent.
+          </div>
+
           <!-- Action Buttons -->
           <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">
@@ -136,5 +140,26 @@
 
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const roleSelect = document.getElementById('role');
+  const agentCard  = document.getElementById('agentAssignmentCard');
+  const adminHint  = document.getElementById('adminAgentHint');
+
+  function toggleAgentSection() {
+    const isAdmin = roleSelect.value === 'admin';
+    agentCard.classList.toggle('d-none', isAdmin);
+    adminHint.classList.toggle('d-none', !isAdmin);
+    agentCard.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+      cb.disabled = isAdmin || cb.dataset.assigned === '1';
+      if (isAdmin) cb.checked = false;
+    });
+  }
+
+  roleSelect.addEventListener('change', toggleAgentSection);
+  toggleAgentSection();
+});
+</script>
 
 @endsection

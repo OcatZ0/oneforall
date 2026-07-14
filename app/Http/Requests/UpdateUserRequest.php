@@ -26,7 +26,11 @@ class UpdateUserRequest extends FormRequest
             'username' => ['required', 'string', 'min:3', 'max:50', Rule::unique('user', 'username')->ignore($id, 'id')],
             'email'    => ['required', 'email:filter', Rule::unique('user', 'email')->ignore($id, 'id')],
             'role'     => 'required|in:admin,customer',
-            'agents'   => 'array',
+            'agents'   => ['array', function ($attribute, $value, $fail) {
+                if ($this->input('role') === 'admin' && !empty($value)) {
+                    $fail('Admin tidak dapat ditugaskan agent.');
+                }
+            }],
             'agents.*' => 'string',
         ];
     }

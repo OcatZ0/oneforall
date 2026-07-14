@@ -79,7 +79,7 @@ class UserController extends Controller
                 'role'     => $validated['role'],
             ]);
 
-            if (!empty($validated['agents'])) {
+            if ($validated['role'] !== 'admin' && !empty($validated['agents'])) {
                 foreach ($validated['agents'] as $agentId) {
                     WazuhAgent::where('agent_id', $agentId)->update(['user_id' => $user->id]);
                 }
@@ -134,7 +134,7 @@ class UserController extends Controller
 
             $user->agents()->update(['user_id' => null]);
 
-            if (!empty($validated['agents'])) {
+            if ($validated['role'] !== 'admin' && !empty($validated['agents'])) {
                 foreach ($validated['agents'] as $agentId) {
                     WazuhAgent::where('agent_id', $agentId)->update(['user_id' => $user->id]);
                 }
